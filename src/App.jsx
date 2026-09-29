@@ -11,6 +11,9 @@ import Dashboard from '@/pages/Dashboard';
 import FlightLog from '@/pages/FlightLog';
 import Aircraft from '@/pages/Aircraft';
 import Checklist from '@/pages/Checklist';
+import QRH from '@/pages/QRH';
+import Biblioteca from '@/pages/Biblioteca';
+import Treinamentos from '@/pages/Treinamentos';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -44,6 +47,9 @@ const AuthenticatedApp = () => {
         <Route path="/flight-log" element={<FlightLog />} />
         <Route path="/aircraft" element={<Aircraft />} />
         <Route path="/checklist" element={<Checklist />} />
+        <Route path="/qrh" element={<QRH />} />
+        <Route path="/biblioteca" element={<Biblioteca />} />
+        <Route path="/treinamentos" element={<Treinamentos />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

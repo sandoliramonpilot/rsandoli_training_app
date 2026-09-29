@@ -1,0 +1,45 @@
+{
+  "name": "LibraryDocument",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "T\u00edtulo"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "flight_manual",
+        "rfm",
+        "poh",
+        "maintenance_manual",
+        "fcom",
+        "sop",
+        "bulletins",
+        "charts"
+      ],
+      "default": "flight_manual",
+      "title": "Categoria"
+    },
+    "file_uri": {
+      "type": "string",
+      "title": "URI do arquivo privado"
+    },
+    "file_name": {
+      "type": "string",
+      "title": "Nome do arquivo"
+    },
+    "tags": {
+      "type": "string",
+      "title": "Tags (separadas por v\u00edrgula)"
+    },
+    "description": {
+      "type": "string",
+      "title": "Descri\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "title",
+    "category"
+  ]
+}

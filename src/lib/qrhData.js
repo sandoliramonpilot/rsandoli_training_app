@@ -1,0 +1,311 @@
+// Procedimentos de emergência (QRH) — AW119Kx Koala e geral
+export const QRH_CATEGORIES = [
+  { id: "engine", name: "Engine", color: "red" },
+  { id: "rotor", name: "Rotor", color: "red" },
+  { id: "fuel", name: "Fuel", color: "amber" },
+  { id: "electrical", name: "Electrical", color: "amber" },
+  { id: "hydraulic", name: "Hydraulic", color: "amber" },
+  { id: "flight_control", name: "Flight Control", color: "blue" },
+  { id: "avionics", name: "Avionics", color: "blue" },
+];
+
+export const QRH_PROCEDURES = [
+  // ENGINE
+  {
+    id: "engine_failure",
+    category: "engine",
+    title: "Engine Failure",
+    criticality: "emergency",
+    condition: "Perda total de potência do motor durante o voo.",
+    symptoms: ["Decaimento do NR", "Queda de N1 e torque", "Aviso sonoro e visual de engine out", "Guinada para a direita"],
+    immediateActions: [
+      "Baixar o coletivo para manter NR no arco verde",
+      "Estabelecer autorotação — 40 KIAS (velocidade de melhor planeio)",
+      "Selecionar área de pouso forçado",
+      "Throttle — verificar posição (tentar reacionar se aplicável)",
+    ],
+    subsequentActions: [
+      "Transmitir MAYDAY (121.5 ou frequência atual)",
+      "Selecionar área de pouso e preparar para pouso forçado",
+      "Se tempo permitir — Fuel shutoff, Battery OFF após pouso",
+    ],
+    notes: "Velocidade de melhor autorotação: 40 KIAS. Taxa de descida mínima a 40 KIAS. Tentar reacionar o motor abaixo de 10.000 ft se N1 disponível.",
+  },
+  {
+    id: "partial_power_loss",
+    category: "engine",
+    title: "Partial Power Loss",
+    criticality: "caution",
+    condition: "Motor produz potência parcial, incapaz de manter voo estacionário.",
+    symptoms: ["Torque reduzido", "N1/ITT flutuantes", "Possível aspereza do motor", "Dificuldade de manter altitude"],
+    immediateActions: [
+      "Ajustar coletivo para manter NR",
+      "Verificar posição do throttle",
+      "Verificar pressão e fluxo de combustível",
+    ],
+    subsequentActions: [
+      "Pousar o mais breve possível (land as soon as practicable)",
+      "Monitorar parâmetros do motor",
+      "Preparar para pouso preventivo",
+    ],
+    notes: "Se a potência não for suficiente para voo nivelado, proceder como Engine Failure.",
+  },
+  {
+    id: "engine_fire",
+    category: "engine",
+    title: "Engine Fire",
+    criticality: "emergency",
+    condition: "Indicação de incêndio no motor durante o voo.",
+    symptoms: ["Luz de aviso de Engine Fire", "Fumaça visível", "Aumento anormal do ITT", "Possível odor de queimado"],
+    immediateActions: [
+      "Throttle — reduzir para idle",
+      "Ativar extintor de incêndio do motor (Fire Extinguisher)",
+      "Fuel shutoff — cortar combustível",
+      "Iniciar descida de emergência",
+    ],
+    subsequentActions: [
+      "Pousar imediatamente (land immediately)",
+      "Após pouso — Battery OFF, evacuar aeronave",
+      "Acionar equipe de emergência",
+    ],
+    notes: "Se o fogo persistir após o primeiro disparo do extintor, considerar segundo disparo se disponível.",
+  },
+  // ROTOR
+  {
+    id: "low_rotor_rpm",
+    category: "rotor",
+    title: "Low Rotor RPM",
+    criticality: "emergency",
+    condition: "NR abaixo do limite operacional mínimo.",
+    symptoms: ["Aviso sonoro de Low NR", "NR abaixo do arco verde", "Possível vibração", "Perda de eficácia do rotor"],
+    immediateActions: [
+      "Baixar coletivo imediatamente",
+      "Throttle — aumentar (se não no limite)",
+      "Verificar carga do motor",
+    ],
+    subsequentActions: [
+      "Recuperar NR para o arco verde",
+      "Verificar causa (excesso de coletivo, perda de potência)",
+      "Pousar se NR não for recuperável",
+    ],
+    notes: "Low NR prolongado pode levar à perda de sustentação. Ação imediata é crítica.",
+  },
+  {
+    id: "rotor_malfunction",
+    category: "rotor",
+    title: "Rotor System Malfunction",
+    criticality: "emergency",
+    condition: "Malfuncionamento do sistema de rotor principal ou de cauda.",
+    symptoms: ["Vibração anormal", "Guinada não comandada", "Dificuldade de controle direcional", "Ruído anormal do rotor"],
+    immediateActions: [
+      "Reduzir velocidade e potência",
+      "Ajustar coletivo para voo nivelado",
+      "Selecionar área de pouso imediato",
+    ],
+    subsequentActions: [
+      "Pousar imediatamente (land immediately)",
+      "Preparar para pouso de emergência",
+      "Inspeção após pouso",
+    ],
+    notes: "Vibração severa pode indicar falha estrutural. Minimizar tempo de voo.",
+  },
+  // FUEL
+  {
+    id: "fuel_pressure_low",
+    category: "fuel",
+    title: "Fuel Pressure Low",
+    criticality: "caution",
+    condition: "Pressão de combustível abaixo do limite operacional.",
+    symptoms: ["Luz de aviso de Fuel Pressure", "Indicação de pressão baixa", "Possível flutuação do motor"],
+    immediateActions: [
+      "Ativar Fuel Pump auxiliar (se aplicável)",
+      "Verificar seletor de tanque",
+      "Verificar quantidade de combustível",
+    ],
+    subsequentActions: [
+      "Pousar o mais breve possível",
+      "Monitorar parâmetros do motor",
+      "Preparar para possível falha de motor",
+    ],
+    notes: "Se a pressão não for recuperada, proceder como Engine Failure.",
+  },
+  {
+    id: "fuel_starvation",
+    category: "fuel",
+    title: "Fuel Starvation",
+    criticality: "emergency",
+    condition: "Falta de combustível chegando ao motor.",
+    symptoms: ["Perda de potência", "N1 decay", "Engine out", "Indicador de combustível baixo"],
+    immediateActions: [
+      "Trocar de tanque (crossfeed / seletor)",
+      "Ativar Fuel Pump auxiliar",
+      "Baixar coletivo e preparar autorotação",
+    ],
+    subsequentActions: [
+      "Tentar reacionar motor se combustível disponível",
+      "Se não recuperar — proceder como Engine Failure",
+      "Pousar imediatamente",
+    ],
+    notes: "Verificar quantidade real de combustível. Erro de indicação pode mascarar starvation real.",
+  },
+  // ELECTRICAL
+  {
+    id: "generator_failure",
+    category: "electrical",
+    title: "Generator Failure",
+    criticality: "caution",
+    condition: "Falha do gerador principal durante o voo.",
+    symptoms: ["Luz de aviso GEN OFF", "Tensão do gerador em zero", "Carga na bateria"],
+    immediateActions: [
+      "Tentar reset do gerador (OFF depois ON)",
+      "Verificar carga elétrica — reduzir cargas não essenciais",
+      "Monitorar tensão da bateria",
+    ],
+    subsequentActions: [
+      "Pousar o mais breve possível",
+      "Gerenciar carga elétrica para preservar bateria",
+      "Preparar para pouso com sistemas mínimos",
+    ],
+    notes: "Autonomia da bateria limitada. Priorizar sistemas essenciais de voo e navegação.",
+  },
+  {
+    id: "battery_failure",
+    category: "electrical",
+    title: "Battery Failure",
+    criticality: "caution",
+    condition: "Falha da bateria principal.",
+    symptoms: ["Tensão da bateria anormal", "Possível aviso de BAT", "Dificuldade de partida"],
+    immediateActions: [
+      "Verificar conexão da bateria",
+      "Manter gerador ativo para suprir sistemas",
+      "Reduzir cargas elétricas não essenciais",
+    ],
+    subsequentActions: [
+      "Pousar o mais breve possível",
+      "Bateria não disponível para partida de emergência",
+      "Planejar pouso sem capacidade de reacionar motor",
+    ],
+    notes: "Sem bateria, a partida do motor não é possível após corte. Planejar accordingly.",
+  },
+  // HYDRAULIC
+  {
+    id: "hydraulic_failure",
+    category: "hydraulic",
+    title: "Hydraulic Failure",
+    criticality: "caution",
+    condition: "Falha do sistema hidráulico principal.",
+    symptoms: ["Luz de aviso hidráulico", "Aumento de esforço nos controles", "Possível vibração nos controles"],
+    immediateActions: [
+      "Verificar pressão hidráulica",
+      "Ativar sistema hidráulico backup (se aplicável)",
+      "Reduzir manobras abruptas",
+    ],
+    subsequentActions: [
+      "Pousar o mais breve possível",
+      "Manter velocidade e manobra suaves",
+      "Preparar para pouso com controles pesados",
+    ],
+    notes: "Sem hidráulico, os controles ficam significativamente mais pesados. Evitar manobras bruscas.",
+  },
+  // FLIGHT CONTROL
+  {
+    id: "afcs_failure",
+    category: "flight_control",
+    title: "AFCS Failure",
+    criticality: "caution",
+    condition: "Falha do Sistema de Controle de Voo Automático (AFCS).",
+    symptoms: ["Aviso de AFCS no CAS", "Perda de estabilização SAS", "Possível desengajamento automático"],
+    immediateActions: [
+      "Confirmar desengajamento do AFCS",
+      "Assumir controle manual completo",
+      "Verificar estabilidade do voo",
+    ],
+    subsequentActions: [
+      "Pousar o mais breve possível",
+      "Voo manual até pouso",
+      "Evitar condições IMC se possível",
+    ],
+    notes: "Sem SAS, aeronave requer maior atenção do piloto. Reduzir cargas de trabalho.",
+  },
+  {
+    id: "trim_failure",
+    category: "flight_control",
+    title: "Trim Failure",
+    criticality: "info",
+    condition: "Falha do sistema de trim do cíclico.",
+    symptoms: ["Aviso de TRIM no CAS", "Força residual no cíclico", "Dificuldade de manter atitude"],
+    immediateActions: [
+      "Assumir controle manual com força necessária",
+      "Verificar tentativa de reset do trim",
+    ],
+    subsequentActions: [
+      "Pousar o mais breve possível",
+      "Manter voo manual com compensação do piloto",
+    ],
+    notes: "Trim failure aumenta a carga de trabalho do piloto. Planejar pouso com antecedência.",
+  },
+  // AVIONICS
+  {
+    id: "display_failure",
+    category: "avionics",
+    title: "Display Failure (PFD/MFD)",
+    criticality: "caution",
+    condition: "Falha de um dos displays do EFIS (PFD ou MFD).",
+    symptoms: ["Tela em branco ou congelada", "Aviso de DISPLAY no CAS", "Possível reversion para display backup"],
+    immediateActions: [
+      "Confirmar qual display falhou",
+      "Se PFD falhou — usar MFD como PFD (reversion mode)",
+      "Verificar instrumentos de backup",
+    ],
+    subsequentActions: [
+      "Pousar o mais breve possível",
+      "Usar instrumentos de backup para navegação",
+      "Evitar condições IMC",
+    ],
+    notes: "O IDU-680 possui modo de reversion. Familiarizar-se com a configuração de reversion.",
+  },
+  {
+    id: "ahrs_failure",
+    category: "avionics",
+    title: "AHRS Failure",
+    criticality: "caution",
+    condition: "Falha do Sistema de Referência de Atitude e Cabeça (AHRS).",
+    symptoms: ["Aviso de AHRS no CAS", "Atitude indicada inválida ou congelada", "Possível flag vermelho no PFD"],
+    immediateActions: [
+      "Usar instrumentos de backup (atitude de backup)",
+      "Verificar reset do AHRS (se disponível)",
+      "Manter voo nivelado por referência externa",
+    ],
+    subsequentActions: [
+      "Pousar o mais breve possível",
+      "Evitar condições IMC",
+      "Usar navegação visual ou por rádio",
+    ],
+    notes: "Sem AHRS, a indicação de atitude não é confiável. Voo VFR apenas.",
+  },
+  {
+    id: "adc_failure",
+    category: "avionics",
+    title: "ADC Failure",
+    criticality: "caution",
+    condition: "Falha do Computador de Dados de Ar (ADC).",
+    symptoms: ["Aviso de ADC no CAS", "Velocidade e altitude indicadas inválidas", "Possível flag vermelho"],
+    immediateActions: [
+      "Usar velocidade e altitude de backup (standby instruments)",
+      "Manter velocidade por referência visual e som",
+      "Verificar reset do ADC",
+    ],
+    subsequentActions: [
+      "Pousar o mais breve possível",
+      "Evitar condições IMC",
+      "Usar tabelas de performance por referência visual",
+    ],
+    notes: "Sem ADC, dados de velocidade e altitude não são confiáveis. Priorizar pouso VFR.",
+  },
+];
+
+export const CRITICALITY_CONFIG = {
+  emergency: { label: "Emergência", color: "red", bg: "bg-red-50", border: "border-red-200", text: "text-red-700", dot: "bg-red-500" },
+  caution: { label: "Cautela", color: "amber", bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", dot: "bg-amber-500" },
+  info: { label: "Informação", color: "blue", bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", dot: "bg-blue-500" },
+};

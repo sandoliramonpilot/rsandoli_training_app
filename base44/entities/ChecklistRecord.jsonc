@@ -23,6 +23,10 @@
       "type": "string",
       "enum": [
         "pre_flight",
+        "startup",
+        "post_startup",
+        "before_takeoff",
+        "shutdown",
         "post_flight"
       ],
       "default": "pre_flight",
