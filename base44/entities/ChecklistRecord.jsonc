@@ -1,0 +1,59 @@
+{
+  "name": "ChecklistRecord",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data"
+    },
+    "aircraft_id": {
+      "type": "string",
+      "title": "Aeronave"
+    },
+    "aircraft_registration": {
+      "type": "string",
+      "title": "Matr\u00edcula (snapshot)"
+    },
+    "pilot_name": {
+      "type": "string",
+      "title": "Piloto"
+    },
+    "checklist_type": {
+      "type": "string",
+      "enum": [
+        "pre_flight",
+        "post_flight"
+      ],
+      "default": "pre_flight",
+      "title": "Tipo de checklist"
+    },
+    "completed_items": {
+      "type": "string",
+      "title": "Itens conclu\u00eddos (JSON)"
+    },
+    "discrepancies": {
+      "type": "string",
+      "title": "Discrep\u00e2ncias encontradas"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "discrepancy",
+        "no_go"
+      ],
+      "default": "ok",
+      "title": "Status"
+    },
+    "signature": {
+      "type": "string",
+      "title": "Assinatura (nome do piloto)"
+    }
+  },
+  "required": [
+    "date",
+    "aircraft_id",
+    "pilot_name"
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "name": "FlightLog",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data do voo"
+    },
+    "aircraft_id": {
+      "type": "string",
+      "title": "Aeronave"
+    },
+    "aircraft_registration": {
+      "type": "string",
+      "title": "Matr\u00edcula (snapshot)"
+    },
+    "pilot_name": {
+      "type": "string",
+      "title": "Piloto"
+    },
+    "copilot_name": {
+      "type": "string",
+      "title": "Copiloto"
+    },
+    "departure_location": {
+      "type": "string",
+      "title": "Origem"
+    },
+    "arrival_location": {
+      "type": "string",
+      "title": "Destino"
+    },
+    "departure_time": {
+      "type": "string",
+      "title": "Decolagem (HH:MM)"
+    },
+    "arrival_time": {
+      "type": "string",
+      "title": "Pouso (HH:MM)"
+    },
+    "flight_time_minutes": {
+      "type": "integer",
+      "title": "Tempo de voo (minutos)",
+      "default": 0
+    },
+    "flight_type": {
+      "type": "string",
+      "enum": [
+        "private",
+        "instruction",
+        "charter",
+        "ems",
+        "vip",
+        "photo",
+        "other"
+      ],
+      "default": "private",
+      "title": "Tipo de voo"
+    },
+    "landings": {
+      "type": "integer",
+      "title": "Pousos",
+      "default": 1
+    },
+    "night_flight": {
+      "type": "boolean",
+      "title": "Voo noturno",
+      "default": false
+    },
+    "ifr": {
+      "type": "boolean",
+      "title": "IFR",
+      "default": false
+    },
+    "fuel_uplift_liters": {
+      "type": "number",
+      "title": "Combust\u00edvel abastecido (L)"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Observa\u00e7\u00f5es"
+    }
+  },
+  "required": [
+    "date",
+    "aircraft_id",
+    "pilot_name",
+    "departure_location",
+    "arrival_location"
+  ]
+}

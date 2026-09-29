@@ -6,6 +6,11 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import AppLayout from '@/components/AppLayout';
+import Dashboard from '@/pages/Dashboard';
+import FlightLog from '@/pages/FlightLog';
+import Aircraft from '@/pages/Aircraft';
+import Checklist from '@/pages/Checklist';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -34,7 +39,12 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/flight-log" element={<FlightLog />} />
+        <Route path="/aircraft" element={<Aircraft />} />
+        <Route path="/checklist" element={<Checklist />} />
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

@@ -1,0 +1,47 @@
+{
+  "name": "Aircraft",
+  "type": "object",
+  "properties": {
+    "registration": {
+      "type": "string",
+      "title": "Matr\u00edcula",
+      "description": "Ex: PR-ABC, PT-HXYZ"
+    },
+    "model": {
+      "type": "string",
+      "title": "Modelo",
+      "description": "Ex: Bell 206, Robinson R44, AS350 \u00c9cureuil"
+    },
+    "manufacturer": {
+      "type": "string",
+      "title": "Fabricante"
+    },
+    "year": {
+      "type": "integer",
+      "title": "Ano"
+    },
+    "total_hours": {
+      "type": "number",
+      "title": "Total de horas voadas",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "in_maintenance",
+        "grounded"
+      ],
+      "default": "available",
+      "title": "Status"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Observa\u00e7\u00f5es"
+    }
+  },
+  "required": [
+    "registration",
+    "model"
+  ]
+}
