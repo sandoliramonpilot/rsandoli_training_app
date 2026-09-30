@@ -153,10 +153,13 @@ export default function Checklist() {
 
           {/* Progress + Search */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-1">
               <p className="text-sm font-medium text-slate-700">{phase.name} — Progresso</p>
               <p className="text-sm font-semibold text-slate-900">{checkedCount}/{totalItems} · {progress}%</p>
             </div>
+            {phase.subtitle && (
+              <p className="text-xs text-sky-600 font-medium mb-3">{phase.subtitle}</p>
+            )}
             <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden mb-4">
               <div className="h-full bg-gradient-to-r from-sky-500 to-blue-600 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
