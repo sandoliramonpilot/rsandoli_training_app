@@ -9,16 +9,22 @@
     "category": {
       "type": "string",
       "enum": [
-        "flight_manual",
-        "rfm",
         "poh",
+        "rfm",
+        "mmel",
+        "mel",
+        "qrh",
+        "flight_manual",
         "maintenance_manual",
-        "fcom",
-        "sop",
-        "bulletins",
-        "charts"
+        "wiring_manual",
+        "avionics_manual",
+        "helipilot_manual",
+        "genesys_manual",
+        "anac",
+        "icao",
+        "faa"
       ],
-      "default": "flight_manual",
+      "default": "poh",
       "title": "Categoria"
     },
     "file_uri": {

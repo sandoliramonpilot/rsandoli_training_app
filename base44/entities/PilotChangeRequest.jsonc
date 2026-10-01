@@ -1,0 +1,46 @@
+{
+  "name": "PilotChangeRequest",
+  "type": "object",
+  "properties": {
+    "pilot_id": {
+      "type": "string",
+      "title": "ID do piloto"
+    },
+    "pilot_name": {
+      "type": "string",
+      "title": "Nome do piloto"
+    },
+    "requested_by": {
+      "type": "string",
+      "title": "Solicitado por"
+    },
+    "changes": {
+      "type": "string",
+      "title": "Altera\u00e7\u00f5es (JSON)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "title": "Status"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "title": "Analisado por"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data da an\u00e1lise"
+    }
+  },
+  "required": [
+    "pilot_id",
+    "requested_by",
+    "changes"
+  ]
+}

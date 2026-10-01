@@ -1,0 +1,131 @@
+{
+  "name": "Pilot",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "title": "Nome completo"
+    },
+    "war_name": {
+      "type": "string",
+      "title": "Nome de guerra"
+    },
+    "photo_uri": {
+      "type": "string",
+      "title": "URI da foto (privada)"
+    },
+    "birth_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de nascimento"
+    },
+    "cpf": {
+      "type": "string",
+      "title": "CPF"
+    },
+    "rg": {
+      "type": "string",
+      "title": "RG"
+    },
+    "registration": {
+      "type": "string",
+      "title": "Matr\u00edcula"
+    },
+    "nationality": {
+      "type": "string",
+      "title": "Nacionalidade"
+    },
+    "marital_status": {
+      "type": "string",
+      "title": "Estado civil"
+    },
+    "blood_type": {
+      "type": "string",
+      "title": "Tipo sangu\u00edneo"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Telefone"
+    },
+    "email": {
+      "type": "string",
+      "title": "E-mail"
+    },
+    "address": {
+      "type": "string",
+      "title": "Endere\u00e7o"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "commander",
+        "copilot",
+        "instructor",
+        "trainee",
+        "manager"
+      ],
+      "default": "copilot",
+      "title": "Fun\u00e7\u00e3o"
+    },
+    "base": {
+      "type": "string",
+      "title": "Base operacional"
+    },
+    "company": {
+      "type": "string",
+      "title": "Empresa"
+    },
+    "admission_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de admiss\u00e3o"
+    },
+    "anac_code": {
+      "type": "string",
+      "title": "C\u00f3digo ANAC"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "title": "Status"
+    },
+    "hours": {
+      "type": "string",
+      "title": "Horas (JSON)"
+    },
+    "licenses": {
+      "type": "string",
+      "title": "Licen\u00e7as e habilita\u00e7\u00f5es (JSON)"
+    },
+    "certificates": {
+      "type": "string",
+      "title": "Certificados e cursos (JSON)"
+    },
+    "documents": {
+      "type": "string",
+      "title": "Documentos (JSON)"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "pending",
+        "rejected"
+      ],
+      "default": "approved",
+      "title": "Status de aprova\u00e7\u00e3o"
+    },
+    "approval_log": {
+      "type": "string",
+      "title": "Log de aprova\u00e7\u00e3o (JSON)"
+    }
+  },
+  "required": [
+    "full_name",
+    "role"
+  ]
+}

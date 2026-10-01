@@ -14,6 +14,9 @@ import Checklist from '@/pages/Checklist';
 import QRH from '@/pages/QRH';
 import Biblioteca from '@/pages/Biblioteca';
 import Treinamentos from '@/pages/Treinamentos';
+import Pilotos from '@/pages/Pilotos';
+import Questoes from '@/pages/Questoes';
+import Simulados from '@/pages/Simulados';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -50,6 +53,9 @@ const AuthenticatedApp = () => {
         <Route path="/qrh" element={<QRH />} />
         <Route path="/biblioteca" element={<Biblioteca />} />
         <Route path="/treinamentos" element={<Treinamentos />} />
+        <Route path="/pilotos" element={<Pilotos />} />
+        <Route path="/questoes" element={<Questoes />} />
+        <Route path="/simulados" element={<Simulados />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

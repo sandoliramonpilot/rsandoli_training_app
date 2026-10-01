@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Siren, Library, GraduationCap, BookOpen, Plane, Wind, Menu, X } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Wind, Menu, Plane, HelpCircle, BarChart3 } from "lucide-react";
+import GlobalSearch from "@/components/GlobalSearch";
 import { cn } from "@/lib/utils";
 
 const navSections = [
   {
-    label: "Operações",
+    label: "Principal",
     items: [
       { label: "Painel", path: "/", icon: LayoutDashboard },
       { label: "Diário de Bordo", path: "/flight-log", icon: BookOpen },
@@ -13,47 +14,47 @@ const navSections = [
     ],
   },
   {
-    label: "Procedimentos",
+    label: "Operações",
     items: [
       { label: "Checklists", path: "/checklist", icon: ClipboardCheck },
       { label: "QRH", path: "/qrh", icon: Siren },
-      { label: "Biblioteca", path: "/biblioteca", icon: Library },
+      { label: "Pilotos", path: "/pilotos", icon: Users },
     ],
   },
   {
-    label: "Treinamento",
+    label: "Academy",
     items: [
-      { label: "Treinamentos", path: "/treinamentos", icon: GraduationCap },
+      { label: "Treinamento", path: "/treinamentos", icon: GraduationCap },
+      { label: "Questões", path: "/questoes", icon: HelpCircle },
+      { label: "Simulados", path: "/simulados", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "Conhecimento",
+    items: [
+      { label: "Biblioteca", path: "/biblioteca", icon: Library },
     ],
   },
 ];
 
-const allNavItems = navSections.flatMap((s) => s.items);
-
-function isActive(location, path) {
-  return location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
-}
-
 export default function AppLayout() {
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
+    <div className="min-h-screen bg-[#12141A] text-[#F2EFE6] flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col bg-slate-900 text-slate-100 fixed inset-y-0 left-0 z-20">
-        <SidebarContent location={location} />
+      <aside className="hidden md:flex w-64 flex-col bg-[#12141A] text-slate-200 fixed inset-y-0 left-0 z-20 border-r border-slate-800">
+        <SidebarContent location={location} onNavigate={() => {}} />
       </aside>
 
       {/* Mobile header */}
-      <header className="md:hidden fixed top-0 inset-x-0 z-30 bg-slate-900 text-white px-4 h-14 flex items-center justify-between shadow-md">
+      <header className="md:hidden fixed top-0 inset-x-0 z-30 bg-[#12141A] text-slate-100 px-4 h-14 flex items-center justify-between border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
-            <Wind className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-semibold tracking-tight text-sm">RSANDOLI PILOT</span>
+          <Logo />
+          <span className="font-semibold tracking-tight text-sm">AW119Kx Academy</span>
         </div>
-        <button onClick={() => setMobileOpen(true)} className="p-2 text-slate-300 hover:text-white">
+        <button onClick={() => setMobileOpen(true)} className="p-2 text-slate-300 hover:text-slate-100">
           <Menu className="w-6 h-6" />
         </button>
       </header>
@@ -61,11 +62,11 @@ export default function AppLayout() {
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="relative w-72 max-w-[80vw] bg-slate-900 text-slate-100 flex flex-col animate-in slide-in-from-left">
-            <div className="flex items-center justify-between px-4 h-14 border-b border-white/10">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="relative w-72 max-w-[80vw] bg-[#12141A] text-slate-200 flex flex-col border-r border-slate-800">
+            <div className="flex items-center justify-between px-4 h-14 border-b border-slate-800">
               <span className="font-semibold text-sm">Menu</span>
-              <button onClick={() => setMobileOpen(false)} className="p-2 text-slate-400 hover:text-white">
+              <button onClick={() => setMobileOpen(false)} className="p-2 text-slate-400 hover:text-slate-100">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -84,18 +85,36 @@ export default function AppLayout() {
   );
 }
 
+function Logo() {
+  return (
+    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+      <Wind className="w-6 h-6 text-slate-900" />
+    </div>
+  );
+}
+
+function isActive(location, path) {
+  return location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
+}
+
 function SidebarContent({ location, onNavigate }) {
+  const [searchOpen, setSearchOpen] = React.useState(false);
   return (
     <>
-      <div className="px-6 py-7 flex items-center gap-3 border-b border-white/10">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-          <Wind className="w-6 h-6 text-white" />
-        </div>
+      <div className="px-6 py-7 flex items-center gap-3 border-b border-slate-800">
+        <Logo />
         <div>
-          <p className="font-semibold tracking-tight leading-tight text-sm">RSANDOLI PILOT</p>
-          <p className="text-[10px] uppercase tracking-widest text-sky-300/80">Helicopter Aviation</p>
+          <p className="font-semibold tracking-tight leading-tight text-sm">AW119Kx Academy</p>
+          <p className="text-[10px] uppercase tracking-widest text-amber-400/80">Helicopter Aviation</p>
         </div>
       </div>
+
+      <button
+        onClick={() => setSearchOpen(true)}
+        className="mx-3 mt-4 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-[#1A1D25] border border-slate-800 text-sm text-slate-500 hover:border-amber-500/40 hover:text-slate-300 transition-colors"
+      >
+        <Search className="w-4 h-4" /> Busca universal…
+      </button>
 
       <nav className="flex-1 px-3 py-5 space-y-5 overflow-y-auto">
         {navSections.map((section) => (
@@ -113,8 +132,8 @@ function SidebarContent({ location, onNavigate }) {
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                       active
-                        ? "bg-sky-500/15 text-sky-300 shadow-inner"
-                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                        ? "bg-amber-500/15 text-amber-300 border border-amber-500/20"
+                        : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
                     )}
                   >
                     <Icon style={{ width: 18, height: 18 }} />
@@ -127,12 +146,14 @@ function SidebarContent({ location, onNavigate }) {
         ))}
       </nav>
 
-      <div className="px-6 py-5 border-t border-white/10 text-[11px] text-slate-500">
+      <div className="px-6 py-5 border-t border-slate-800 text-[11px] text-slate-600">
         <p className="flex items-center gap-2">
-          <Wind className="w-3.5 h-3.5" />
-          Sistema de operações aéreas
+          <GraduationCap className="w-3.5 h-3.5" />
+          Treinamento e operações AW119Kx
         </p>
       </div>
+
+      <GlobalSearch onClose={() => setSearchOpen(false)} open={searchOpen} />
     </>
   );
 }
