@@ -17,6 +17,11 @@ import Treinamentos from '@/pages/Treinamentos';
 import Pilotos from '@/pages/Pilotos';
 import Questoes from '@/pages/Questoes';
 import Simulados from '@/pages/Simulados';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import OAuthConsent from '@/pages/OAuthConsent';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -45,6 +50,11 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/oauth/consent" element={<OAuthConsent />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/flight-log" element={<FlightLog />} />
