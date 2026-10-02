@@ -1,3 +1,50 @@
 {
-  "auth": "oauth"
+  "auth": "oauth",
+  "login_path": null,
+  "consent_path": null,
+  "tools": {
+    "excluded_agents": [],
+    "entity_overrides": {
+      "Aircraft": {
+        "operations": [
+          "read",
+          "update"
+        ],
+        "description": null
+      },
+      "ChecklistRecord": {
+        "operations": [
+          "read"
+        ],
+        "description": null
+      },
+      "FlightLog": {
+        "operations": [
+          "read"
+        ],
+        "description": null
+      },
+      "LibraryDocument": {
+        "operations": [
+          "read"
+        ],
+        "description": null
+      },
+      "Pilot": {
+        "operations": [
+          "read",
+          "create",
+          "update"
+        ],
+        "description": null
+      },
+      "PilotChangeRequest": {
+        "operations": [
+          "read"
+        ],
+        "description": null
+      }
+    },
+    "functions": []
+  }
 }
