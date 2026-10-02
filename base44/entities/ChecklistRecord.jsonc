@@ -7,6 +7,14 @@
       "format": "date",
       "title": "Data"
     },
+    "start_time": {
+      "type": "string",
+      "title": "Hora inicial (HH:MM)"
+    },
+    "end_time": {
+      "type": "string",
+      "title": "Hora final (HH:MM)"
+    },
     "aircraft_id": {
       "type": "string",
       "title": "Aeronave"
@@ -15,49 +23,85 @@
       "type": "string",
       "title": "Matr\u00edcula (snapshot)"
     },
-    "pilot_name": {
-      "type": "string",
-      "title": "Piloto"
+    "horimeter_initial": {
+      "type": "number",
+      "title": "Hor\u00edmetro inicial"
     },
-    "checklist_type": {
+    "fuel_initial": {
+      "type": "number",
+      "title": "Combust\u00edvel inicial"
+    },
+    "pax_count": {
+      "type": "integer",
+      "title": "Quantidade de passageiros"
+    },
+    "pic_name": {
+      "type": "string",
+      "title": "Piloto em Comando"
+    },
+    "pic_canac": {
+      "type": "string",
+      "title": "CANAC do Piloto em Comando"
+    },
+    "sic_name": {
+      "type": "string",
+      "title": "Copiloto"
+    },
+    "sic_canac": {
+      "type": "string",
+      "title": "CANAC do Copiloto"
+    },
+    "mission_type": {
       "type": "string",
       "enum": [
-        "pre_flight",
-        "startup",
-        "post_startup",
-        "before_takeoff",
-        "shutdown",
-        "post_flight"
+        "instrucao",
+        "treinamento",
+        "transporte",
+        "aeromedico",
+        "seguranca_publica",
+        "patrulhamento",
+        "sar",
+        "fiscalizacao",
+        "outro"
       ],
-      "default": "pre_flight",
-      "title": "Tipo de checklist"
+      "default": "instrucao",
+      "title": "Natureza da miss\u00e3o"
     },
-    "completed_items": {
+    "executed_by": {
       "type": "string",
-      "title": "Itens conclu\u00eddos (JSON)"
+      "title": "Usu\u00e1rio executante"
     },
-    "discrepancies": {
+    "phases_progress": {
       "type": "string",
-      "title": "Discrep\u00e2ncias encontradas"
+      "title": "Progresso das fases (JSON)"
+    },
+    "justification": {
+      "type": "string",
+      "title": "Justificativa de itens pendentes"
     },
     "status": {
       "type": "string",
       "enum": [
         "ok",
-        "discrepancy",
+        "pending_items",
         "no_go"
       ],
       "default": "ok",
-      "title": "Status"
+      "title": "Status final"
     },
-    "signature": {
-      "type": "string",
-      "title": "Assinatura (nome do piloto)"
+    "duration_minutes": {
+      "type": "integer",
+      "title": "Tempo de execu\u00e7\u00e3o (minutos)"
+    },
+    "favorite": {
+      "type": "boolean",
+      "default": false,
+      "title": "Favorito"
     }
   },
   "required": [
     "date",
     "aircraft_id",
-    "pilot_name"
+    "pic_name"
   ]
 }
