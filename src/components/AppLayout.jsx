@@ -1,38 +1,40 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Wind, Menu, Plane, HelpCircle, BarChart3 } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Wind, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/AuthContext";
+import { can, canManageUsers, getAccessLevel } from "@/lib/accessControl";
 
 const navSections = [
   {
     label: "Principal",
     items: [
-      { label: "Painel", path: "/", icon: LayoutDashboard },
-      { label: "Diário de Bordo", path: "/flight-log", icon: BookOpen },
-      { label: "Aeronaves", path: "/aircraft", icon: Plane },
+      { label: "Painel", path: "/", icon: LayoutDashboard, moduleId: "dashboard" },
+      { label: "Diário de Bordo", path: "/flight-log", icon: BookOpen, moduleId: "diario_bordo" },
+      { label: "Aeronaves", path: "/aircraft", icon: Plane, moduleId: "aeronaves" },
     ],
   },
   {
     label: "Operações",
     items: [
-      { label: "Checklists", path: "/checklist", icon: ClipboardCheck },
-      { label: "QRH", path: "/qrh", icon: Siren },
-      { label: "Pilotos", path: "/pilotos", icon: Users },
+      { label: "Checklists", path: "/checklist", icon: ClipboardCheck, moduleId: "checklists" },
+      { label: "QRH", path: "/qrh", icon: Siren, moduleId: "qrh" },
+      { label: "Pilotos", path: "/pilotos", icon: Users, moduleId: "pilotos" },
     ],
   },
   {
     label: "Academy",
     items: [
-      { label: "Treinamento", path: "/treinamentos", icon: GraduationCap },
-      { label: "Questões", path: "/questoes", icon: HelpCircle },
-      { label: "Simulados", path: "/simulados", icon: BarChart3 },
+      { label: "Treinamento", path: "/treinamentos", icon: GraduationCap, moduleId: "treinamentos" },
+      { label: "Questões", path: "/questoes", icon: HelpCircle, moduleId: "questoes" },
+      { label: "Simulados", path: "/simulados", icon: BarChart3, moduleId: "simulados" },
     ],
   },
   {
     label: "Conhecimento",
     items: [
-      { label: "Biblioteca", path: "/biblioteca", icon: Library },
+      { label: "Biblioteca", path: "/biblioteca", icon: Library, moduleId: "biblioteca" },
     ],
   },
 ];
@@ -99,6 +101,14 @@ function isActive(location, path) {
 
 function SidebarContent({ location, onNavigate }) {
   const [searchOpen, setSearchOpen] = React.useState(false);
+  const { user, logout } = useAuth();
+  const visibleSections = React.useMemo(() => {
+    return navSections
+      .map((s) => ({ ...s, items: s.items.filter((i) => can(user, i.moduleId, "visualizar")) }))
+      .filter((s) => s.items.length > 0);
+  }, [user]);
+  const showUsersMenu = canManageUsers(user);
+
   return (
     <>
       <div className="px-6 py-7 flex items-center gap-3 border-b border-slate-800">
@@ -117,7 +127,7 @@ function SidebarContent({ location, onNavigate }) {
       </button>
 
       <nav className="flex-1 px-3 py-5 space-y-5 overflow-y-auto">
-        {navSections.map((section) => (
+        {visibleSections.map((section) => (
           <div key={section.label}>
             <p className="px-3 mb-1.5 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">{section.label}</p>
             <div className="space-y-1">
@@ -144,9 +154,56 @@ function SidebarContent({ location, onNavigate }) {
             </div>
           </div>
         ))}
+
+        {showUsersMenu && (
+          <div>
+            <p className="px-3 mb-1.5 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Administração</p>
+            <div className="space-y-1">
+              <Link
+                to="/usuarios"
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                  isActive(location, "/usuarios")
+                    ? "bg-amber-500/15 text-amber-300 border border-amber-500/20"
+                    : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+                )}
+              >
+                <UserCog style={{ width: 18, height: 18 }} />
+                Usuários e Acessos
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
-      <div className="px-6 py-5 border-t border-slate-800 text-[11px] text-slate-600">
+      <div className="px-3 py-3 border-t border-slate-800 space-y-1">
+        <Link
+          to="/perfil"
+          onClick={onNavigate}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all",
+            isActive(location, "/perfil") ? "text-amber-300 bg-amber-500/10" : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+          )}
+        >
+          <UserCircle style={{ width: 18, height: 18 }} />
+          Meu perfil
+        </Link>
+        <button
+          onClick={() => logout(true)}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all"
+        >
+          <LogOut style={{ width: 18, height: 18 }} />
+          Sair
+        </button>
+        {user && (
+          <p className="px-3 pt-1 text-[11px] text-slate-600 truncate">
+            {user.full_name || user.email}
+          </p>
+        )}
+      </div>
+
+      <div className="px-6 py-4 border-t border-slate-800 text-[11px] text-slate-600">
         <p className="flex items-center gap-2">
           <GraduationCap className="w-3.5 h-3.5" />
           Treinamento e operações AW119Kx

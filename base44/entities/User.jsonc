@@ -1,17 +1,66 @@
 {
-  "properties": {
-    "role": {
-      "type": "string",
-      "description": "The role of the user in the app",
-      "enum": [
-        "admin",
-        "user"
-      ]
-    }
-  },
-  "required": [
-    "role"
-  ],
   "name": "User",
-  "type": "object"
+  "type": "object",
+  "properties": {
+    "access_level": {
+      "type": "string",
+      "title": "N\u00edvel de acesso",
+      "description": "admin_geral | administrador | gestor_supervisor | operacional | consulta"
+    },
+    "account_status": {
+      "type": "string",
+      "title": "Situa\u00e7\u00e3o da conta",
+      "description": "convite_pendente | ativa | bloqueada | suspensa | desativada"
+    },
+    "login": {
+      "type": "string",
+      "title": "Nome de usu\u00e1rio / login"
+    },
+    "registration": {
+      "type": "string",
+      "title": "Matr\u00edcula"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Telefone"
+    },
+    "unit": {
+      "type": "string",
+      "title": "Unidade / setor"
+    },
+    "job_title": {
+      "type": "string",
+      "title": "Fun\u00e7\u00e3o / cargo"
+    },
+    "photo_uri": {
+      "type": "string",
+      "title": "URI da foto de perfil (privada)"
+    },
+    "admin_notes": {
+      "type": "string",
+      "title": "Observa\u00e7\u00f5es administrativas"
+    },
+    "custom_permissions": {
+      "type": "string",
+      "title": "Permiss\u00f5es personalizadas (JSON)"
+    },
+    "must_change_password": {
+      "type": "boolean",
+      "title": "Exigir troca de senha no pr\u00f3ximo acesso",
+      "default": false
+    },
+    "last_login_at": {
+      "type": "string",
+      "title": "\u00daltimo acesso"
+    },
+    "created_by_user_id": {
+      "type": "string",
+      "title": "Criado por (usu\u00e1rio)"
+    },
+    "mfa_enrolled": {
+      "type": "boolean",
+      "title": "Autentica\u00e7\u00e3o em 2 fatores ativa",
+      "default": false
+    }
+  }
 }

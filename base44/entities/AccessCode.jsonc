@@ -1,0 +1,59 @@
+{
+  "name": "AccessCode",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "ID do usu\u00e1rio"
+    },
+    "user_email": {
+      "type": "string",
+      "title": "E-mail do usu\u00e1rio (mascarado)"
+    },
+    "code_hash": {
+      "type": "string",
+      "title": "Hash do c\u00f3digo (nunca o c\u00f3digo em texto)"
+    },
+    "channel": {
+      "type": "string",
+      "title": "Canal de envio"
+    },
+    "purpose": {
+      "type": "string",
+      "title": "Finalidade (login | sensitive_op)"
+    },
+    "operation": {
+      "type": "string",
+      "title": "Opera\u00e7\u00e3o sens\u00edvel vinculada"
+    },
+    "expires_at": {
+      "type": "string",
+      "title": "Validade do c\u00f3digo"
+    },
+    "attempts": {
+      "type": "integer",
+      "title": "Tentativas de valida\u00e7\u00e3o",
+      "default": 0
+    },
+    "used": {
+      "type": "boolean",
+      "title": "Utilizado",
+      "default": false
+    },
+    "created_at": {
+      "type": "string",
+      "title": "Data de gera\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "user_id",
+    "code_hash",
+    "purpose"
+  ],
+  "rls": {
+    "read": false,
+    "create": {},
+    "update": false,
+    "delete": false
+  }
+}

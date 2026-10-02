@@ -17,6 +17,9 @@ import Treinamentos from '@/pages/Treinamentos';
 import Pilotos from '@/pages/Pilotos';
 import Questoes from '@/pages/Questoes';
 import Simulados from '@/pages/Simulados';
+import Usuarios from '@/pages/Usuarios';
+import MeuPerfil from '@/pages/MeuPerfil';
+import RequireModule from '@/components/RequireModule';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -66,6 +69,8 @@ const AuthenticatedApp = () => {
         <Route path="/pilotos" element={<Pilotos />} />
         <Route path="/questoes" element={<Questoes />} />
         <Route path="/simulados" element={<Simulados />} />
+        <Route path="/usuarios" element={<RequireModule moduleId="usuarios"><Usuarios /></RequireModule>} />
+        <Route path="/perfil" element={<MeuPerfil />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
