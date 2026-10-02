@@ -71,6 +71,15 @@
       "type": "string",
       "title": "Usu\u00e1rio executante"
     },
+    "finalized_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data e hora da finaliza\u00e7\u00e3o"
+    },
+    "finalized_by": {
+      "type": "string",
+      "title": "Usu\u00e1rio que finalizou"
+    },
     "phases_progress": {
       "type": "string",
       "title": "Progresso das fases (JSON)"

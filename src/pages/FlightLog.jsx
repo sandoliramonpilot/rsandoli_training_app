@@ -4,7 +4,15 @@ import { Plus, X, Plane, Clock, Search, Trash2, Edit3 } from "lucide-react";
 
 const FLIGHT_TYPE_LABELS = {
   private: "Privado", instruction: "Instrução", charter: "Táxi aéreo",
-  ems: "Aeromédico", vip: "VIP", photo: "Fotografia", other: "Outro",
+  ems: "Aeromédico", vip: "VIP", photo: "Fotografia", maintenance: "Manutenção", other: "Outro",
+};
+
+const ROLE_LABELS = {
+  comandante: "Piloto em Comando",
+  instrutor: "Instrutor de Voo",
+  instrucao: "Piloto em Instrução",
+  single_pilot: "Copiloto em Operação Single Pilot",
+  single_pilot_copiloto: "Copiloto em Operação Single Pilot com Copiloto, por questões regulamentares",
 };
 
 function fmtHours(min) {
@@ -27,12 +35,17 @@ const emptyForm = {
   date: new Date().toISOString().slice(0, 10),
   aircraft_id: "",
   pilot_name: "",
+  pilot_role: "",
   copilot_name: "",
+  copilot_role: "",
   departure_location: "",
   arrival_location: "",
   departure_time: "",
   arrival_time: "",
   flight_time_minutes: 0,
+  day_time_minutes: 0,
+  night_time_minutes: 0,
+  ifr_time_minutes: 0,
   flight_type: "private",
   landings: 1,
   night_flight: false,
@@ -40,6 +53,11 @@ const emptyForm = {
   fuel_uplift_liters: "",
   notes: "",
 };
+
+function toInt(v) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
 
 export default function FlightLog() {
   const [flights, setFlights] = useState(null);
@@ -66,7 +84,7 @@ export default function FlightLog() {
     const q = query.trim().toLowerCase();
     if (!q) return flights;
     return flights.filter((f) =>
-      [f.pilot_name, f.departure_location, f.arrival_location, f.aircraft_registration, f.flight_type, f.date]
+      [f.pilot_name, f.copilot_name, f.departure_location, f.arrival_location, f.aircraft_registration, f.flight_type, f.date]
         .filter(Boolean).some((v) => String(v).toLowerCase().includes(q))
     );
   }, [flights, query]);
@@ -85,12 +103,17 @@ export default function FlightLog() {
       date: f.date || new Date().toISOString().slice(0, 10),
       aircraft_id: f.aircraft_id || "",
       pilot_name: f.pilot_name || "",
+      pilot_role: f.pilot_role || "",
       copilot_name: f.copilot_name || "",
+      copilot_role: f.copilot_role || "",
       departure_location: f.departure_location || "",
       arrival_location: f.arrival_location || "",
       departure_time: f.departure_time || "",
       arrival_time: f.arrival_time || "",
       flight_time_minutes: f.flight_time_minutes || 0,
+      day_time_minutes: f.day_time_minutes || 0,
+      night_time_minutes: f.night_time_minutes || 0,
+      ifr_time_minutes: f.ifr_time_minutes || 0,
       flight_type: f.flight_type || "private",
       landings: f.landings ?? 1,
       night_flight: !!f.night_flight,
@@ -109,31 +132,6 @@ export default function FlightLog() {
       }
       return next;
     });
-  };
-
-  const save = async (e) => {
-    e.preventDefault();
-    if (!form.aircraft_id || !form.pilot_name || !form.departure_location || !form.arrival_location || !form.date) return;
-    setSaving(true);
-    const ac = aircraft.find((a) => a.id === form.aircraft_id);
-    const payload = {
-      ...form,
-      aircraft_registration: ac?.registration || "",
-      landings: Number(form.landings) || 1,
-      flight_time_minutes: Number(form.flight_time_minutes) || 0,
-      fuel_uplift_liters: form.fuel_uplift_liters === "" ? null : Number(form.fuel_uplift_liters),
-    };
-    try {
-      if (editing) {
-        await base44.entities.FlightLog.update(editing.id, payload);
-      } else {
-        await base44.entities.FlightLog.create(payload);
-      }
-      setShowForm(false);
-      await load();
-    } finally {
-      setSaving(false);
-    }
   };
 
   const remove = async (f) => {
@@ -190,7 +188,7 @@ export default function FlightLog() {
                   <th className="px-5 py-3 font-medium">Data</th>
                   <th className="px-5 py-3 font-medium">Rota</th>
                   <th className="px-5 py-3 font-medium">Aeronave</th>
-                  <th className="px-5 py-3 font-medium">Piloto</th>
+                  <th className="px-5 py-3 font-medium">Tripulação</th>
                   <th className="px-5 py-3 font-medium">Tipo</th>
                   <th className="px-5 py-3 font-medium text-right">Tempo</th>
                   <th className="px-5 py-3 font-medium text-right">Pousos</th>
@@ -199,7 +197,7 @@ export default function FlightLog() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((f) => (
-                  <tr key={f.id} className="hover:bg-slate-50/60 transition-colors">
+                  <tr key={f.id} className="hover:bg-slate-50/60 transition-colors align-top">
                     <td className="px-5 py-3 whitespace-nowrap text-slate-600">{f.date ? new Date(f.date).toLocaleDateString("pt-BR") : "—"}</td>
                     <td className="px-5 py-3">
                       <span className="text-slate-900 font-medium">{f.departure_location || "—"}</span>
@@ -213,7 +211,15 @@ export default function FlightLog() {
                       )}
                     </td>
                     <td className="px-5 py-3 text-slate-600 whitespace-nowrap">{f.aircraft_registration || "—"}</td>
-                    <td className="px-5 py-3 text-slate-600 whitespace-nowrap">{f.pilot_name || "—"}</td>
+                    <td className="px-5 py-3">
+                      <div className="space-y-0.5">
+                        <div className="text-slate-900 whitespace-nowrap">{f.pilot_name || "—"}</div>
+                        {f.pilot_role && <div className="text-[11px] text-sky-600">{ROLE_LABELS[f.pilot_role]}</div>}
+                        {f.copilot_name && (
+                          <div className="text-slate-500 whitespace-nowrap text-xs">{f.copilot_name}{f.copilot_role ? ` · ${ROLE_LABELS[f.copilot_role]}` : ""}</div>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{FLIGHT_TYPE_LABELS[f.flight_type] || "—"}</td>
                     <td className="px-5 py-3 text-right font-semibold text-slate-900 whitespace-nowrap">{fmtHours(f.flight_time_minutes)}</td>
                     <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{f.landings ?? "—"}</td>
@@ -241,14 +247,80 @@ export default function FlightLog() {
           saving={saving}
           onField={onField}
           onClose={() => setShowForm(false)}
-          onSave={save}
+          onSubmit={async (payload) => {
+            setSaving(true);
+            try {
+              if (editing) await base44.entities.FlightLog.update(editing.id, payload);
+              else await base44.entities.FlightLog.create(payload);
+              setShowForm(false);
+              await load();
+            } finally {
+              setSaving(false);
+            }
+          }}
         />
       )}
     </div>
   );
 }
 
-function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSave }) {
+function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSubmit }) {
+  const [error, setError] = useState("");
+
+  const total = toInt(form.flight_time_minutes);
+  const day = toInt(form.day_time_minutes);
+  const night = toInt(form.night_time_minutes);
+  const ifr = toInt(form.ifr_time_minutes);
+  const sumDayNight = day + night;
+  const sumMismatch = sumDayNight !== total;
+  const ifrExceeds = ifr > total;
+
+  const hasCopilot = !!form.copilot_name?.trim();
+  const hasPilot = !!form.pilot_name?.trim();
+
+  const validate = () => {
+    if (hasPilot && !form.pilot_role) {
+      return 'Campo obrigatório: "Função a bordo" do piloto.';
+    }
+    if (hasCopilot && !form.copilot_role) {
+      return 'Campo obrigatório: "Função a bordo" do copiloto.';
+    }
+    if (total <= 0) {
+      return 'Campo obrigatório: "Tempo total de voo" deve ser maior que zero.';
+    }
+    if (sumMismatch) {
+      return `Inconsistência: diurno (${day}) + noturno (${night}) = ${sumDayNight} min, diferente do total (${total} min).`;
+    }
+    if (ifrExceeds) {
+      return `Inconsistência: tempo IFR (${ifr} min) superior ao tempo total (${total} min).`;
+    }
+    return "";
+  };
+
+  const save = (e) => {
+    e.preventDefault();
+    const msg = validate();
+    if (msg) {
+      setError(msg);
+      return;
+    }
+    setError("");
+    const ac = aircraft.find((a) => a.id === form.aircraft_id);
+    const payload = {
+      ...form,
+      aircraft_registration: ac?.registration || "",
+      landings: Number(form.landings) || 1,
+      flight_time_minutes: total,
+      day_time_minutes: day,
+      night_time_minutes: night,
+      ifr_time_minutes: ifr,
+      fuel_uplift_liters: form.fuel_uplift_liters === "" ? null : Number(form.fuel_uplift_liters),
+      pilot_role: hasPilot ? form.pilot_role : null,
+      copilot_role: hasCopilot ? form.copilot_role : null,
+    };
+    onSubmit(payload);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm p-0 sm:p-4">
       <div className="bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
@@ -258,7 +330,7 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSave 
             <X className="w-5 h-5" />
           </button>
         </div>
-        <form onSubmit={onSave} className="px-6 py-5 space-y-5">
+        <form onSubmit={save} className="px-6 py-5 space-y-5">
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Data *">
               <input type="date" required value={form.date} onChange={(e) => onField("date", e.target.value)} className={inputCls} />
@@ -274,8 +346,24 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSave 
             <Field label="Piloto *">
               <input required value={form.pilot_name} onChange={(e) => onField("pilot_name", e.target.value)} className={inputCls} placeholder="Nome do piloto" />
             </Field>
+            <Field label="Função a bordo do piloto *">
+              <select required value={form.pilot_role} onChange={(e) => onField("pilot_role", e.target.value)} className={inputCls}>
+                <option value="">Selecione…</option>
+                {Object.entries(ROLE_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </Field>
             <Field label="Copiloto">
               <input value={form.copilot_name} onChange={(e) => onField("copilot_name", e.target.value)} className={inputCls} placeholder="Opcional" />
+            </Field>
+            <Field label={hasCopilot ? "Função a bordo do copiloto *" : "Função a bordo do copiloto"}>
+              <select value={form.copilot_role} onChange={(e) => onField("copilot_role", e.target.value)} className={inputCls} required={hasCopilot}>
+                <option value="">Selecione…</option>
+                {Object.entries(ROLE_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
             </Field>
             <Field label="Origem *">
               <input required value={form.departure_location} onChange={(e) => onField("departure_location", e.target.value)} className={inputCls} placeholder="SBSP / local" />
@@ -302,12 +390,28 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSave 
             <Field label="Combustível abastecido (L)">
               <input type="number" step="0.1" value={form.fuel_uplift_liters} onChange={(e) => onField("fuel_uplift_liters", e.target.value)} className={inputCls} placeholder="Opcional" />
             </Field>
-            <Field label="Tempo de voo (min)">
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4 p-3 rounded-lg bg-slate-50 border border-slate-200">
+            <Field label="Tempo total de voo (min) *">
               <div className="relative">
                 <Clock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input type="number" min="0" value={form.flight_time_minutes} onChange={(e) => onField("flight_time_minutes", e.target.value)} className={inputCls + " pl-9"} />
               </div>
             </Field>
+            <div className="hidden sm:block" />
+            <Field label="Tempo de voo diurno (min)">
+              <input type="number" min="0" value={form.day_time_minutes} onChange={(e) => onField("day_time_minutes", e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Tempo de voo noturno (min)">
+              <input type="number" min="0" value={form.night_time_minutes} onChange={(e) => onField("night_time_minutes", e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Tempo de voo IFR (min)">
+              <input type="number" min="0" value={form.ifr_time_minutes} onChange={(e) => onField("ifr_time_minutes", e.target.value)} className={inputCls} />
+            </Field>
+            <div className="text-[11px] text-slate-500 self-end sm:col-span-1">
+              Soma diurno + noturno: <strong className={sumMismatch ? "text-rose-600" : "text-emerald-600"}>{sumDayNight} min</strong> · IFR: <strong className={ifrExceeds ? "text-rose-600" : "text-slate-700"}>{ifr} min</strong>
+            </div>
           </div>
 
           <div className="flex gap-6">
@@ -324,6 +428,10 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSave 
           <Field label="Observações">
             <textarea value={form.notes} onChange={(e) => onField("notes", e.target.value)} rows={3} className={inputCls} placeholder="Notas do voo, condições, etc." />
           </Field>
+
+          {error && (
+            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">{error}</div>
+          )}
 
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">Cancelar</button>

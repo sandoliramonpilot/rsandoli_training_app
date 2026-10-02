@@ -22,8 +22,18 @@
     },
     "total_hours": {
       "type": "number",
-      "title": "Total de horas voadas",
+      "title": "Total de horas de voo",
       "default": 0
+    },
+    "total_mnt_hours": {
+      "type": "number",
+      "title": "Total de horas MNT",
+      "default": 0
+    },
+    "color": {
+      "type": "string",
+      "title": "Cor",
+      "description": "Texto livre. Ex: Branca e vermelha"
     },
     "status": {
       "type": "string",

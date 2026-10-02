@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { CHECKLIST_PHASES } from "@/lib/checklistData";
-import AircraftSetupForm from "@/components/checklist/AircraftSetupForm";
 import ChecklistPhaseTabs from "@/components/checklist/ChecklistPhaseTabs";
 import ChecklistSectionList from "@/components/checklist/ChecklistSectionList";
 import ChecklistSummaryBar from "@/components/checklist/ChecklistSummaryBar";
 import FinalizeModal from "@/components/checklist/FinalizeModal";
 import ChecklistHistoryList from "@/components/checklist/ChecklistHistoryList";
 import ChecklistHistoryDetail from "@/components/checklist/ChecklistHistoryDetail";
+import StartChecklistFlow from "@/components/checklist/StartChecklistFlow";
 
 const DRAFT_KEY = "checklist_draft_v2";
 
@@ -21,6 +21,7 @@ export default function Checklist() {
   const [activePhase, setActivePhase] = useState(CHECKLIST_PHASES[0].id);
   const [checkedByPhase, setCheckedByPhase] = useState({});
   const [query, setQuery] = useState("");
+  const [showStartFlow, setShowStartFlow] = useState(false);
   const [showFinalize, setShowFinalize] = useState(false);
   const [viewingRecord, setViewingRecord] = useState(null);
   const [startedAt, setStartedAt] = useState(null);
@@ -58,7 +59,20 @@ export default function Checklist() {
     setStartedAt(Date.now());
     setCheckedByPhase({});
     setActivePhase(CHECKLIST_PHASES[0].id);
+    setShowStartFlow(false);
     persistDraft({ setup: data, startedAt: Date.now(), checkedByPhase: {}, activePhase: CHECKLIST_PHASES[0].id });
+  };
+
+  const beginNewChecklist = () => {
+    if (setup) {
+      // There is an in-progress checklist; start flow re-confirms a fresh aircraft.
+      setSetup(null);
+      setCheckedByPhase({});
+      setStartedAt(null);
+      setActivePhase(CHECKLIST_PHASES[0].id);
+      localStorage.removeItem(DRAFT_KEY);
+    }
+    setShowStartFlow(true);
   };
 
   const toggleItem = (phaseId, idx) => {
@@ -99,21 +113,42 @@ export default function Checklist() {
 
   const isLastPhase = activePhase === CHECKLIST_PHASES[CHECKLIST_PHASES.length - 1].id;
 
-  const totalPending = useMemo(() => {
-    let pending = 0;
+  const pendingItems = useMemo(() => {
+    const list = [];
     CHECKLIST_PHASES.forEach((p) => {
-      const total = p.sections.reduce((s, sec) => s + sec.items.length, 0);
-      const done = Object.values(checkedByPhase[p.id] || {}).filter(Boolean).length;
-      pending += total - done;
+      let idx = -1;
+      p.sections.forEach((sec) => {
+        sec.items.forEach((text) => {
+          const globalIdx = (function () {
+            let n = -1;
+            for (const ph of CHECKLIST_PHASES) {
+              for (const s of ph.sections) for (const it of s.items) {
+                n++;
+                if (ph.id === p.id && s === sec && it === text) return n;
+              }
+            }
+            return n;
+          })();
+          if (!checkedByPhase[p.id]?.[idx]) {
+            list.push({ phaseId: p.id, phaseTitle: p.name, localIdx: idx, text });
+          }
+          idx++;
+        });
+      });
     });
-    return pending;
+    return list;
   }, [checkedByPhase]);
 
-  const finalize = async (justification) => {
+  const finalize = async (justifications) => {
     const phasesProgress = {};
     CHECKLIST_PHASES.forEach((p) => {
       let idx = -1;
-      const items = p.sections.flatMap((sec) => sec.items.map((text) => ({ idx: ++idx, text, checked: !!checkedByPhase[p.id]?.[idx] })));
+      const items = p.sections.flatMap((sec) => sec.items.map((text) => ({
+        idx: ++idx,
+        text,
+        checked: !!checkedByPhase[p.id]?.[idx],
+        justification: checkedByPhase[p.id]?.[idx] ? null : (justifications[p.id]?.[idx] || null),
+      })));
       phasesProgress[p.id] = { items, total: items.length, done: items.filter((i) => i.checked).length };
     });
     const durationMinutes = startedAt ? Math.round((Date.now() - startedAt) / 60000) : 0;
@@ -121,10 +156,12 @@ export default function Checklist() {
     await base44.entities.ChecklistRecord.create({
       ...setup,
       end_time: endTime,
+      finalized_at: new Date().toISOString(),
+      finalized_by: user?.full_name || user?.email || "",
       executed_by: user?.full_name || user?.email || "",
       phases_progress: JSON.stringify(phasesProgress),
-      justification: justification || "",
-      status: totalPending === 0 ? "ok" : "pending_items",
+      justification: "",
+      status: "ok",
       duration_minutes: durationMinutes,
     });
     localStorage.removeItem(DRAFT_KEY);
@@ -152,7 +189,7 @@ export default function Checklist() {
       sic_canac: record.sic_canac,
       mission_type: record.mission_type,
     };
-    setView("new");
+    setShowStartFlow(false);
     startSetup(data);
   };
 
@@ -177,20 +214,42 @@ export default function Checklist() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">Checklists</h1>
           <p className="text-slate-400 mt-2 text-sm">Sistema digital de execução e registro de checklists operacionais</p>
         </div>
-        <div className="inline-flex bg-[#1A1D25] border border-slate-700/60 rounded-lg p-1 text-sm">
-          <button onClick={() => setView("new")} className={`px-4 py-1.5 rounded-md font-medium transition-colors ${view === "new" ? "bg-amber-500 text-slate-900" : "text-slate-400"}`}>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={beginNewChecklist}
+            className="inline-flex items-center gap-2 rounded-lg text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400 px-4 py-2 shadow-lg shadow-amber-500/20 transition-colors"
+          >
             Novo checklist
           </button>
-          <button onClick={() => setView("history")} className={`px-4 py-1.5 rounded-md font-medium transition-colors ${view === "history" ? "bg-amber-500 text-slate-900" : "text-slate-400"}`}>
-            Histórico
-          </button>
+          <div className="inline-flex bg-[#1A1D25] border border-slate-700/60 rounded-lg p-1 text-sm">
+            <button onClick={() => setView("new")} className={`px-4 py-1.5 rounded-md font-medium transition-colors ${view === "new" && !showStartFlow ? "bg-amber-500 text-slate-900" : "text-slate-400"}`}>
+              Execução
+            </button>
+            <button onClick={() => setView("history")} className={`px-4 py-1.5 rounded-md font-medium transition-colors ${view === "history" ? "bg-amber-500 text-slate-900" : "text-slate-400"}`}>
+              Histórico
+            </button>
+          </div>
         </div>
       </header>
 
       {view === "history" ? (
         <ChecklistHistoryList records={records} onView={setViewingRecord} onDuplicate={duplicateRecord} onToggleFavorite={toggleFavorite} />
+      ) : showStartFlow ? (
+        <StartChecklistFlow aircraft={aircraft} onCancel={() => setShowStartFlow(false)} onStart={startSetup} />
       ) : !setup ? (
-        <AircraftSetupForm aircraft={aircraft} onSubmit={startSetup} />
+        <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 px-6 py-14 text-center">
+          {aircraft.length === 0 ? (
+            <>
+              <p className="text-sm text-slate-400">Nenhuma aeronave cadastrada.</p>
+              <p className="text-xs text-slate-500 mt-2">Para iniciar um checklist, cadastre uma aeronave antes.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-slate-400">Nenhum checklist em andamento.</p>
+              <p className="text-xs text-slate-500 mt-2">Selecione "Novo checklist" para iniciar.</p>
+            </>
+          )}
+        </div>
       ) : (
         <>
           <div className="bg-[#1A1D25] rounded-xl border border-slate-700/60 px-5 py-3 text-sm text-slate-400 flex flex-wrap gap-x-6 gap-y-1">
@@ -225,7 +284,13 @@ export default function Checklist() {
       )}
 
       {showFinalize && (
-        <FinalizeModal pendingCount={totalPending} onClose={() => setShowFinalize(false)} onConfirm={finalize} />
+        <FinalizeModal
+          aircraftReg={setup?.aircraft_registration}
+          user={user?.full_name || user?.email || ""}
+          pendingItems={pendingItems}
+          onClose={() => setShowFinalize(false)}
+          onConfirm={finalize}
+        />
       )}
       {viewingRecord && (
         <ChecklistHistoryDetail record={viewingRecord} onClose={() => setViewingRecord(null)} />

@@ -109,7 +109,7 @@ export const CHECKLIST_PHASES = [
         category: "Painéis, Chaves e Disjuntores",
         items: [
           "Chave EEC/MEC — EEC",
-          "Disjuntores e interruptores do painel superior — IN, OFF ou CLOSED",
+          "Disjuntores e circuit breakers dos painéis superior e dianteiro — ON (armados)",
           "Chave da fonte estática (STATIC) — NORM e travada",
           "Freio de rotor (se instalado) — Verificação de função, OFF",
           "Painéis de controle de áudio — Ajustados",
@@ -141,7 +141,7 @@ export const CHECKLIST_PHASES = [
           "MASTER CAUTION / MASTER WARNING — Reconhecer e resetar",
           "Iluminação de cabine — Conforme necessário",
           "Chave AWG — TEST (manter conforme necessário); verificar alerta sonoro \"TEST OK\" e soltar",
-          "Chave TEST — LAMP (manter); verificar iluminação de todos os interruptores e anunciadores do painel",
+          "Chave TEST — LAMP (manter); verificar iluminação de todos os interruptores e anunciadores do painel. Manter TEST acionada. Todos os alertas sonoros armazenados serão reproduzidos sequencialmente",
           "Chave TEST — FCU/FIRE (manter); verificar aviso ENG FIRE, Master Warning e alerta sonoro \"ENGINE FIRE\" (repete se mantido >6s)",
           "Chave TEST — FCU/FIRE (manter); verificar cautela FUEL LOW, quantidades próximas de \"0\" kg, leitura nº1 amarela e nº2 com \"X\"; soltar e confirmar retorno ao normal",
         ],
@@ -161,7 +161,7 @@ export const CHECKLIST_PHASES = [
           "Chave PUMP 2 — ON (2 FUEL PUMP e FUEL PRESS apagam, verificar pressão)",
           "Chave PUMP 1 — ON; cautela 1 FUEL PUMP apaga",
           "Altímetro do PFD — Ajustar ao QNH local ou elevação de campo",
-          "Indicador Standby — Ajustar ao QNH local e dimming conforme necessário",
+          "Altímetro — Ajustar ao QNH local e dimming conforme necessário",
         ],
       },
     ],
@@ -186,7 +186,7 @@ export const CHECKLIST_PHASES = [
         category: "Partida do Motor",
         items: [
           "Botão START (manete coletiva) — Pressionar e soltar; MFD exibe ENG START e IGNITER ON, aviso IGN junto ao ITT e START junto ao N1 (observar limitações do motor de partida)",
-          "Acelerador do motor (N1 > 12% e ITT < 100°C) — IDLE; observar aumento de N1 e ITT. Cuidado: ITT transiente máximo 1090°C, não exceder 980°C por mais de 2s. Monitorar partida — sem ignição em 10s, cortar (OFF) e repetir START para interromper o motor de partida",
+          "Acelerador do motor (N1 > 12% e ITT < 100°C) — IDLE; observar aumento de N1 e ITT. Cuidado: ITT transiente máximo 1090°C, não exceder 980°C por mais de 2s. Monitorar partida — sem ignição em 10s, cortar (OFF) e repetir START para interromper o motor de partida. Executar DRY MOTORING.",
           "Pressão de óleo do motor — Verificar (pode exceder 110 psi temporariamente em partida a frio)",
           "MFD — Verificar desativação automática do motor de partida (N1 ≈43%), avisos ENG START/IGNITER ON apagam; ao rotor girar, verificar aumento da pressão hidráulica",
           "MFD e PFD — Verificar mudança automática do ITT para formato Cruise (ocorre em N1=51% subindo / 50% descendo)",
@@ -213,6 +213,12 @@ export const CHECKLIST_PHASES = [
     name: "Pós-Acionamento",
     title: "PÓS-ACIONAMENTO (SYSTEMS CHECK)",
     sections: [
+      {
+        category: "Preparação de Sistemas",
+        items: [
+          "Engine throttle — Levar à posição FLT, 102% RPM. Observar PLA POS apagada.",
+        ],
+      },
       {
         category: "Óleo do Motor e Transmissão",
         items: ["Pressão e temperatura — Dentro dos limites"],
@@ -403,6 +409,8 @@ export const CHECKLIST_PHASES = [
           "Manete coletiva — Verificar totalmente abaixada",
           "Cíclico e pedais — Centralizados e trimados (não aplicar coletiva nesta fase; abaixo de 85% NR evitar movimento do cíclico exceto para prevenir contato com batentes)",
           "Acelerador do motor — IDLE por pelo menos 30 segundos para estabilizar ITT; cautela PLA POS exibida",
+          // PENDENTE DE CONTEÚDO – Procedimento após Acelerador do motor
+          // (texto oficial ainda não fornecido; não exibir aos usuários operacionais)
           "Chaves PUMP 1 e PUMP 2 — OFF; cautela 1-2 FUEL PUMP exibida",
           "Chave PUMP (transferência) — OFF; cautela XFER PUMP exibida",
           "Chave ENG HTR — OFF",

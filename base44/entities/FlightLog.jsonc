@@ -19,9 +19,31 @@
       "type": "string",
       "title": "Piloto"
     },
+    "pilot_role": {
+      "type": "string",
+      "enum": [
+        "comandante",
+        "instrutor",
+        "instrucao",
+        "single_pilot",
+        "single_pilot_copiloto"
+      ],
+      "title": "Fun\u00e7\u00e3o a bordo do piloto"
+    },
     "copilot_name": {
       "type": "string",
       "title": "Copiloto"
+    },
+    "copilot_role": {
+      "type": "string",
+      "enum": [
+        "comandante",
+        "instrutor",
+        "instrucao",
+        "single_pilot",
+        "single_pilot_copiloto"
+      ],
+      "title": "Fun\u00e7\u00e3o a bordo do copiloto"
     },
     "departure_location": {
       "type": "string",
@@ -41,7 +63,22 @@
     },
     "flight_time_minutes": {
       "type": "integer",
-      "title": "Tempo de voo (minutos)",
+      "title": "Tempo total de voo (minutos)",
+      "default": 0
+    },
+    "day_time_minutes": {
+      "type": "integer",
+      "title": "Tempo de voo diurno (minutos)",
+      "default": 0
+    },
+    "night_time_minutes": {
+      "type": "integer",
+      "title": "Tempo de voo noturno (minutos)",
+      "default": 0
+    },
+    "ifr_time_minutes": {
+      "type": "integer",
+      "title": "Tempo de voo IFR (minutos)",
       "default": 0
     },
     "flight_type": {
@@ -53,6 +90,7 @@
         "ems",
         "vip",
         "photo",
+        "maintenance",
         "other"
       ],
       "default": "private",

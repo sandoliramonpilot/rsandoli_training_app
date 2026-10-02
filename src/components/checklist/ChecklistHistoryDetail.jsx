@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { CHECKLIST_PHASES, MISSION_LABELS } from "@/lib/checklistData";
-import { X, Printer, FileDown, CheckCircle2, XCircle } from "lucide-react";
+import { X, Printer, FileDown, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 
 export default function ChecklistHistoryDetail({ record, onClose }) {
   const printRef = useRef(null);
@@ -10,7 +10,7 @@ export default function ChecklistHistoryDetail({ record, onClose }) {
   const handlePrint = () => {
     const win = window.open("", "_blank");
     win.document.write(`<html><head><title>Checklist ${record.aircraft_registration}</title>
-      <style>body{font-family:sans-serif;padding:24px;color:#111} h1{font-size:18px} h2{font-size:14px;margin-top:16px} li{margin:3px 0;font-size:12px} .done{color:#059669} .pending{color:#dc2626}</style>
+      <style>body{font-family:sans-serif;padding:24px;color:#111} h1{font-size:18px} h2{font-size:14px;margin-top:16px} li{margin:3px 0;font-size:12px} .done{color:#059669} .pending{color:#dc2626} .just{color:#b45309}</style>
       </head><body>${printRef.current.innerHTML}</body></html>`);
     win.document.close();
     win.focus();
@@ -58,13 +58,13 @@ export default function ChecklistHistoryDetail({ record, onClose }) {
             <p>Combustível inicial: {record.fuel_initial || "—"}</p>
             <p>PAX: {record.pax_count ?? "—"}</p>
             <p>Executado por: {record.executed_by || "—"}</p>
+            {record.finalized_at && (
+              <>
+                <p>Finalizado em: {new Date(record.finalized_at).toLocaleString("pt-BR")}</p>
+                <p>Finalizado por: {record.finalized_by || "—"}</p>
+              </>
+            )}
           </div>
-
-          {record.justification && (
-            <div className="mt-4 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm text-amber-300">
-              <strong>Justificativa:</strong> {record.justification}
-            </div>
-          )}
 
           {CHECKLIST_PHASES.map((phase) => {
             const items = progress[phase.id]?.items || [];
@@ -75,8 +75,19 @@ export default function ChecklistHistoryDetail({ record, onClose }) {
                 <ul className="mt-2 space-y-1">
                   {items.map((it, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
-                      {it.checked ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <XCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />}
-                      <span className={it.checked ? "text-slate-300" : "text-slate-400"}>{it.text}</span>
+                      {it.checked ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                      ) : it.justification ? (
+                        <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                      )}
+                      <div>
+                        <span className={it.checked ? "text-slate-300" : "text-slate-400"}>{it.text}</span>
+                        {!it.checked && it.justification && (
+                          <div className="text-xs text-amber-400/80 mt-0.5">Não executado, com justificativa: {it.justification}</div>
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>

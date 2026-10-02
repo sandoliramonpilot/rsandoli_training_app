@@ -14,6 +14,8 @@ const emptyForm = {
   manufacturer: "",
   year: "",
   total_hours: 0,
+  total_mnt_hours: 0,
+  color: "",
   status: "available",
   notes: "",
 };
@@ -37,6 +39,8 @@ export default function Aircraft() {
       manufacturer: a.manufacturer || "",
       year: a.year ?? "",
       total_hours: a.total_hours ?? 0,
+      total_mnt_hours: a.total_mnt_hours ?? 0,
+      color: a.color || "",
       status: a.status || "available",
       notes: a.notes || "",
     });
@@ -51,6 +55,7 @@ export default function Aircraft() {
       ...form,
       year: form.year === "" ? null : Number(form.year),
       total_hours: Number(form.total_hours) || 0,
+      total_mnt_hours: Number(form.total_mnt_hours) || 0,
     };
     try {
       if (editing) await base44.entities.Aircraft.update(editing.id, payload);
@@ -118,8 +123,12 @@ export default function Aircraft() {
 
                 <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-slate-400">Total de horas</p>
+                    <p className="text-xs text-slate-400">Total de horas de voo</p>
                     <p className="font-semibold text-slate-900">{(a.total_hours || 0).toFixed(1)}h</p>
+                    {a.total_mnt_hours != null && a.total_mnt_hours > 0 && (
+                      <p className="text-[11px] text-slate-400 mt-0.5">MNT: {(a.total_mnt_hours || 0).toFixed(1)}h</p>
+                    )}
+                    {a.color && <p className="text-[11px] text-slate-400 capitalize">Cor: {a.color}</p>}
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => openEdit(a)} className="p-2 text-slate-400 hover:text-sky-600 rounded-lg hover:bg-sky-50 transition-colors">
@@ -169,8 +178,16 @@ function AircraftForm({ form, editing, saving, onField, onClose, onSave }) {
             <Field label="Ano">
               <input type="number" value={form.year} onChange={(e) => onField("year", e.target.value)} className={inputCls} placeholder="2020" />
             </Field>
-            <Field label="Total de horas">
-              <input type="number" step="0.1" value={form.total_hours} onChange={(e) => onField("total_hours", e.target.value)} className={inputCls} />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Total de horas de voo">
+                <input type="number" step="0.1" min="0" value={form.total_hours} onChange={(e) => onField("total_hours", e.target.value)} className={inputCls} />
+              </Field>
+              <Field label="Total de horas MNT">
+                <input type="number" step="0.1" min="0" value={form.total_mnt_hours} onChange={(e) => onField("total_mnt_hours", e.target.value)} className={inputCls} placeholder="Manutenção" />
+              </Field>
+            </div>
+            <Field label="Cor">
+              <input value={form.color} onChange={(e) => onField("color", e.target.value)} className={inputCls} placeholder="Ex: Branca e vermelha" />
             </Field>
             <Field label="Status">
               <select value={form.status} onChange={(e) => onField("status", e.target.value)} className={inputCls}>
