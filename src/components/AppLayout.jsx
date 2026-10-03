@@ -54,7 +54,7 @@ export default function AppLayout() {
       <header className="md:hidden fixed top-0 inset-x-0 z-30 bg-[#12141A] text-slate-100 px-4 h-14 flex items-center justify-between border-b border-slate-800">
         <div className="flex items-center gap-2">
           <Logo />
-          <span className="font-semibold tracking-tight text-sm">AW119Kx Academy</span>
+          <span className="font-semibold tracking-tight text-sm">RSANDOLI PILOTS</span>
         </div>
         <button onClick={() => setMobileOpen(true)} className="p-2 text-slate-300 hover:text-slate-100">
           <Menu className="w-6 h-6" />
@@ -114,8 +114,8 @@ function SidebarContent({ location, onNavigate }) {
       <div className="px-6 py-7 flex items-center gap-3 border-b border-slate-800">
         <Logo />
         <div>
-          <p className="font-semibold tracking-tight leading-tight text-sm">AW119Kx Academy</p>
-          <p className="text-[10px] uppercase tracking-widest text-amber-400/80">Helicopter Aviation</p>
+          <p className="font-semibold tracking-tight leading-tight text-sm">RSANDOLI PILOTS</p>
+          <p className="text-[10px] uppercase tracking-widest text-amber-400/80">Helicopter Training</p>
         </div>
       </div>
 
@@ -206,7 +206,7 @@ function SidebarContent({ location, onNavigate }) {
       <div className="px-6 py-4 border-t border-slate-800 text-[11px] text-slate-600">
         <p className="flex items-center gap-2">
           <GraduationCap className="w-3.5 h-3.5" />
-          Treinamento e operações AW119Kx
+          RSANDOLI PILOTS Helicopter Training
         </p>
       </div>
 

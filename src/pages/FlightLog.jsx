@@ -48,8 +48,6 @@ const emptyForm = {
   ifr_time_minutes: 0,
   flight_type: "private",
   landings: 1,
-  night_flight: false,
-  ifr: false,
   fuel_uplift_liters: "",
   notes: "",
 };
@@ -116,8 +114,6 @@ export default function FlightLog() {
       ifr_time_minutes: f.ifr_time_minutes || 0,
       flight_type: f.flight_type || "private",
       landings: f.landings ?? 1,
-      night_flight: !!f.night_flight,
-      ifr: !!f.ifr,
       fuel_uplift_liters: f.fuel_uplift_liters ?? "",
       notes: f.notes || "",
     });
@@ -203,12 +199,7 @@ export default function FlightLog() {
                       <span className="text-slate-900 font-medium">{f.departure_location || "—"}</span>
                       <span className="text-slate-300 mx-1.5">→</span>
                       <span className="text-slate-900 font-medium">{f.arrival_location || "—"}</span>
-                      {(f.night_flight || f.ifr) && (
-                        <span className="ml-2 inline-flex gap-1">
-                          {f.night_flight && <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 font-medium">NOT</span>}
-                          {f.ifr && <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 font-medium">IFR</span>}
-                        </span>
-                      )}
+                      
                     </td>
                     <td className="px-5 py-3 text-slate-600 whitespace-nowrap">{f.aircraft_registration || "—"}</td>
                     <td className="px-5 py-3">
@@ -412,17 +403,6 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSubmi
             <div className="text-[11px] text-slate-500 self-end sm:col-span-1">
               Soma diurno + noturno: <strong className={sumMismatch ? "text-rose-600" : "text-emerald-600"}>{sumDayNight} min</strong> · IFR: <strong className={ifrExceeds ? "text-rose-600" : "text-slate-700"}>{ifr} min</strong>
             </div>
-          </div>
-
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 text-sm text-slate-700">
-              <input type="checkbox" checked={form.night_flight} onChange={(e) => onField("night_flight", e.target.checked)} className="w-4 h-4 rounded accent-sky-600" />
-              Voo noturno
-            </label>
-            <label className="flex items-center gap-2 text-sm text-slate-700">
-              <input type="checkbox" checked={form.ifr} onChange={(e) => onField("ifr", e.target.checked)} className="w-4 h-4 rounded accent-sky-600" />
-              IFR
-            </label>
           </div>
 
           <Field label="Observações">

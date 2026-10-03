@@ -54,7 +54,7 @@ export default function Login() {
   return (
     <AuthLayout
       icon={LogIn}
-      title="AW119Kx Academy"
+      title="RSANDOLI PILOTS Helicopter Training"
       subtitle="Acesse sua conta"
       footer={
         <>
@@ -88,15 +88,15 @@ export default function Login() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Login ou e-mail</Label>
+          <Label htmlFor="email">E-mail</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="email"
-              type="text"
+              type="email"
               autoComplete="username"
               autoFocus
-              placeholder="seu.login ou voce@exemplo.com"
+              placeholder="voce@exemplo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-12"

@@ -121,7 +121,7 @@ export default function Pilotos() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Pesquisar por nome, matrícula…"
+                placeholder="Pesquisar por nome, #CANAC/CPF…"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#1A1D25] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50"
               />
             </div>
@@ -159,7 +159,7 @@ export default function Pilotos() {
                         </div>
                         <p className="text-xs text-amber-400/90 font-medium">{ROLE_LABELS[p.role] || p.role}</p>
                         <p className="text-[11px] text-slate-500 mt-1 truncate">
-                          {p.registration ? `Mat. ${p.registration} · ` : ""}{p.base || "Sem base"}
+                          {p.registration ? `#CANAC/CPF ${p.registration} · ` : ""}{p.base || "Sem base"}
                         </p>
                       </div>
                     </div>
@@ -318,7 +318,7 @@ function PilotDetail({ pilot, me, isManager, onBack, onRefresh }) {
         ) : (
           <Grid rows={[
             ["Nome completo", pilot.full_name], ["Nome de guerra", pilot.war_name], ["Nascimento", fmt(pilot.birth_date)],
-            ["CPF", pilot.cpf], ["RG", pilot.rg], ["Matrícula", pilot.registration],
+            ["CPF", pilot.cpf], ["RG", pilot.rg], ["#CANAC/CPF", pilot.registration],
             ["Nacionalidade", pilot.nationality], ["Estado civil", pilot.marital_status], ["Tipo sanguíneo", pilot.blood_type],
             ["Telefone", pilot.phone], ["E-mail", pilot.email], ["Endereço", pilot.address],
           ]} />
@@ -551,7 +551,7 @@ function EditPersonalSections({ pilot, onCancel, onSaved }) {
         <Field label="Nascimento"><input type="date" className={inputCls} value={f.birth_date} onChange={set("birth_date")} /></Field>
         <Field label="CPF"><input className={inputCls} value={f.cpf} onChange={set("cpf")} /></Field>
         <Field label="RG"><input className={inputCls} value={f.rg} onChange={set("rg")} /></Field>
-        <Field label="Matrícula"><input className={inputCls} value={f.registration} onChange={set("registration")} /></Field>
+        <Field label="#CANAC/CPF"><input className={inputCls} value={f.registration} onChange={set("registration")} /></Field>
         <Field label="Nacionalidade"><input className={inputCls} value={f.nationality} onChange={set("nationality")} /></Field>
         <Field label="Estado civil"><input className={inputCls} value={f.marital_status} onChange={set("marital_status")} /></Field>
         <Field label="Tipo sanguíneo"><input className={inputCls} value={f.blood_type} onChange={set("blood_type")} /></Field>
@@ -763,7 +763,7 @@ function PilotForm({ me, onClose, onDone }) {
         <div className="grid sm:grid-cols-2 gap-3">
           <Field label="Nome completo *"><input className={inputCls} value={f.full_name} onChange={set("full_name")} /></Field>
           <Field label="Nome de guerra"><input className={inputCls} value={f.war_name} onChange={set("war_name")} /></Field>
-          <Field label="Matrícula"><input className={inputCls} value={f.registration} onChange={set("registration")} /></Field>
+          <Field label="#CANAC/CPF"><input className={inputCls} value={f.registration} onChange={set("registration")} /></Field>
           <Field label="Função"><select className={inputCls} value={f.role} onChange={set("role")}>{Object.entries(ROLE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
           <Field label="Base operacional"><input className={inputCls} value={f.base} onChange={set("base")} /></Field>
           <Field label="Empresa"><input className={inputCls} value={f.company} onChange={set("company")} /></Field>
