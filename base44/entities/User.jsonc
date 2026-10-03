@@ -18,7 +18,7 @@
     },
     "registration": {
       "type": "string",
-      "title": "Matr\u00edcula"
+      "title": "#CANAC/CPF"
     },
     "phone": {
       "type": "string",
@@ -60,6 +60,11 @@
     "mfa_enrolled": {
       "type": "boolean",
       "title": "Autentica\u00e7\u00e3o em 2 fatores ativa",
+      "default": false
+    },
+    "is_master": {
+      "type": "boolean",
+      "title": "Administrador Geral Master",
       "default": false
     }
   }

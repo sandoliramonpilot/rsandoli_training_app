@@ -79,6 +79,7 @@ export default async function (req) {
         created_date: u.created_date,
         created_by_user_id: u.created_by_user_id || null,
         custom_permissions: u.custom_permissions || null,
+        is_master: !!u.is_master,
         admin_notes: canManage ? (u.admin_notes || null) : null,
         invite_status: invites.find((i) => (i.email || "").toLowerCase() === (u.email || "").toLowerCase() && i.status === "accepted") ? "accepted" : null,
       }));
@@ -164,6 +165,23 @@ export default async function (req) {
         invitePayload.custom_permissions = JSON.stringify(body.custom_permissions);
       }
       await base44.asServiceRole.entities.UserInvite.create(invitePayload);
+
+      // Cria registro de piloto vinculado (migração usuário→piloto, item 8).
+      // O piloto é criado mesmo antes do aceite do convite, garantindo integridade e relacionamento.
+      try {
+        await base44.asServiceRole.entities.Pilot.create({
+          full_name: fullName,
+          email,
+          registration: body.registration ? String(body.registration).trim() : null,
+          role: "copilot",
+          status: "active",
+          approval_status: "approved",
+          anac_code: null,
+        });
+      } catch (pilotErr) {
+        // Falha na criação do piloto não deve impedir o convite; registra no log.
+        await logAudit(base44, user, { email, full_name: fullName }, "Criação de usuário", `Piloto não criado: ${pilotErr?.message || pilotErr}`);
+      }
 
       await logAudit(
         base44,
@@ -268,6 +286,70 @@ export default async function (req) {
       if (Object.keys(patch).length === 0) return Response.json({ error: "Nada para atualizar." }, { status: 400 });
       await base44.asServiceRole.entities.User.update(targetId, patch);
       await logAudit(base44, user, target, AUDITABLE_ACTIONS.user_edited, changes.join(" | "));
+      return Response.json({ ok: true });
+    }
+
+    // ---------- MIGRATE USERS → PILOTS ----------
+    if (action === "migrate") {
+      const users = await base44.asServiceRole.entities.User.list().catch(() => []);
+      const pilots = await base44.asServiceRole.entities.Pilot.list().catch(() => []);
+      const pilotsByEmail = new Map(
+        pilots
+          .filter((p) => p.email)
+          .map((p) => [(p.email || "").toLowerCase(), p])
+      );
+      const created = [];
+      const skipped = [];
+      for (const u of users) {
+        const em = (u.email || "").toLowerCase();
+        if (!em) continue;
+        if (pilotsByEmail.has(em)) {
+          skipped.push(em);
+          continue;
+        }
+        try {
+          await base44.asServiceRole.entities.Pilot.create({
+            full_name: u.full_name || u.email || "Piloto",
+            email: u.email,
+            registration: u.registration || null,
+            phone: u.phone || null,
+            role: "copilot",
+            status: "active",
+            approval_status: "approved",
+            anac_code: null,
+          });
+          created.push(em);
+        } catch (err) {
+          // segue para o próximo; sem interromper a migração
+        }
+      }
+      await logAudit(base44, user, null, "Migração usuário→piloto", `Pilotos criados: ${created.length} | Já vinculados: ${skipped.length}`);
+      return Response.json({ ok: true, created: created.length, alreadyLinked: skipped.length });
+    }
+
+    // ---------- SET MASTER (Administrador Geral Master) ----------
+    if (action === "set_master") {
+      // Somente o Administrador Geral pode conceder perfil Master.
+      if (actorLevel !== "admin_geral") return Response.json({ error: "Forbidden" }, { status: 403 });
+      const targetId = body.user_id;
+      if (!targetId) return Response.json({ error: "Usuário não informado." }, { status: 400 });
+      const target = await base44.asServiceRole.entities.User.get(targetId).catch(() => null);
+      if (!target) return Response.json({ error: "Usuário não encontrado." }, { status: 404 });
+      const master = !!body.master;
+      // Master é sempre Administrador Geral com acesso total.
+      await base44.asServiceRole.entities.User.update(targetId, {
+        access_level: "admin_geral",
+        role: "admin",
+        account_status: "ativa",
+        is_master: master,
+        custom_permissions: null, // acesso irrestrito
+      });
+      // Sincroniza o piloto vinculado ao e-mail, marcando is_master.
+      const pilots = await base44.asServiceRole.entities.Pilot.filter({ email: target.email }).catch(() => []);
+      for (const p of pilots) {
+        await base44.asServiceRole.entities.Pilot.update(p.id, { is_master: master, permission: "full", approval_status: "approved" }).catch(() => {});
+      }
+      await logAudit(base44, user, target, "Admin Geral Master", `Perfil Master ${master ? "concedido" : "removido"} para ${target.full_name || target.email}`);
       return Response.json({ ok: true });
     }
 
