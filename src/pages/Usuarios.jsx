@@ -203,7 +203,7 @@ export default function Usuarios() {
               </thead>
               <tbody className="divide-y divide-slate-700/40">
                 {filtered.map((u) => (
-                  <UserRow key={u.id} u={u} me={me} actorLevel={actorLevel} onEdit={() => setModal({ mode: "edit", user: u })} onView={() => setModal({ mode: "view", user: u })} onStatus={setStatus} onAudit={openAudit} onReset={() => {
+                  <UserRow key={u.id} u={u} me={me} actorLevel={actorLevel} onEdit={() => setModal({ mode: "edit", user: u })} onView={() => setModal({ mode: "view", user: u })} onStatus={setStatus} onAudit={openAudit} onCancelInvite={() => cancelInvite(u)} onResendInvite={() => resendInvite(u)} onReset={() => {
                     setPendingSensitive({
                       label: "Redefinir senha de usuário",
                       run: async () => {
@@ -252,19 +252,21 @@ export default function Usuarios() {
   );
 }
 
-function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onReset }) {
+function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onCancelInvite, onResendInvite, onReset }) {
   const isSelf = u.id === me?.id;
   const targetIsGeral = u.access_level === "admin_geral";
   const actorIsGeral = actorLevel === "admin_geral";
   const canEdit = !isSelf && (actorIsGeral || (!targetIsGeral && actorLevel === "administrador"));
+  const isInvite = u.invite === true;
+  const canEditInvite = actorIsGeral || (u.access_level !== "admin_geral" && actorLevel === "administrador");
   const st = STATUS_STYLES[u.account_status] || STATUS_STYLES.ativa;
 
   return (
     <tr className="hover:bg-white/[0.02]">
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-300 font-semibold text-xs shrink-0">
-            {(u.full_name || u.email || "?").slice(0, 2).toUpperCase()}
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs shrink-0 ${isInvite ? "bg-amber-500/10 border border-amber-500/30 text-amber-400" : "bg-gradient-to-br from-amber-500/30 to-amber-600/10 border border-amber-500/30 text-amber-300 font-semibold"}`}>
+            {isInvite ? <MailCheck className="w-4 h-4" /> : (u.full_name || u.email || "?").slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0">
             <p className="font-medium text-slate-100 truncate">{u.full_name || "—"}</p>
@@ -282,7 +284,11 @@ function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onReset
         </span>
       </td>
       <td className="px-4 py-3">
-        <span className={`text-xs px-2.5 py-1 rounded-full border ${st}`}>{ACCOUNT_STATUS_LABELS[u.account_status]}</span>
+        {isInvite ? (
+          <span className="text-xs px-2.5 py-1 rounded-full border text-amber-300 bg-amber-500/10 border-amber-500/30">Convite pendente</span>
+        ) : (
+          <span className={`text-xs px-2.5 py-1 rounded-full border ${st}`}>{ACCOUNT_STATUS_LABELS[u.account_status]}</span>
+        )}
       </td>
       <td className="px-4 py-3 hidden md:table-cell text-slate-400 text-xs">
         {u.last_login_at ? new Date(u.last_login_at).toLocaleString("pt-BR") : "—"}
@@ -293,15 +299,24 @@ function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onReset
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1">
           <IconBtn title="Visualizar" onClick={onView}><Eye className="w-4 h-4" /></IconBtn>
-          {canEdit && <IconBtn title="Editar" onClick={onEdit}><Pencil className="w-4 h-4" /></IconBtn>}
-          {canEdit && u.account_status === "ativa" && <IconBtn title="Bloquear" onClick={() => onStatus(u, "bloqueada")}><Lock className="w-4 h-4" /></IconBtn>}
-          {canEdit && u.account_status === "bloqueada" && <IconBtn title="Desbloquear" onClick={() => onStatus(u, "ativa")}><Unlock className="w-4 h-4" /></IconBtn>}
-          {canEdit && u.account_status === "ativa" && <IconBtn title="Suspender" onClick={() => onStatus(u, "suspensa")}><PauseCircle className="w-4 h-4" /></IconBtn>}
-          {canEdit && u.account_status === "suspensa" && <IconBtn title="Reativar" onClick={() => onStatus(u, "ativa")}><PlayCircle className="w-4 h-4" /></IconBtn>}
-          {canEdit && u.account_status !== "desativada" && <IconBtn title="Desativar" danger onClick={() => onStatus(u, "desativada")}><Ban className="w-4 h-4" /></IconBtn>}
-          {canEdit && u.account_status === "desativada" && <IconBtn title="Reativar" onClick={() => onStatus(u, "ativa")}><PlayCircle className="w-4 h-4" /></IconBtn>}
-          {canEdit && <IconBtn title="Redefinir senha" onClick={() => onReset()}><KeyRound className="w-4 h-4" /></IconBtn>}
-          {actorIsGeral && <IconBtn title="Histórico" onClick={() => onAudit(u)}><History className="w-4 h-4" /></IconBtn>}
+          {isInvite ? (
+            <>
+              {canEditInvite && <IconBtn title="Reenviar convite" onClick={() => onResendInvite()}><Send className="w-4 h-4" /></IconBtn>}
+              {canEditInvite && <IconBtn title="Cancelar convite" danger onClick={() => onCancelInvite()}><Trash2 className="w-4 h-4" /></IconBtn>}
+            </>
+          ) : (
+            <>
+              {canEdit && <IconBtn title="Editar" onClick={onEdit}><Pencil className="w-4 h-4" /></IconBtn>}
+              {canEdit && u.account_status === "ativa" && <IconBtn title="Bloquear" onClick={() => onStatus(u, "bloqueada")}><Lock className="w-4 h-4" /></IconBtn>}
+              {canEdit && u.account_status === "bloqueada" && <IconBtn title="Desbloquear" onClick={() => onStatus(u, "ativa")}><Unlock className="w-4 h-4" /></IconBtn>}
+              {canEdit && u.account_status === "ativa" && <IconBtn title="Suspender" onClick={() => onStatus(u, "suspensa")}><PauseCircle className="w-4 h-4" /></IconBtn>}
+              {canEdit && u.account_status === "suspensa" && <IconBtn title="Reativar" onClick={() => onStatus(u, "ativa")}><PlayCircle className="w-4 h-4" /></IconBtn>}
+              {canEdit && u.account_status !== "desativada" && <IconBtn title="Desativar" danger onClick={() => onStatus(u, "desativada")}><Ban className="w-4 h-4" /></IconBtn>}
+              {canEdit && u.account_status === "desativada" && <IconBtn title="Reativar" onClick={() => onStatus(u, "ativa")}><PlayCircle className="w-4 h-4" /></IconBtn>}
+              {canEdit && <IconBtn title="Redefinir senha" onClick={() => onReset()}><KeyRound className="w-4 h-4" /></IconBtn>}
+            </>
+          )}
+          {actorIsGeral && !isInvite && <IconBtn title="Histórico" onClick={() => onAudit(u)}><History className="w-4 h-4" /></IconBtn>}
         </div>
       </td>
     </tr>
