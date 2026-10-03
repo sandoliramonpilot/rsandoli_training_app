@@ -20,6 +20,7 @@ import VerifyCodeModal from "@/components/VerifyCodeModal";
 import {
   Users, Search, Plus, Loader2, ShieldCheck, Lock, Unlock, PauseCircle, PlayCircle,
   Ban, Eye, EyeOff, Pencil, History, KeyRound, X, ChevronDown, ChevronUp,
+  MailCheck, Send, Trash2,
 } from "lucide-react";
 
 const STATUS_STYLES = {
@@ -89,6 +90,16 @@ export default function Usuarios() {
       setToast(e?.response?.data?.error || e.message || "Erro ao executar ação.");
       return false;
     }
+  };
+
+  const cancelInvite = async (u) => {
+    const ok = await call({ action: "cancel_invite", invite_id: u.id });
+    if (ok) setToast(`Convite de ${u.email} cancelado.`);
+  };
+
+  const resendInvite = async (u) => {
+    const ok = await call({ action: "resend_invite", invite_id: u.id });
+    if (ok) setToast(`Convite reenviado para ${u.email}.`);
   };
 
   const setStatus = async (u, status) => {

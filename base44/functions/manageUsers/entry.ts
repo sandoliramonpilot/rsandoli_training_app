@@ -37,6 +37,30 @@ export default async function (req) {
     // ---------- LIST ----------
     if (action === "list") {
       const users = await base44.asServiceRole.entities.User.list();
+      const invites = await base44.asServiceRole.entities.UserInvite.list().catch(() => []);
+
+      // Aplica metadados de convites já aceitos (convidado já existe como usuário).
+      const usersByEmail = new Map(users.map((u) => [(u.email || "").toLowerCase(), u]));
+      for (const inv of invites) {
+        if (inv.status !== "pending") continue;
+        const matched = usersByEmail.get((inv.email || "").toLowerCase());
+        if (matched) {
+          const patch = {};
+          if (inv.access_level) patch.access_level = inv.access_level;
+          if (inv.login) patch.login = inv.login;
+          if (!matched.registration && inv.registration) patch.registration = inv.registration;
+          if (!matched.phone && inv.phone) patch.phone = inv.phone;
+          if (!matched.unit && inv.unit) patch.unit = inv.unit;
+          if (!matched.job_title && inv.job_title) patch.job_title = inv.job_title;
+          if (inv.custom_permissions) patch.custom_permissions = inv.custom_permissions;
+          if (inv.admin_notes) patch.admin_notes = inv.admin_notes;
+          patch.account_status = matched.account_status || "ativa";
+          patch.role = inv.access_level === "admin_geral" || inv.access_level === "administrador" ? "admin" : "user";
+          await base44.asServiceRole.entities.User.update(matched.id, patch).catch(() => {});
+          await base44.asServiceRole.entities.UserInvite.update(inv.id, { status: "accepted", accepted_at: new Date().toISOString() }).catch(() => {});
+        }
+      }
+
       const sanitized = users.map((u) => ({
         id: u.id,
         full_name: u.full_name,
@@ -56,8 +80,30 @@ export default async function (req) {
         created_by_user_id: u.created_by_user_id || null,
         custom_permissions: u.custom_permissions || null,
         admin_notes: canManage ? (u.admin_notes || null) : null,
+        invite_status: invites.find((i) => (i.email || "").toLowerCase() === (u.email || "").toLowerCase() && i.status === "accepted") ? "accepted" : null,
       }));
-      return Response.json({ users: sanitized, actorLevel });
+
+      // Inclui convites pendentes (convidado ainda não aceitou) como itens separados.
+      const pending = invites
+        .filter((i) => i.status === "pending")
+        .map((i) => ({
+          id: i.id,
+          invite: true,
+          full_name: i.full_name || i.login || null,
+          email: i.email,
+          access_level: i.access_level,
+          account_status: "convite_pendente",
+          login: i.login || null,
+          registration: i.registration || null,
+          phone: i.phone || null,
+          unit: i.unit || null,
+          job_title: i.job_title || null,
+          created_date: i.created_at,
+          invited_by_name: i.invited_by_name || null,
+          admin_notes: canManage ? (i.admin_notes || null) : null,
+        }));
+
+      return Response.json({ users: [...pending, ...sanitized], actorLevel });
     }
 
     if (!canManage) return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -88,32 +134,66 @@ export default async function (req) {
         return Response.json({ error: "Já existe um usuário com este login." }, { status: 409 });
       }
 
-      // Cria a conta real de autenticação via convite (senha definida pelo próprio usuário).
+      // Envia o convite de cadastro (o convidado define a própria senha via link por e-mail).
+      // A conta só passa a constar na lista de usuários após o convidado aceitar o convite.
+      // Os metadados pretendidos ficam gravados em UserInvite e são aplicados automaticamente
+      // assim que o convidado concluir o cadastro (ver "list").
       const role = accessLevel === "admin_geral" || accessLevel === "administrador" ? "admin" : "user";
-      await base44.users.inviteUser(email, role);
+      try {
+        await base44.users.inviteUser(email, role);
+      } catch (inviteErr) {
+        return Response.json({ error: `Falha ao enviar convite: ${inviteErr?.message || inviteErr}` }, { status: 500 });
+      }
 
-      const created = (await base44.asServiceRole.entities.User.filter({ email }))[0];
-      if (!created) return Response.json({ error: "Não foi possível concluir o cadastro." }, { status: 500 });
-
-      const extras = {
-        access_level: accessLevel,
-        account_status: "convite_pendente",
+      const invitePayload = {
+        email,
+        full_name: fullName,
         login,
+        access_level: accessLevel,
         registration: body.registration ? String(body.registration).trim() : null,
         phone: body.phone ? String(body.phone).trim() : null,
         unit: body.unit ? String(body.unit).trim() : null,
         job_title: body.job_title ? String(body.job_title).trim() : null,
-        photo_uri: body.photo_uri || null,
         admin_notes: body.admin_notes || null,
-        must_change_password: !!body.must_change_password,
-        created_by_user_id: user.id,
+        status: "pending",
+        invited_by_user_id: user.id,
+        invited_by_name: user.full_name || user.email || null,
+        created_at: new Date().toISOString(),
       };
       if (body.custom_permissions && typeof body.custom_permissions === "object") {
-        extras.custom_permissions = JSON.stringify(body.custom_permissions);
+        invitePayload.custom_permissions = JSON.stringify(body.custom_permissions);
       }
-      await base44.asServiceRole.entities.User.update(created.id, extras);
-      await logAudit(base44, user, created, AUDITABLE_ACTIONS.user_created, `Nível: ${accessLevel}`);
-      return Response.json({ ok: true, userId: created.id, inviteSent: true });
+      await base44.asServiceRole.entities.UserInvite.create(invitePayload);
+
+      await logAudit(
+        base44,
+        user,
+        { email, full_name: fullName },
+        AUDITABLE_ACTIONS.user_created,
+        `Convite enviado — Nível: ${accessLevel} | Login: ${login}`
+      );
+      return Response.json({ ok: true, inviteSent: true, message: "Convite enviado. O convidado receberá um e-mail para concluir o cadastro." });
+    }
+
+// ---------- CANCEL INVITE ----------
+    if (action === "cancel_invite") {
+      const invite = await base44.asServiceRole.entities.UserInvite.get(body.invite_id).catch(() => null);
+      if (!invite) return Response.json({ error: "Convite não encontrado." }, { status: 404 });
+      if (invite.status !== "pending") return Response.json({ error: "Convite já processado." }, { status: 400 });
+      await base44.asServiceRole.entities.UserInvite.update(body.invite_id, { status: "cancelled" });
+      await logAudit(base44, user, { email: invite.email }, AUDITABLE_ACTIONS.user_edited, `Convite cancelado — ${invite.email}`);
+      return Response.json({ ok: true });
+    }
+
+    // ---------- RESEND INVITE ----------
+    if (action === "resend_invite") {
+      const invite = await base44.asServiceRole.entities.UserInvite.get(body.invite_id).catch(() => null);
+      if (!invite) return Response.json({ error: "Convite não encontrado." }, { status: 404 });
+      if (invite.status !== "pending") return Response.json({ error: "Convite já processado." }, { status: 400 });
+      const role = invite.access_level === "admin_geral" || invite.access_level === "administrador" ? "admin" : "user";
+      await base44.users.inviteUser(invite.email, role).catch((e) => {});
+      await logAudit(base44, user, { email: invite.email }, AUDITABLE_ACTIONS.user_edited, `Convite reenviado — ${invite.email}`);
+      return Response.json({ ok: true });
     }
 
     // ---------- UPDATE / STATUS / LEVEL / PERMISSIONS ----------
@@ -155,7 +235,7 @@ export default async function (req) {
         if (targetLevel === "admin_geral" && body.access_level !== "admin_geral") {
           const all = await base44.asServiceRole.entities.User.list();
           const gerals = all.filter((u) => levelOf(u) === "admin_geral" && (u.account_status || "ativa") === "ativa");
-          if (gerais.length <= 1) return Response.json({ error: "Não é possível remover a função do último Administrador Geral ativo." }, { status: 403 });
+          if (gerals.length <= 1) return Response.json({ error: "Não é possível remover a função do último Administrador Geral ativo." }, { status: 403 });
         }
         patch.access_level = body.access_level;
         patch.role = body.access_level === "admin_geral" || body.access_level === "administrador" ? "admin" : "user";
