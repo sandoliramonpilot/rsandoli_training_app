@@ -87,7 +87,7 @@ export default function Dashboard() {
           const Icon = s.icon;
           return (
             <div key={s.label} className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-5 hover:border-amber-500/30 transition-colors">
-              <div className={`w-10 h-10 bg-gradient-to-br rounded-[14px] ${s.accent} flex items-center justify-center mb-3 shadow-lg`}>
+              <div className={`w-10 h-10 bg-gradient-to-br rounded-3xl ${s.accent} flex items-center justify-center mb-3 shadow-lg`}>
                 <Icon className="w-5 h-5 text-slate-900" />
               </div>
               <p className="text-2xl font-bold tracking-tight text-slate-100">{s.value}</p>
