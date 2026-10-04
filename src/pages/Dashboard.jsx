@@ -13,12 +13,12 @@ function fmtHours(min) {
 
 const FLIGHT_TYPE_LABELS = {
   private: "Privado", instruction: "Instrução", charter: "Táxi aéreo",
-  ems: "Aeromédico", vip: "VIP", photo: "Fotografia", other: "Outro",
+  ems: "Aeromédico", vip: "VIP", photo: "Fotografia", other: "Outro"
 };
 
 const PHASE_LABELS = {
   pre_flight: "Pré-Voo", startup: "Partida", post_startup: "Pós-Acionamento",
-  before_takeoff: "Antes da Decolagem", shutdown: "Corte de Motor", post_flight: "Pós-Voo", taxi: "Taxi",
+  before_takeoff: "Antes da Decolagem", shutdown: "Corte de Motor", post_flight: "Pós-Voo", taxi: "Taxi"
 };
 
 export default function Dashboard() {
@@ -31,13 +31,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      base44.entities.FlightLog.list("-date", 200).catch(() => []),
-      base44.entities.Aircraft.list().catch(() => []),
-      base44.entities.ChecklistRecord.list("-date", 50).catch(() => []),
-      base44.entities.LibraryDocument.list("-created_date", 5).catch(() => []),
-      base44.entities.Pilot.list().catch(() => []),
-    ]).then(([f, a, c, d, p]) => {
-      setFlights(f); setAircraft(a); setChecklists(c); setDocs(d); setPilots(p);
+    base44.entities.FlightLog.list("-date", 200).catch(() => []),
+    base44.entities.Aircraft.list().catch(() => []),
+    base44.entities.ChecklistRecord.list("-date", 50).catch(() => []),
+    base44.entities.LibraryDocument.list("-created_date", 5).catch(() => []),
+    base44.entities.Pilot.list().catch(() => [])]
+    ).then(([f, a, c, d, p]) => {
+      setFlights(f);setAircraft(a);setChecklists(c);setDocs(d);setPilots(p);
     });
     try {
       const h = JSON.parse(localStorage.getItem("sim_history") || "[]");
@@ -52,8 +52,8 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center py-24">
         <div className="w-8 h-8 border-4 border-slate-700 border-t-amber-500 rounded-full animate-spin" />
-      </div>
-    );
+      </div>);
+
   }
 
   const totalMinutes = flights.reduce((s, f) => s + (f.flight_time_minutes || 0), 0);
@@ -67,11 +67,11 @@ export default function Dashboard() {
   const activePilots = pilots.filter((p) => p.status === "active").length;
 
   const stats = [
-    { label: "Total de horas", value: fmtHours(totalMinutes), icon: Clock, accent: "from-amber-500 to-amber-400" },
-    { label: "Voos registrados", value: flights.length, icon: BookOpen, accent: "from-violet-500 to-purple-400" },
-    { label: "Pilotos ativos", value: activePilots, icon: Users, accent: "from-teal-500 to-emerald-400" },
-    { label: "Simulados · média", value: `${simStats.avg}%`, icon: Award, accent: "from-sky-500 to-blue-400" },
-  ];
+  { label: "Total de horas", value: fmtHours(totalMinutes), icon: Clock, accent: "from-amber-500 to-amber-400" },
+  { label: "Voos registrados", value: flights.length, icon: BookOpen, accent: "from-violet-500 to-purple-400" },
+  { label: "Pilotos ativos", value: activePilots, icon: Users, accent: "from-teal-500 to-emerald-400" },
+  { label: "Simulados · média", value: `${simStats.avg}%`, icon: Award, accent: "from-sky-500 to-blue-400" }];
+
 
   return (
     <div className="space-y-8">
@@ -87,13 +87,13 @@ export default function Dashboard() {
           const Icon = s.icon;
           return (
             <div key={s.label} className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-5 hover:border-amber-500/30 transition-colors">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.accent} flex items-center justify-center mb-3 shadow-lg`}>
+              <div className={`w-10 h-10 bg-gradient-to-br rounded-[14px] ${s.accent} flex items-center justify-center mb-3 shadow-lg`}>
                 <Icon className="w-5 h-5 text-slate-900" />
               </div>
               <p className="text-2xl font-bold tracking-tight text-slate-100">{s.value}</p>
               <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
-            </div>
-          );
+            </div>);
+
         })}
       </div>
 
@@ -110,8 +110,8 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           {/* Last checklist */}
           <Panel title="Último checklist realizado" to="/checklist" linkLabel="Ver todos">
-            {lastChecklist ? (
-              <div className="flex items-center justify-between py-2">
+            {lastChecklist ?
+            <div className="flex items-center justify-between py-2">
                 <div>
                   <p className="font-medium text-slate-100">{PHASE_LABELS[lastChecklist.checklist_type] || lastChecklist.checklist_type}</p>
                   <p className="text-xs text-slate-500 mt-0.5">
@@ -122,32 +122,32 @@ export default function Dashboard() {
                   {lastChecklist.status === "ok" ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
                   {lastChecklist.status === "ok" ? "OK" : "Discrepância"}
                 </span>
-              </div>
-            ) : (
-              <div className="py-8 text-center text-sm text-slate-500">Nenhum checklist registrado ainda.</div>
-            )}
+              </div> :
+
+            <div className="py-8 text-center text-sm text-slate-500">Nenhum checklist registrado ainda.</div>
+            }
           </Panel>
 
           {/* QRH quick access */}
           <Panel title="Atalhos QRH" to="/qrh" linkLabel="Ver todos">
             <div className="py-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {QRH_CATEGORIES.slice(0, 6).map((c) => (
-                <Link key={c.id} to="/qrh" className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-700/50 hover:border-rose-500/40 hover:bg-rose-500/[0.03] transition-colors">
+              {QRH_CATEGORIES.slice(0, 6).map((c) =>
+              <Link key={c.id} to="/qrh" className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-700/50 hover:border-rose-500/40 hover:bg-rose-500/[0.03] transition-colors">
                   <span className={`w-2 h-2 rounded-full ${c.color === "red" ? "bg-rose-500" : c.color === "amber" ? "bg-amber-500" : "bg-teal-500"}`} />
                   <span className="text-sm font-medium text-slate-300">{c.name}</span>
                 </Link>
-              ))}
+              )}
             </div>
           </Panel>
 
           {/* Recent flights */}
           <Panel title="Voos recentes" to="/flight-log" linkLabel="Ver todos">
-            {recentFlights.length === 0 ? (
-              <div className="py-10 text-center text-sm text-slate-500">Nenhum voo registrado ainda.</div>
-            ) : (
-              <ul className="divide-y divide-slate-700/40">
-                {recentFlights.map((f) => (
-                  <li key={f.id} className="py-3 flex items-center justify-between gap-4">
+            {recentFlights.length === 0 ?
+            <div className="py-10 text-center text-sm text-slate-500">Nenhum voo registrado ainda.</div> :
+
+            <ul className="divide-y divide-slate-700/40">
+                {recentFlights.map((f) =>
+              <li key={f.id} className="py-3 flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <p className="font-medium text-slate-100 truncate">
                         {f.departure_location || "—"} <span className="text-slate-600 mx-1">→</span> {f.arrival_location || "—"}
@@ -161,9 +161,9 @@ export default function Dashboard() {
                       <p className="text-[11px] text-slate-500">{FLIGHT_TYPE_LABELS[f.flight_type] || f.flight_type}</p>
                     </div>
                   </li>
-                ))}
+              )}
               </ul>
-            )}
+            }
           </Panel>
         </div>
 
@@ -181,20 +181,20 @@ export default function Dashboard() {
 
           {/* Library recent */}
           <Panel title="Biblioteca recente" to="/biblioteca" linkLabel="Ver">
-            {docs.length === 0 ? (
-              <div className="py-8 text-center text-sm text-slate-500">Nenhum documento enviado.</div>
-            ) : (
-              <ul className="divide-y divide-slate-700/40">
-                {docs.map((d) => (
-                  <li key={d.id} className="py-3 flex items-center gap-3">
+            {docs.length === 0 ?
+            <div className="py-8 text-center text-sm text-slate-500">Nenhum documento enviado.</div> :
+
+            <ul className="divide-y divide-slate-700/40">
+                {docs.map((d) =>
+              <li key={d.id} className="py-3 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
                       <BookOpen className="w-4 h-4 text-amber-400" />
                     </div>
                     <span className="text-sm text-slate-300 truncate">{d.title}</span>
                   </li>
-                ))}
+              )}
               </ul>
-            )}
+            }
           </Panel>
 
           {/* Fleet status */}
@@ -204,17 +204,17 @@ export default function Dashboard() {
               <StatusRow icon={Wrench} color="text-amber-400 bg-amber-500/10" label="Em manutenção" value={inMaint} />
               <StatusRow icon={AlertTriangle} color="text-rose-400 bg-rose-500/10" label="Aterrissadas" value={grounded} />
             </div>
-            {discrepancies > 0 && (
-              <div className="mt-4 px-4 py-3 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center gap-2 text-sm text-rose-300">
+            {discrepancies > 0 &&
+            <div className="mt-4 px-4 py-3 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center gap-2 text-sm text-rose-300">
                 <AlertTriangle className="w-4 h-4" />
                 {discrepancies} discrepância(s) em checklists
               </div>
-            )}
+            }
           </Panel>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 function Panel({ title, to, linkLabel, children }) {
@@ -225,8 +225,8 @@ function Panel({ title, to, linkLabel, children }) {
         {to && <Link to={to} className="text-xs font-medium text-amber-400 hover:text-amber-300">{linkLabel} →</Link>}
       </div>
       <div className="px-6 py-2">{children}</div>
-    </div>
-  );
+    </div>);
+
 }
 
 function QuickLink({ to, icon: Icon, label, sub, accent }) {
@@ -237,8 +237,8 @@ function QuickLink({ to, icon: Icon, label, sub, accent }) {
       </div>
       <p className="font-semibold text-slate-100 text-sm">{label}</p>
       <p className="text-xs text-slate-500 mt-0.5">{sub}</p>
-    </Link>
-  );
+    </Link>);
+
 }
 
 function QuickRow({ title, sub, icon: Icon }) {
@@ -252,8 +252,8 @@ function QuickRow({ title, sub, icon: Icon }) {
         <p className="text-[11px] text-slate-500">{sub}</p>
       </div>
       <ChevronRight className="w-4 h-4 text-slate-600 ml-auto shrink-0" />
-    </Link>
-  );
+    </Link>);
+
 }
 
 function StatusRow({ icon: Icon, color, label, value }) {
@@ -266,6 +266,6 @@ function StatusRow({ icon: Icon, color, label, value }) {
         <span className="text-sm text-slate-300">{label}</span>
       </div>
       <span className="font-semibold text-slate-100">{value}</span>
-    </div>
-  );
+    </div>);
+
 }
