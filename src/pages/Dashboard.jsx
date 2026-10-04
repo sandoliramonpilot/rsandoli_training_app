@@ -77,7 +77,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       <header>
         <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Painel do Piloto</p>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">-</h1>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">Con-</h1>
         <p className="text-slate-400 mt-2 text-sm">Sistema integrado de treinamento, procedimentos e consulta operacional para helicópteros.</p>
       </header>
 
