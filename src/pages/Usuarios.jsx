@@ -20,7 +20,7 @@ import VerifyCodeModal from "@/components/VerifyCodeModal";
 import {
   Users, Search, Plus, Loader2, ShieldCheck, Lock, Unlock, PauseCircle, PlayCircle,
   Ban, Eye, EyeOff, Pencil, History, KeyRound, X, ChevronDown, ChevronUp,
-  MailCheck, Send, Trash2,
+  MailCheck, Send, Trash2, Star, StarOff, RefreshCw,
 } from "lucide-react";
 
 const STATUS_STYLES = {
@@ -102,6 +102,25 @@ export default function Usuarios() {
     if (ok) setToast(`Convite reenviado para ${u.email}.`);
   };
 
+  const runMigration = async () => {
+    const res = await base44.functions.invoke("manageUsers", { action: "migrate" }).then((r) => r.data).catch((e) => null);
+    if (res) {
+      await load();
+      setToast(`Migração concluída: ${res.created} piloto(s) criado(s), ${res.alreadyLinked} já vinculado(s).`);
+    } else {
+      setToast("Erro ao executar migração.");
+    }
+  };
+
+  const toggleMaster = async (u) => {
+    const isMaster = !!u.is_master;
+    const run = async () => {
+      const ok = await call({ action: "set_master", user_id: u.id, master: !isMaster });
+      if (ok) setToast(isMaster ? `Perfil Master removido de ${u.full_name}.` : `${u.full_name} agora é Administrador Geral Master.`);
+    };
+    setPendingSensitive({ label: isMaster ? "Remover perfil Master" : "Conceder perfil Master", run });
+  };
+
   const setStatus = async (u, status) => {
     // Operações sensíveis exigem código de acesso.
     const sensitive = status === "desativada" || (u.access_level === "admin_geral" && status !== "ativa");
@@ -143,6 +162,11 @@ export default function Usuarios() {
           <p className="text-slate-400 mt-2 text-sm">Cadastro, permissões e situação das contas do aplicativo.</p>
         </div>
         <div className="flex items-center gap-2">
+          {actorLevel === "admin_geral" && (
+            <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-amber-300" onClick={runMigration} title="Criar registros de Piloto para usuários sem piloto vinculado">
+              <RefreshCw className="w-4 h-4 mr-2" /> Migrar pilotos
+            </Button>
+          )}
           {actorLevel === "admin_geral" && (
             <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-amber-300" onClick={() => setShowAudit(true)}>
               <History className="w-4 h-4 mr-2" /> Auditoria
@@ -203,7 +227,7 @@ export default function Usuarios() {
               </thead>
               <tbody className="divide-y divide-slate-700/40">
                 {filtered.map((u) => (
-                  <UserRow key={u.id} u={u} me={me} actorLevel={actorLevel} onEdit={() => setModal({ mode: "edit", user: u })} onView={() => setModal({ mode: "view", user: u })} onStatus={setStatus} onAudit={openAudit} onCancelInvite={() => cancelInvite(u)} onResendInvite={() => resendInvite(u)} onReset={() => {
+                  <UserRow key={u.id} u={u} me={me} actorLevel={actorLevel} onEdit={() => setModal({ mode: "edit", user: u })} onView={() => setModal({ mode: "view", user: u })} onStatus={setStatus} onAudit={openAudit} onCancelInvite={() => cancelInvite(u)} onResendInvite={() => resendInvite(u)} onToggleMaster={() => toggleMaster(u)} onReset={() => {
                     setPendingSensitive({
                       label: "Redefinir senha de usuário",
                       run: async () => {
@@ -252,7 +276,7 @@ export default function Usuarios() {
   );
 }
 
-function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onCancelInvite, onResendInvite, onReset }) {
+function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onCancelInvite, onResendInvite, onToggleMaster, onReset }) {
   const isSelf = u.id === me?.id;
   const targetIsGeral = u.access_level === "admin_geral";
   const actorIsGeral = actorLevel === "admin_geral";
@@ -281,6 +305,7 @@ function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onCance
       <td className="px-4 py-3">
         <span className={`text-xs px-2.5 py-1 rounded-full border ${LEVEL_STYLES[u.access_level] || LEVEL_STYLES.consulta}`}>
           {ACCESS_LEVEL_LABELS[u.access_level] || u.access_level}
+          {u.is_master && <Star className="w-3 h-3 inline-block ml-1 -mt-0.5 text-amber-300 fill-amber-300" />}
         </span>
       </td>
       <td className="px-4 py-3">
@@ -315,6 +340,11 @@ function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onCance
               {canEdit && u.account_status === "desativada" && <IconBtn title="Reativar" onClick={() => onStatus(u, "ativa")}><PlayCircle className="w-4 h-4" /></IconBtn>}
               {canEdit && <IconBtn title="Redefinir senha" onClick={() => onReset()}><KeyRound className="w-4 h-4" /></IconBtn>}
             </>
+          )}
+          {actorIsGeral && !isInvite && (u.access_level === "admin_geral" || u.is_master) && (
+            <IconBtn title={u.is_master ? "Remover perfil Master" : "Conceder perfil Master"} onClick={() => onToggleMaster(u)}>
+              {u.is_master ? <StarOff className="w-4 h-4 text-amber-300" /> : <Star className="w-4 h-4" />}
+            </IconBtn>
           )}
           {actorIsGeral && !isInvite && <IconBtn title="Histórico" onClick={() => onAudit(u)}><History className="w-4 h-4" /></IconBtn>}
         </div>
