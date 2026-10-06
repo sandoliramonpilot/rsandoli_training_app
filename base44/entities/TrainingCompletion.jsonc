@@ -1,0 +1,53 @@
+{
+  "name": "TrainingCompletion",
+  "type": "object",
+  "properties": {
+    "pilot_id": {
+      "type": "string",
+      "title": "ID do piloto"
+    },
+    "pilot_name": {
+      "type": "string",
+      "title": "Nome do piloto (snapshot)"
+    },
+    "training_document_id": {
+      "type": "string",
+      "title": "ID do documento de treinamento"
+    },
+    "training_title": {
+      "type": "string",
+      "title": "T\u00edtulo do treinamento (snapshot)"
+    },
+    "discipline": {
+      "type": "string",
+      "title": "Disciplina"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed"
+      ],
+      "default": "pending",
+      "title": "Status da conclus\u00e3o"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data de conclus\u00e3o"
+    },
+    "score": {
+      "type": "number",
+      "title": "Aproveitamento (%)"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Observa\u00e7\u00f5es"
+    }
+  },
+  "required": [
+    "pilot_id",
+    "training_document_id",
+    "status"
+  ]
+}

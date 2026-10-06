@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
 import { ACADEMY_DISCIPLINES } from "@/lib/academyData";
 import BackToDashboard from "@/components/BackToDashboard";
+import AcademyProgress from "@/components/academy/AcademyProgress";
 import { GraduationCap, Crown, Award, BarChart3, Cog, Joystick, Monitor, Gauge, Siren, Upload, FileText, Loader2, X, AlertTriangle } from "lucide-react";
 
 const ICONS = { sistemas: Cog, helipilot: Joystick, idu680: Monitor, limitacoes: Gauge, briefing_emergencia: Siren };
@@ -98,6 +99,9 @@ export default function Treinamentos() {
         <StatCard icon={Award} label="Áreas concluídas" value={completedCount} accent="text-emerald-400" />
         <StatCard icon={Cog} label="Sistemas cobertos" value="10+" accent="text-sky-400" />
       </div>
+
+      {/* Progress panel */}
+      <AcademyProgress />
 
       {/* Discipline tabs */}
       <div className="flex flex-wrap gap-2">
