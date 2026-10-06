@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { QRH_CATEGORIES } from "@/lib/qrhData";
+import AlertsPanel from "@/components/dashboard/AlertsPanel";
 import { Plane, BookOpen, Clock, TrendingUp, AlertTriangle, Plus, CheckCircle2, Wrench, Siren, Library, GraduationCap, ChevronRight, Award, ClipboardCheck, Users, HelpCircle } from "lucide-react";
 
 function fmtHours(min) {
@@ -80,6 +81,8 @@ export default function Dashboard() {
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">Controle e indicações</h1>
         <p className="text-slate-400 mt-2 text-sm">Sistema integrado de treinamento, procedimentos e consulta operacional para helicópteros.</p>
       </header>
+
+      <AlertsPanel />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
