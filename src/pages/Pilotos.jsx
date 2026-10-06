@@ -11,7 +11,9 @@ import {
 import {
   ROLE_LABELS, safeParse, collectExpiries, nextCriticalExpiry,
   EXPIRY_COLORS, LICENSE_TYPES, CERTIFICATE_TYPES, DOC_CATEGORIES,
+  REGISTRATION_STATUS_LABELS, REGISTRATION_STATUS_STYLES,
 } from "@/lib/pilotUtils";
+import NewPilotForm from "@/components/pilots/NewPilotForm";
 
 export default function Pilotos() {
   const [pilots, setPilots] = useState(null);
@@ -182,7 +184,7 @@ export default function Pilotos() {
       )}
 
       {showForm && (
-        <PilotForm
+        <NewPilotForm
           me={me}
           onClose={() => setShowForm(false)}
           onDone={() => { setShowForm(false); load(); }}
@@ -740,39 +742,6 @@ function FormActions({ saving, onCancel }) {
         {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando…</> : <><CheckCircle2 className="w-4 h-4" /> Salvar</>}
       </button>
     </div>
-  );
-}
-
-// ---------- NEW PILOT FORM ----------
-function PilotForm({ me, onClose, onDone }) {
-  const [f, setF] = useState({ full_name: "", war_name: "", registration: "", role: "copilot", base: "", company: "", email: "", phone: "", status: "active" });
-  const [saving, setSaving] = useState(false);
-  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
-  const submit = async (e) => {
-    e.preventDefault();
-    if (!f.full_name) return;
-    setSaving(true);
-    try {
-      await base44.entities.Pilot.create({ ...f, approval_status: "approved" });
-      onDone();
-    } finally { setSaving(false); }
-  };
-  return (
-    <Modal onClose={onClose} title="Novo Piloto">
-      <form onSubmit={submit} className="space-y-4">
-        <div className="grid sm:grid-cols-2 gap-3">
-          <Field label="Nome completo *"><input className={inputCls} value={f.full_name} onChange={set("full_name")} /></Field>
-          <Field label="Nome de guerra"><input className={inputCls} value={f.war_name} onChange={set("war_name")} /></Field>
-          <Field label="#CANAC/CPF"><input className={inputCls} value={f.registration} onChange={set("registration")} /></Field>
-          <Field label="Função"><select className={inputCls} value={f.role} onChange={set("role")}>{Object.entries(ROLE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
-          <Field label="Base operacional"><input className={inputCls} value={f.base} onChange={set("base")} /></Field>
-          <Field label="Empresa"><input className={inputCls} value={f.company} onChange={set("company")} /></Field>
-          <Field label="E-mail"><input className={inputCls} value={f.email} onChange={set("email")} /></Field>
-          <Field label="Telefone"><input className={inputCls} value={f.phone} onChange={set("phone")} /></Field>
-        </div>
-        <FormActions saving={saving} onCancel={onClose} />
-      </form>
-    </Modal>
   );
 }
 

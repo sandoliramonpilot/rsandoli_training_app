@@ -27,6 +27,15 @@
       "type": "string",
       "title": "RG"
     },
+    "rg_issuer": {
+      "type": "string",
+      "title": "\u00d3rg\u00e3o emissor do RG"
+    },
+    "rg_issue_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de emiss\u00e3o do RG"
+    },
     "registration": {
       "type": "string",
       "title": "#CANAC/CPF"
@@ -45,15 +54,71 @@
     },
     "phone": {
       "type": "string",
-      "title": "Telefone"
+      "title": "Telefone celular"
+    },
+    "phone_alt": {
+      "type": "string",
+      "title": "Telefone alternativo"
     },
     "email": {
       "type": "string",
-      "title": "E-mail"
+      "title": "E-mail de contato"
+    },
+    "email_login": {
+      "type": "string",
+      "title": "E-mail de login (somente leitura, origina da conta)"
+    },
+    "emergency_contact_name": {
+      "type": "string",
+      "title": "Contato de emerg\u00eancia \u2014 nome"
+    },
+    "emergency_contact_phone": {
+      "type": "string",
+      "title": "Contato de emerg\u00eancia \u2014 telefone"
+    },
+    "emergency_contact_relation": {
+      "type": "string",
+      "title": "Contato de emerg\u00eancia \u2014 rela\u00e7\u00e3o/v\u00ednculo"
     },
     "address": {
       "type": "string",
-      "title": "Endere\u00e7o"
+      "title": "Endere\u00e7o (texto livre \u2014 legado)"
+    },
+    "cep": {
+      "type": "string",
+      "title": "CEP"
+    },
+    "logradouro": {
+      "type": "string",
+      "title": "Logradouro"
+    },
+    "address_number": {
+      "type": "string",
+      "title": "N\u00famero"
+    },
+    "address_complement": {
+      "type": "string",
+      "title": "Complemento"
+    },
+    "bairro": {
+      "type": "string",
+      "title": "Bairro"
+    },
+    "city": {
+      "type": "string",
+      "title": "Cidade"
+    },
+    "state": {
+      "type": "string",
+      "title": "Estado (UF)"
+    },
+    "country": {
+      "type": "string",
+      "title": "Pa\u00eds"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "ID do usu\u00e1rio vinculado (interno, imut\u00e1vel)"
     },
     "role": {
       "type": "string",
@@ -62,27 +127,55 @@
         "copilot",
         "instructor",
         "trainee",
-        "manager"
+        "manager",
+        "first_officer",
+        "pilot_student",
+        "instructor_eventual",
+        "pilot_collaborator"
       ],
       "default": "copilot",
-      "title": "Fun\u00e7\u00e3o"
+      "title": "Fun\u00e7\u00e3o principal"
+    },
+    "role_secondary": {
+      "type": "string",
+      "title": "Fun\u00e7\u00f5es secund\u00e1rias (JSON)"
+    },
+    "functions_exercised": {
+      "type": "string",
+      "title": "Fun\u00e7\u00f5es exercidas com situa\u00e7\u00e3o e datas (JSON)"
     },
     "base": {
       "type": "string",
       "title": "Base operacional"
     },
+    "unit": {
+      "type": "string",
+      "title": "Unidade"
+    },
+    "organization": {
+      "type": "string",
+      "title": "Organiza\u00e7\u00e3o"
+    },
     "company": {
       "type": "string",
-      "title": "Empresa"
+      "title": "Empresa (legado)"
     },
     "admission_date": {
       "type": "string",
       "format": "date",
-      "title": "Data de admiss\u00e3o"
+      "title": "Data de admiss\u00e3o ou in\u00edcio"
     },
     "anac_code": {
       "type": "string",
-      "title": "C\u00f3digo ANAC"
+      "title": "C\u00f3digo ANAC/CANAC"
+    },
+    "license_anac": {
+      "type": "string",
+      "title": "N\u00famero da licen\u00e7a ANAC"
+    },
+    "category": {
+      "type": "string",
+      "title": "Categoria da licen\u00e7a"
     },
     "status": {
       "type": "string",
@@ -91,11 +184,51 @@
         "inactive"
       ],
       "default": "active",
-      "title": "Status"
+      "title": "Status (legado \u2014 usar registration_status)"
+    },
+    "registration_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "vacation",
+        "leave",
+        "training",
+        "pending"
+      ],
+      "default": "active",
+      "title": "Situa\u00e7\u00e3o cadastral"
+    },
+    "registration_status_start": {
+      "type": "string",
+      "format": "date",
+      "title": "In\u00edcio da situa\u00e7\u00e3o cadastral"
+    },
+    "registration_status_end": {
+      "type": "string",
+      "format": "date",
+      "title": "T\u00e9rmino previsto da situa\u00e7\u00e3o cadastral"
+    },
+    "registration_status_reason": {
+      "type": "string",
+      "title": "Motivo da situa\u00e7\u00e3o cadastral"
+    },
+    "operational_restriction": {
+      "type": "string",
+      "title": "Restri\u00e7\u00e3o operacional"
     },
     "hours": {
       "type": "string",
       "title": "Horas (JSON)"
+    },
+    "hours_ref_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de refer\u00eancia das horas"
+    },
+    "hours_source": {
+      "type": "string",
+      "title": "Fonte das horas (declarada | importada | aprovada)"
     },
     "licenses": {
       "type": "string",
@@ -104,6 +237,18 @@
     "certificates": {
       "type": "string",
       "title": "Certificados e cursos (JSON)"
+    },
+    "cma": {
+      "type": "string",
+      "title": "CMA \u2014 Certificado M\u00e9dico Aeron\u00e1utico (JSON)"
+    },
+    "aircraft_endorsements": {
+      "type": "string",
+      "title": "Aeronaves e endossos (JSON)"
+    },
+    "experience": {
+      "type": "string",
+      "title": "Experi\u00eancia operacional (JSON)"
     },
     "documents": {
       "type": "string",
