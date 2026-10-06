@@ -143,9 +143,11 @@ export default function Treinamentos() {
               docs={trainingDocs.filter((d) => d.chapter === ch.id)}
               canEdit={canEdit}
               uploading={uploading && uploadChapter === ch.id}
+              isUploadOpen={uploadChapter === ch.id}
               uploadTitle={uploadTitle}
               setUploadTitle={setUploadTitle}
               onUploadClick={() => setUploadChapter(ch.id)}
+              onCancelUpload={() => setUploadChapter(null)}
               onFileSelect={handleUpload}
             />
           ))}
