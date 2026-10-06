@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import VerifyCodeModal from "@/components/VerifyCodeModal";
+import NewUserForm from "@/components/usuarios/NewUserForm";
 import {
   Users, Search, Plus, Loader2, ShieldCheck, Lock, Unlock, PauseCircle, PlayCircle,
   Ban, Eye, EyeOff, Pencil, History, KeyRound, X, ChevronDown, ChevronUp,
@@ -46,6 +47,9 @@ export default function Usuarios() {
   const [query, setQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [unitFilter, setUnitFilter] = useState("all");
+  const [jobFilter, setJobFilter] = useState("all");
+  const [pilotFilter, setPilotFilter] = useState("all");
   const [modal, setModal] = useState(null); // { mode: 'create'|'edit'|'view', user }
   const [auditUser, setAuditUser] = useState(null);
   const [toast, setToast] = useState("");
@@ -71,15 +75,41 @@ export default function Usuarios() {
     let list = users;
     if (levelFilter !== "all") list = list.filter((u) => u.access_level === levelFilter);
     if (statusFilter !== "all") list = list.filter((u) => u.account_status === statusFilter);
+    if (unitFilter !== "all") list = list.filter((u) => u.unit === unitFilter);
+    if (jobFilter !== "all") list = list.filter((u) => u.job_title === jobFilter);
+    if (pilotFilter !== "all") list = list.filter((u) => u.pilot_status === pilotFilter);
     const q = query.trim().toLowerCase();
     if (q) {
       list = list.filter((u) =>
-        [u.full_name, u.login, u.email, u.registration, u.job_title, u.unit]
+        [u.full_name, u.login, u.email, u.registration, u.job_title, u.unit, u.pilot_canac]
           .filter(Boolean).join(" ").toLowerCase().includes(q)
       );
     }
     return list;
-  }, [users, query, levelFilter, statusFilter]);
+  }, [users, query, levelFilter, statusFilter, unitFilter, jobFilter, pilotFilter]);
+
+  const stats = useMemo(() => {
+    if (!users) return { total: 0, ativas: 0, convites: 0, bloqueadas: 0, suspensas: 0, desativadas: 0, incompletos: 0, sem_vinculo: 0 };
+    return {
+      total: users.length,
+      ativas: users.filter((u) => !u.invite && u.account_status === "ativa").length,
+      convites: users.filter((u) => u.invite || u.account_status === "convite_pendente").length,
+      bloqueadas: users.filter((u) => u.account_status === "bloqueada").length,
+      suspensas: users.filter((u) => u.account_status === "suspensa").length,
+      desativadas: users.filter((u) => u.account_status === "desativada").length,
+      incompletos: users.filter((u) => u.pilot_status === "incompleto").length,
+      sem_vinculo: users.filter((u) => u.pilot_status === "sem_vinculo" && !u.invite).length,
+    };
+  }, [users]);
+
+  const unitOptions = useMemo(() => {
+    if (!users) return [];
+    return [...new Set(users.map((u) => u.unit).filter(Boolean))].sort();
+  }, [users]);
+  const jobOptions = useMemo(() => {
+    if (!users) return [];
+    return [...new Set(users.map((u) => u.job_title).filter(Boolean))].sort();
+  }, [users]);
 
   const call = async (payload) => {
     try {
@@ -185,6 +215,18 @@ export default function Usuarios() {
         </div>
       )}
 
+      {/* Indicadores de resumo */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+        <StatMini label="Total" value={stats.total} tone="text-slate-200" />
+        <StatMini label="Ativas" value={stats.ativas} tone="text-emerald-400" />
+        <StatMini label="Convites" value={stats.convites} tone="text-amber-400" />
+        <StatMini label="Bloqueadas" value={stats.bloqueadas} tone="text-rose-400" />
+        <StatMini label="Suspensas" value={stats.suspensas} tone="text-orange-400" />
+        <StatMini label="Desativadas" value={stats.desativadas} tone="text-slate-500" />
+        <StatMini label="Piloto incompleto" value={stats.incompletos} tone="text-sky-400" />
+        <StatMini label="Sem vínculo" value={stats.sem_vinculo} tone="text-violet-400" />
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px] max-w-md">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -203,6 +245,20 @@ export default function Usuarios() {
           <option value="all">Situação: Todas</option>
           {ACCOUNT_STATUSES.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
+        <select value={unitFilter} onChange={(e) => setUnitFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-slate-300 text-sm">
+          <option value="all">Unidade: Todas</option>
+          {unitOptions.map((u) => <option key={u} value={u}>{u}</option>)}
+        </select>
+        <select value={jobFilter} onChange={(e) => setJobFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-slate-300 text-sm">
+          <option value="all">Função: Todas</option>
+          {jobOptions.map((j) => <option key={j} value={j}>{j}</option>)}
+        </select>
+        <select value={pilotFilter} onChange={(e) => setPilotFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-slate-300 text-sm">
+          <option value="all">Piloto: Todos</option>
+          <option value="completo">Cadastro completo</option>
+          <option value="incompleto">Cadastro incompleto</option>
+          <option value="sem_vinculo">Sem vínculo</option>
+        </select>
       </div>
 
       {filtered.length === 0 ? (
@@ -220,6 +276,7 @@ export default function Usuarios() {
                   <th className="px-4 py-3 font-medium hidden lg:table-cell">Matrícula / Cargo</th>
                   <th className="px-4 py-3 font-medium">Nível de acesso</th>
                   <th className="px-4 py-3 font-medium">Situação</th>
+                  <th className="px-4 py-3 font-medium hidden lg:table-cell">Piloto</th>
                   <th className="px-4 py-3 font-medium hidden md:table-cell">Último acesso</th>
                   <th className="px-4 py-3 font-medium hidden xl:table-cell">Criado em</th>
                   <th className="px-4 py-3 font-medium text-right">Ações</th>
@@ -243,7 +300,15 @@ export default function Usuarios() {
         </div>
       )}
 
-      {modal && (
+      {modal && modal.mode === "create" && (
+        <NewUserForm
+          actorLevel={actorLevel}
+          onClose={() => setModal(null)}
+          onSaved={async (msg) => { setModal(null); await load(); setToast(msg); }}
+          onError={(msg) => setToast(msg)}
+        />
+      )}
+      {modal && modal.mode !== "create" && (
         <UserFormModal
           mode={modal.mode}
           user={modal.user}
@@ -315,6 +380,17 @@ function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onCance
           <span className={`text-xs px-2.5 py-1 rounded-full border ${st}`}>{ACCOUNT_STATUS_LABELS[u.account_status]}</span>
         )}
       </td>
+      <td className="px-4 py-3 hidden lg:table-cell">
+        {isInvite ? (
+          <span className="text-xs text-slate-600">—</span>
+        ) : u.pilot_status === "completo" ? (
+          <span className="text-xs px-2 py-0.5 rounded-full border border-emerald-500/30 text-emerald-300 bg-emerald-500/10">Completo</span>
+        ) : u.pilot_status === "incompleto" ? (
+          <span className="text-xs px-2 py-0.5 rounded-full border border-sky-500/30 text-sky-300 bg-sky-500/10">Incompleto</span>
+        ) : (
+          <span className="text-xs px-2 py-0.5 rounded-full border border-slate-600/40 text-slate-500 bg-slate-700/20">Sem vínculo</span>
+        )}
+      </td>
       <td className="px-4 py-3 hidden md:table-cell text-slate-400 text-xs">
         {u.last_login_at ? new Date(u.last_login_at).toLocaleString("pt-BR") : "—"}
       </td>
@@ -350,6 +426,15 @@ function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onCance
         </div>
       </td>
     </tr>
+  );
+}
+
+function StatMini({ label, value, tone }) {
+  return (
+    <div className="bg-[#1A1D25] rounded-xl border border-slate-700/60 px-3 py-2.5">
+      <p className={`text-xl font-bold tracking-tight ${tone}`}>{value}</p>
+      <p className="text-[10px] text-slate-500 mt-0.5 truncate">{label}</p>
+    </div>
   );
 }
 

@@ -104,6 +104,24 @@ export default async function (req) {
           admin_notes: canManage ? (i.admin_notes || null) : null,
         }));
 
+      // Vínculo com pilotos — linka por user_id ou e-mail e inclui situação do cadastro
+      const pilots = await base44.asServiceRole.entities.Pilot.list().catch(() => []);
+      const pilotsByUserId = new Map(pilots.filter((p) => p.user_id).map((p) => [p.user_id, p]));
+      const pilotsByEmail = new Map(
+        pilots.filter((p) => p.email).map((p) => [(p.email || "").toLowerCase(), p])
+      );
+      for (const u of sanitized) {
+        let pilot = pilotsByUserId.get(u.id) || (u.email ? pilotsByEmail.get(u.email.toLowerCase()) : null);
+        if (pilot && !pilot.user_id) {
+          await base44.asServiceRole.entities.Pilot.update(pilot.id, { user_id: u.id }).catch(() => {});
+        }
+        u.pilot_id = pilot?.id || null;
+        u.pilot_status = pilot
+          ? (pilot.approval_status === "pending" ? "incompleto" : "completo")
+          : "sem_vinculo";
+        u.pilot_canac = pilot?.anac_code || pilot?.registration || null;
+      }
+
       return Response.json({ users: [...pending, ...sanitized], actorLevel });
     }
 
@@ -166,21 +184,31 @@ export default async function (req) {
       }
       await base44.asServiceRole.entities.UserInvite.create(invitePayload);
 
-      // Cria registro de piloto vinculado (migração usuário→piloto, item 8).
-      // O piloto é criado mesmo antes do aceite do convite, garantindo integridade e relacionamento.
-      try {
-        await base44.asServiceRole.entities.Pilot.create({
-          full_name: fullName,
-          email,
-          registration: body.registration ? String(body.registration).trim() : null,
-          role: "copilot",
-          status: "active",
-          approval_status: "approved",
-          anac_code: null,
-        });
-      } catch (pilotErr) {
-        // Falha na criação do piloto não deve impedir o convite; registra no log.
-        await logAudit(base44, user, { email, full_name: fullName }, "Criação de usuário", `Piloto não criado: ${pilotErr?.message || pilotErr}`);
+      // Vínculo com piloto — procura cadastro existente por e-mail antes de criar (item 10).
+      const allPilots = await base44.asServiceRole.entities.Pilot.list().catch(() => []);
+      const existingByEmail = allPilots.filter((p) => (p.email || "").toLowerCase() === email);
+      if (existingByEmail.length === 1) {
+        // Correspondência inequívoca — não cria duplicidade; será linkado por user_id ao aceitar o convite.
+        await logAudit(base44, user, { email, full_name: fullName }, "Vínculo com piloto", `Piloto existente vinculado: ${existingByEmail[0].full_name}`);
+      } else if (existingByEmail.length === 0) {
+        // Sem correspondência — cria novo piloto marcado como incompleto (item 10.5).
+        try {
+          await base44.asServiceRole.entities.Pilot.create({
+            full_name: fullName,
+            email,
+            registration: body.registration ? String(body.registration).trim() : null,
+            cpf: body.cpf ? String(body.cpf).trim() : null,
+            anac_code: body.canac ? String(body.canac).trim() : null,
+            role: "copilot",
+            status: "active",
+            approval_status: "pending",
+          });
+        } catch (pilotErr) {
+          await logAudit(base44, user, { email, full_name: fullName }, "Criação de usuário", `Piloto não criado: ${pilotErr?.message || pilotErr}`);
+        }
+      } else {
+        // Múltiplas correspondências — não vincula automaticamente; marca para revisão (item 10.6).
+        await logAudit(base44, user, { email, full_name: fullName }, "Vínculo com piloto", `Múltiplas correspondências (${existingByEmail.length}) — revisão necessária`);
       }
 
       await logAudit(
@@ -191,6 +219,32 @@ export default async function (req) {
         `Convite enviado — Nível: ${accessLevel} | Login: ${login}`
       );
       return Response.json({ ok: true, inviteSent: true, message: "Convite enviado. O convidado receberá um e-mail para concluir o cadastro." });
+    }
+
+    // ---------- FIND PILOT MATCHES ----------
+    if (action === "find_pilot_matches") {
+      const email = String(body.email || "").trim().toLowerCase();
+      const cpf = String(body.cpf || "").trim();
+      const canac = String(body.canac || "").trim();
+      const registration = String(body.registration || "").trim();
+      const pilots = await base44.asServiceRole.entities.Pilot.list().catch(() => []);
+      const matches = pilots
+        .filter((p) => {
+          if (email && (p.email || "").toLowerCase() === email) return true;
+          if (cpf && p.cpf === cpf) return true;
+          if (canac && (p.anac_code === canac || p.registration === canac)) return true;
+          if (registration && p.registration === registration) return true;
+          return false;
+        })
+        .map((p) => ({
+          id: p.id,
+          full_name: p.full_name,
+          email: p.email,
+          registration: p.registration,
+          anac_code: p.anac_code,
+          user_id: p.user_id || null,
+        }));
+      return Response.json({ matches });
     }
 
 // ---------- CANCEL INVITE ----------
