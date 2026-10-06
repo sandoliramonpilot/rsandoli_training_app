@@ -157,7 +157,7 @@ export default function Treinamentos() {
   );
 }
 
-function ChapterCard({ chapter, docs, canEdit, uploading, uploadTitle, setUploadTitle, onUploadClick, onFileSelect }) {
+function ChapterCard({ chapter, docs, canEdit, uploading, isUploadOpen, uploadTitle, setUploadTitle, onUploadClick, onCancelUpload, onFileSelect }) {
   const fileInputRef = React.useRef(null);
   return (
     <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 overflow-hidden">
@@ -197,11 +197,11 @@ function ChapterCard({ chapter, docs, canEdit, uploading, uploadTitle, setUpload
 
         {canEdit && (
           <div className="pt-2 border-t border-slate-700/40">
-            {uploading && uploadChapter === chapter.id ? (
+            {uploading ? (
               <div className="flex items-center gap-2 text-sm text-slate-400 py-2">
                 <Loader2 className="w-4 h-4 animate-spin text-amber-400" /> Enviando arquivo…
               </div>
-            ) : uploadChapter === chapter.id ? (
+            ) : isUploadOpen ? (
               <div className="space-y-2 py-1">
                 <input
                   type="text"
@@ -219,7 +219,7 @@ function ChapterCard({ chapter, docs, canEdit, uploading, uploadTitle, setUpload
                   >
                     <Upload className="w-3.5 h-3.5" /> Selecionar PDF/PPSX
                   </button>
-                  <button onClick={() => setUploadChapter(null)} className="text-xs text-slate-500 hover:text-slate-300">
+                  <button onClick={onCancelUpload} className="text-xs text-slate-500 hover:text-slate-300">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
