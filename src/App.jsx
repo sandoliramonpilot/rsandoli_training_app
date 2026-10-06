@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import TermsModal from "@/components/TermsModal";
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -29,6 +31,14 @@ import OAuthConsent from '@/pages/OAuthConsent';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const [termsAccepted, setTermsAccepted] = useState(
+    () => sessionStorage.getItem("terms_accepted") === "true"
+  );
+
+  // Bloqueia todo o acesso até o aceite dos termos
+  if (!termsAccepted) {
+    return <TermsModal onAccept={() => setTermsAccepted(true)} />;
+  }
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {

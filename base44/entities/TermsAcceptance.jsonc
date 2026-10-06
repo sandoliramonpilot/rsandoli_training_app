@@ -1,0 +1,53 @@
+{
+  "name": "TermsAcceptance",
+  "type": "object",
+  "properties": {
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data e hora do aceite"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "ID do usu\u00e1rio (ap\u00f3s login, quando aplic\u00e1vel)"
+    },
+    "user_email": {
+      "type": "string",
+      "title": "E-mail do usu\u00e1rio"
+    },
+    "ip_address": {
+      "type": "string",
+      "title": "Endere\u00e7o IP"
+    },
+    "device_info": {
+      "type": "string",
+      "title": "Informa\u00e7\u00f5es do dispositivo"
+    },
+    "user_agent": {
+      "type": "string",
+      "title": "User-Agent"
+    },
+    "session_id": {
+      "type": "string",
+      "title": "ID da sess\u00e3o"
+    },
+    "terms_version": {
+      "type": "string",
+      "title": "Vers\u00e3o dos termos",
+      "default": "v1"
+    }
+  },
+  "required": [
+    "accepted_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {},
+    "update": false,
+    "delete": false
+  }
+}
