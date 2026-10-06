@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { can } from "@/lib/accessControl";
+import BackToDashboard from "@/components/BackToDashboard";
 import { Plus, X, Plane, Trash2, Edit3, Wrench, CheckCircle2, AlertTriangle } from "lucide-react";
 
 const STATUS = {
@@ -21,11 +24,14 @@ const emptyForm = {
 };
 
 export default function Aircraft() {
+  const { user } = useAuth();
   const [aircraft, setAircraft] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const canEdit = can(user, "aeronaves", "editar");
+  const canCreate = can(user, "aeronaves", "criar");
 
   const load = async () => setAircraft(await base44.entities.Aircraft.list().catch(() => []));
   useEffect(() => { load(); }, []);
@@ -89,12 +95,17 @@ export default function Aircraft() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1">Aeronaves</h1>
           <p className="text-slate-500 mt-2 text-sm">{aircraft.length} helicóptero(s) cadastrado(s)</p>
         </div>
-        <button
-          onClick={openNew}
-          className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> Nova aeronave
-        </button>
+        <div className="flex items-center gap-2">
+          <BackToDashboard />
+          {canCreate && (
+            <button
+              onClick={openNew}
+              className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Nova aeronave
+            </button>
+          )}
+        </div>
       </header>
 
       {aircraft.length === 0 ? (
@@ -131,12 +142,16 @@ export default function Aircraft() {
                     {a.color && <p className="text-[11px] text-slate-400 capitalize">Cor: {a.color}</p>}
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => openEdit(a)} className="p-2 text-slate-400 hover:text-sky-600 rounded-lg hover:bg-sky-50 transition-colors">
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => remove(a)} className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {canEdit && (
+                      <>
+                        <button onClick={() => openEdit(a)} className="p-2 text-slate-400 hover:text-sky-600 rounded-lg hover:bg-sky-50 transition-colors">
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => remove(a)} className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 

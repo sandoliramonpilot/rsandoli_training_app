@@ -1,0 +1,65 @@
+{
+  "name": "TrainingDocument",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "T\u00edtulo"
+    },
+    "discipline": {
+      "type": "string",
+      "title": "Disciplina (ID)"
+    },
+    "chapter": {
+      "type": "string",
+      "title": "Cap\u00edtulo"
+    },
+    "file_type": {
+      "type": "string",
+      "enum": [
+        "pdf",
+        "ppsx",
+        "pptx",
+        "video",
+        "image",
+        "other"
+      ],
+      "title": "Tipo de arquivo"
+    },
+    "file_uri": {
+      "type": "string",
+      "title": "URI do arquivo privado"
+    },
+    "file_name": {
+      "type": "string",
+      "title": "Nome do arquivo"
+    },
+    "file_size": {
+      "type": "number",
+      "title": "Tamanho (bytes)"
+    },
+    "description": {
+      "type": "string",
+      "title": "Descri\u00e7\u00e3o"
+    },
+    "uploaded_by": {
+      "type": "string",
+      "title": "Enviado por"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived"
+      ],
+      "default": "active",
+      "title": "Status"
+    }
+  },
+  "required": [
+    "title",
+    "discipline",
+    "file_uri",
+    "file_type"
+  ]
+}

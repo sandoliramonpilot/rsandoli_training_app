@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { can } from "@/lib/accessControl";
+import BackToDashboard from "@/components/BackToDashboard";
 import { Plus, X, Plane, Clock, Search, Trash2, Edit3 } from "lucide-react";
 
 const FLIGHT_TYPE_LABELS = {
@@ -58,6 +61,7 @@ function toInt(v) {
 }
 
 export default function FlightLog() {
+  const { user } = useAuth();
   const [flights, setFlights] = useState(null);
   const [aircraft, setAircraft] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -65,6 +69,8 @@ export default function FlightLog() {
   const [form, setForm] = useState(emptyForm);
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(false);
+  const canEdit = can(user, "diario_bordo", "editar");
+  const canCreate = can(user, "diario_bordo", "criar");
 
   const load = async () => {
     const [f, a] = await Promise.all([
@@ -152,12 +158,17 @@ export default function FlightLog() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1">Diário de Bordo</h1>
           <p className="text-slate-500 mt-2 text-sm">{filtered.length} voos · {fmtHours(totalMinutes)} no total filtrado</p>
         </div>
-        <button
-          onClick={openNew}
-          className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> Novo voo
-        </button>
+        <div className="flex items-center gap-2">
+          <BackToDashboard />
+          {canCreate && (
+            <button
+              onClick={openNew}
+              className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Novo voo
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="relative max-w-md">
@@ -215,12 +226,16 @@ export default function FlightLog() {
                     <td className="px-5 py-3 text-right font-semibold text-slate-900 whitespace-nowrap">{fmtHours(f.flight_time_minutes)}</td>
                     <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{f.landings ?? "—"}</td>
                     <td className="px-5 py-3 text-right whitespace-nowrap">
-                      <button onClick={() => openEdit(f)} className="p-1.5 text-slate-400 hover:text-sky-600 rounded-md hover:bg-sky-50 transition-colors">
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => remove(f)} className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-rose-50 transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {canEdit && (
+                        <>
+                          <button onClick={() => openEdit(f)} className="p-1.5 text-slate-400 hover:text-sky-600 rounded-md hover:bg-sky-50 transition-colors">
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => remove(f)} className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-rose-50 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}

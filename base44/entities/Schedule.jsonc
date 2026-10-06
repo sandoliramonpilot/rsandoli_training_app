@@ -1,0 +1,89 @@
+{
+  "name": "Schedule",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data"
+    },
+    "start_time": {
+      "type": "string",
+      "title": "Hora de in\u00edcio (HH:MM)"
+    },
+    "end_time": {
+      "type": "string",
+      "title": "Hora de t\u00e9rmino (HH:MM)"
+    },
+    "period": {
+      "type": "string",
+      "enum": [
+        "manha",
+        "tarde",
+        "noite",
+        "integral",
+        "outro"
+      ],
+      "default": "integral",
+      "title": "Per\u00edodo"
+    },
+    "aircraft_id": {
+      "type": "string",
+      "title": "Aeronave (ID)"
+    },
+    "aircraft_registration": {
+      "type": "string",
+      "title": "Matr\u00edcula (snapshot)"
+    },
+    "crew_pilot_id": {
+      "type": "string",
+      "title": "Piloto (ID)"
+    },
+    "crew_pilot_name": {
+      "type": "string",
+      "title": "Nome do piloto"
+    },
+    "crew_copilot_id": {
+      "type": "string",
+      "title": "Copiloto (ID)"
+    },
+    "crew_copilot_name": {
+      "type": "string",
+      "title": "Nome do copiloto"
+    },
+    "base": {
+      "type": "string",
+      "title": "Base"
+    },
+    "mission": {
+      "type": "string",
+      "title": "Miss\u00e3o ou atividade"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planejada",
+        "confirmada",
+        "em_andamento",
+        "concluida",
+        "cancelada"
+      ],
+      "default": "planejada",
+      "title": "Status"
+    },
+    "observations": {
+      "type": "string",
+      "title": "Observa\u00e7\u00f5es"
+    },
+    "created_by_name": {
+      "type": "string",
+      "title": "Criado por"
+    }
+  },
+  "required": [
+    "date",
+    "aircraft_id",
+    "crew_pilot_name",
+    "mission"
+  ]
+}

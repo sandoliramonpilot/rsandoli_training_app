@@ -1,23 +1,75 @@
 import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { can } from "@/lib/accessControl";
 import { ACADEMY_DISCIPLINES } from "@/lib/academyData";
-import { GraduationCap, Crown, Award, BarChart3, Cog, Joystick, Monitor, Gauge } from "lucide-react";
+import BackToDashboard from "@/components/BackToDashboard";
+import { GraduationCap, Crown, Award, BarChart3, Cog, Joystick, Monitor, Gauge, Siren, Upload, FileText, Loader2, X, AlertTriangle } from "lucide-react";
 
-const ICONS = { sistemas: Cog, helipilot: Joystick, idu680: Monitor, limitacoes: Gauge };
+const ICONS = { sistemas: Cog, helipilot: Joystick, idu680: Monitor, limitacoes: Gauge, briefing_emergencia: Siren };
 
 export default function Treinamentos() {
+  const { user } = useAuth();
   const [activeDiscipline, setActiveDiscipline] = useState("sistemas");
+  const [trainingDocs, setTrainingDocs] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadChapter, setUploadChapter] = useState(null);
+  const [uploadTitle, setUploadTitle] = useState("");
 
   const discipline = ACADEMY_DISCIPLINES.find((d) => d.id === activeDiscipline) || ACADEMY_DISCIPLINES[0];
+  const canEdit = can(user, "treinamentos", "editar");
 
   const completedCount = 0;
   const overallProgress = 0;
 
+  const loadDocs = async () => {
+    const docs = await base44.entities.TrainingDocument.filter({ discipline: "briefing_emergencia", status: "active" }).catch(() => []);
+    setTrainingDocs(docs);
+  };
+  useEffect(() => { loadDocs(); }, []);
+
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    const file = e.target.files?.[0];
+    if (!file || !uploadChapter) return;
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (!["pdf", "ppsx", "pptx"].includes(ext)) {
+      alert("Formato não suportado. Use PDF, PPSX ou PPTX.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+      await base44.entities.TrainingDocument.create({
+        title: uploadTitle || file.name.replace(/\.[^/.]+$/, ""),
+        discipline: "briefing_emergencia",
+        chapter: uploadChapter,
+        file_type: ext === "pdf" ? "pdf" : ext === "ppsx" ? "ppsx" : "pptx",
+        file_uri,
+        file_name: file.name,
+        file_size: file.size,
+        uploaded_by: user?.full_name || user?.email || "",
+      });
+      setUploadTitle("");
+      setUploadChapter(null);
+      await loadDocs();
+    } catch (err) {
+      alert("Erro ao enviar arquivo: " + (err.message || "tente novamente."));
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Academy</p>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">AW119Kx Academy</h1>
-        <p className="text-slate-400 mt-2 text-sm">Instrução teórica e treinamento operacional — disciplinas, sistemas e capacitação contínua.</p>
+      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Academy</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">AW119Kx Academy</h1>
+          <p className="text-slate-400 mt-2 text-sm">Instrução teórica e treinamento operacional — disciplinas, sistemas e capacitação contínua.</p>
+        </div>
+        <BackToDashboard />
       </header>
 
       {/* Featured banner */}
@@ -69,6 +121,14 @@ export default function Treinamentos() {
       {/* Discipline content */}
       <div>
         <p className="text-slate-400 text-sm mb-4">{discipline.description}</p>
+
+        {discipline.notice && (
+          <div className="mb-4 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{discipline.notice}</span>
+          </div>
+        )}
+
         <div className="space-y-3">
           {discipline.categories?.map((c) => (
             <CategoryCard key={c.title} title={c.title} items={c.topics} />
@@ -76,7 +136,102 @@ export default function Treinamentos() {
           {discipline.sections?.map((s) => (
             <SectionCard key={s.title} title={s.title} items={s.items} />
           ))}
+          {discipline.chapters?.map((ch) => (
+            <ChapterCard
+              key={ch.id}
+              chapter={ch}
+              docs={trainingDocs.filter((d) => d.chapter === ch.id)}
+              canEdit={canEdit}
+              uploading={uploading && uploadChapter === ch.id}
+              uploadTitle={uploadTitle}
+              setUploadTitle={setUploadTitle}
+              onUploadClick={() => setUploadChapter(ch.id)}
+              onFileSelect={handleUpload}
+            />
+          ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ChapterCard({ chapter, docs, canEdit, uploading, uploadTitle, setUploadTitle, onUploadClick, onFileSelect }) {
+  const fileInputRef = React.useRef(null);
+  return (
+    <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 overflow-hidden">
+      <div className="px-5 py-3.5 bg-[#12141A] border-b border-slate-700/60">
+        <h3 className="font-semibold text-sm text-slate-100">{chapter.title}</h3>
+      </div>
+      <div className="px-5 py-4 space-y-3">
+        <ul className="space-y-2">
+          {chapter.items.map((t, i) => (
+            <li key={i} className="text-sm text-slate-300 flex items-start gap-2.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" /> {t}
+            </li>
+          ))}
+        </ul>
+
+        {docs.length > 0 && (
+          <div className="space-y-2 pt-2 border-t border-slate-700/40">
+            <p className="text-xs uppercase tracking-wider text-slate-500 font-medium pt-2">Documentos anexados</p>
+            {docs.map((d) => (
+              <a
+                key={d.id}
+                href="#"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: d.file_uri });
+                  window.open(signed_url, "_blank");
+                }}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-slate-700/30 border border-slate-700/40 hover:border-amber-500/40 transition-colors text-sm"
+              >
+                <FileText className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="text-slate-300 truncate">{d.title}</span>
+                <span className="text-xs text-slate-500 ml-auto uppercase">{d.file_type}</span>
+              </a>
+            ))}
+          </div>
+        )}
+
+        {canEdit && (
+          <div className="pt-2 border-t border-slate-700/40">
+            {uploading && uploadChapter === chapter.id ? (
+              <div className="flex items-center gap-2 text-sm text-slate-400 py-2">
+                <Loader2 className="w-4 h-4 animate-spin text-amber-400" /> Enviando arquivo…
+              </div>
+            ) : uploadChapter === chapter.id ? (
+              <div className="space-y-2 py-1">
+                <input
+                  type="text"
+                  value={uploadTitle}
+                  onChange={(e) => setUploadTitle(e.target.value)}
+                  placeholder="Título do documento (opcional)"
+                  className="w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500"
+                />
+                <div className="flex items-center gap-2">
+                  <input ref={fileInputRef} type="file" accept=".pdf,.ppsx,.pptx" onChange={onFileSelect} className="hidden" />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500 text-slate-900 text-xs font-medium hover:bg-amber-400 transition-colors"
+                  >
+                    <Upload className="w-3.5 h-3.5" /> Selecionar PDF/PPSX
+                  </button>
+                  <button onClick={() => setUploadChapter(null)} className="text-xs text-slate-500 hover:text-slate-300">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={onUploadClick}
+                className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-amber-400 transition-colors py-1"
+              >
+                <Upload className="w-3.5 h-3.5" /> Anexar documento (.pdf, .ppsx)
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

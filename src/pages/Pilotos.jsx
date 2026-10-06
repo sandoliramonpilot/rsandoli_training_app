@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { can } from "@/lib/accessControl";
+import BackToDashboard from "@/components/BackToDashboard";
 import {
   Search, Plus, Users, ChevronLeft, Camera, Star, ShieldCheck,
   Clock, AlertTriangle, CheckCircle2, X, Calendar, Phone, Mail,
@@ -10,9 +12,6 @@ import {
   ROLE_LABELS, safeParse, collectExpiries, nextCriticalExpiry,
   EXPIRY_COLORS, LICENSE_TYPES, CERTIFICATE_TYPES, DOC_CATEGORIES,
 } from "@/lib/pilotUtils";
-
-// user management scope: admins & managers manage everyone; pilots edit only themselves
-const MANAGER_ROLES = ["admin", "instructor", "manager"];
 
 export default function Pilotos() {
   const [pilots, setPilots] = useState(null);
@@ -27,7 +26,7 @@ export default function Pilotos() {
   const [showApprovals, setShowApprovals] = useState(false);
   const [requests, setRequests] = useState([]);
 
-  const isManager = me && MANAGER_ROLES.includes(me.role);
+  const isManager = can(me, "pilotos", "editar");
 
   useEffect(() => {
     base44.auth.me().then((u) => setMe(u)).catch(() => setMe(null));
@@ -85,6 +84,7 @@ export default function Pilotos() {
           <p className="text-slate-400 mt-2 text-sm">Gestão documental, habilitações, vencimentos e experiência operacional.</p>
         </div>
         <div className="flex gap-2">
+          <BackToDashboard />
           {isManager && (
             <button
               onClick={() => { setShowApprovals(true); }}
