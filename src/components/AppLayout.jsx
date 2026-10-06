@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw, FileBarChart, CalendarDays } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw, FileBarChart, CalendarDays, TrendingUp } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
@@ -29,6 +29,7 @@ const navSections = [
     label: "Academy",
     items: [
       { label: "AW119 TRAINING", path: "/aw119-training", icon: Crown, moduleId: "aw119_training", badge: "Premium" },
+      { label: "Dashboard de Progresso", path: "/painel-progresso", icon: TrendingUp, moduleId: "treinamentos" },
       { label: "Treinamentos Gerais", path: "/treinamentos-gerais", icon: GraduationCap, moduleId: "treinamentos_gerais" },
       { label: "Limitações", path: "/limitacoes", icon: Gauge, moduleId: "limitacoes" },
       { label: "Procedimentos Normais", path: "/procedimentos-normais", icon: FileText, moduleId: "procedimentos_normais" },

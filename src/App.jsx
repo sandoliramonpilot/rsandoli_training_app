@@ -27,6 +27,7 @@ import Simulados from '@/pages/Simulados';
 import Usuarios from '@/pages/Usuarios';
 import MeuPerfil from '@/pages/MeuPerfil';
 import Escalas from '@/pages/Escalas';
+import PainelProgresso from '@/pages/PainelProgresso';
 import RequireModule from '@/components/RequireModule';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -98,6 +99,7 @@ const AuthenticatedApp = () => {
         <Route path="/simulados" element={<Simulados />} />
         <Route path="/usuarios" element={<RequireModule moduleId="usuarios"><Usuarios /></RequireModule>} />
         <Route path="/perfil" element={<MeuPerfil />} />
+        <Route path="/painel-progresso" element={<PainelProgresso />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

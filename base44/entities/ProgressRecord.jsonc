@@ -1,0 +1,120 @@
+{
+  "name": "ProgressRecord",
+  "type": "object",
+  "properties": {
+    "pilot_id": {
+      "type": "string",
+      "title": "ID do piloto vinculado"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "ID do usu\u00e1rio (chave de propriedade)"
+    },
+    "content_id": {
+      "type": "string",
+      "title": "ID \u00fanico do conte\u00fado (chave composta m\u00f3dulo__t\u00f3pico__aula)"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": [
+        "modulo",
+        "topico",
+        "aula",
+        "atividade",
+        "avaliacao"
+      ],
+      "default": "aula",
+      "title": "Tipo de conte\u00fado"
+    },
+    "content_title": {
+      "type": "string",
+      "title": "T\u00edtulo do conte\u00fado (snapshot)"
+    },
+    "module_id": {
+      "type": "string",
+      "title": "ID do m\u00f3dulo pai"
+    },
+    "module_title": {
+      "type": "string",
+      "title": "M\u00f3dulo (snapshot)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "nao_iniciado",
+        "em_andamento",
+        "concluido",
+        "revisao_recomendada",
+        "pendente",
+        "vencido",
+        "bloqueado"
+      ],
+      "default": "nao_iniciado",
+      "title": "Status do conte\u00fado"
+    },
+    "time_spent_seconds": {
+      "type": "integer",
+      "default": 0,
+      "title": "Tempo de estudo acumulado (segundos)"
+    },
+    "last_accessed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data e hora do \u00faltimo acesso"
+    },
+    "position": {
+      "type": "string",
+      "title": "Posi\u00e7\u00e3o de retomada (JSON: page, slide, video_time, question, step)"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data e hora da conclus\u00e3o efetiva"
+    },
+    "score": {
+      "type": "number",
+      "title": "Nota ou aproveitamento (%)"
+    },
+    "completion_criteria": {
+      "type": "string",
+      "title": "Crit\u00e9rios de conclus\u00e3o atendidos (JSON)"
+    }
+  },
+  "required": [
+    "user_id",
+    "content_id",
+    "content_type"
+  ],
+  "rls": {
+    "create": null,
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
