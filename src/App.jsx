@@ -25,6 +25,7 @@ import Questoes from '@/pages/Questoes';
 import Simulados from '@/pages/Simulados';
 import Usuarios from '@/pages/Usuarios';
 import MeuPerfil from '@/pages/MeuPerfil';
+import Escalas from '@/pages/Escalas';
 import RequireModule from '@/components/RequireModule';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -90,6 +91,7 @@ const AuthenticatedApp = () => {
         <Route path="/briefing-emergencia" element={<EmConstrucao title="Briefing de Emergência" subtitle="Briefings e procedimentos de emergência." />} />
         <Route path="/gestao" element={<RequireModule moduleId="gestao"><Gestao /></RequireModule>} />
         <Route path="/pilotos" element={<Pilotos />} />
+        <Route path="/escalas" element={<Escalas />} />
         <Route path="/questoes" element={<Questoes />} />
         <Route path="/simulados" element={<Simulados />} />
         <Route path="/usuarios" element={<RequireModule moduleId="usuarios"><Usuarios /></RequireModule>} />

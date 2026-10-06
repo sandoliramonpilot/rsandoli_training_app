@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw, FileBarChart } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw, FileBarChart, CalendarDays } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
@@ -21,6 +21,7 @@ const navSections = [
       { label: "Checklists", path: "/checklist", icon: ClipboardCheck, moduleId: "checklists" },
       { label: "QRH", path: "/qrh", icon: Siren, moduleId: "qrh" },
       { label: "Pilotos", path: "/pilotos", icon: Users, moduleId: "pilotos" },
+      { label: "Escalas", path: "/escalas", icon: CalendarDays, moduleId: "escalas" },
     ],
   },
   {
