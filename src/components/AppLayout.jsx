@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Wind, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw, FileBarChart } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw, FileBarChart } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
@@ -96,9 +96,11 @@ export default function AppLayout() {
 
 function Logo() {
   return (
-    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-      <Wind className="w-6 h-6 text-slate-900" />
-    </div>
+    <img
+      src="https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/8d21e7f79_Logo_APP.png"
+      alt="RSANDOLI PILOTS"
+      className="w-10 h-10 rounded-xl object-cover shadow-lg shadow-amber-500/20"
+    />
   );
 }
 
