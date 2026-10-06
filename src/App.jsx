@@ -14,6 +14,7 @@ import FlightLog from '@/pages/FlightLog';
 import Aircraft from '@/pages/Aircraft';
 import Checklist from '@/pages/Checklist';
 import QRH from '@/pages/QRH';
+import QRHEfis from '@/pages/QRHEfis';
 import Biblioteca from '@/pages/Biblioteca';
 import Treinamentos from '@/pages/Treinamentos';
 import AW119Training from '@/pages/AW119Training';
@@ -79,6 +80,7 @@ const AuthenticatedApp = () => {
         <Route path="/aircraft" element={<Aircraft />} />
         <Route path="/checklist" element={<Checklist />} />
         <Route path="/qrh" element={<QRH />} />
+        <Route path="/qrh-efis" element={<QRHEfis />} />
         <Route path="/biblioteca" element={<Biblioteca />} />
         <Route path="/treinamentos" element={<Treinamentos />} />
         <Route path="/aw119-training" element={<AW119Training />} />

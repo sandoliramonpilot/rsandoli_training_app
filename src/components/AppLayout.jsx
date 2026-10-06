@@ -20,6 +20,7 @@ const navSections = [
     items: [
       { label: "Checklists", path: "/checklist", icon: ClipboardCheck, moduleId: "checklists" },
       { label: "QRH", path: "/qrh", icon: Siren, moduleId: "qrh" },
+      { label: "QRH-EFIS", path: "/qrh-efis", icon: Monitor, moduleId: "qrh_efis" },
       { label: "Pilotos", path: "/pilotos", icon: Users, moduleId: "pilotos" },
       { label: "Escalas", path: "/escalas", icon: CalendarDays, moduleId: "escalas" },
     ],
