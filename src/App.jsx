@@ -41,11 +41,6 @@ const AuthenticatedApp = () => {
     () => sessionStorage.getItem("terms_accepted") === "true"
   );
 
-  // Bloqueia todo o acesso até o aceite dos termos
-  if (!termsAccepted) {
-    return <TermsModal onAccept={() => setTermsAccepted(true)} />;
-  }
-
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -64,6 +59,11 @@ const AuthenticatedApp = () => {
       navigateToLogin();
       return null;
     }
+  }
+
+  // Após autenticação confirmada, exige aceite dos termos antes de liberar o app
+  if (!termsAccepted) {
+    return <TermsModal onAccept={() => setTermsAccepted(true)} />;
   }
 
   // Render the main app

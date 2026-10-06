@@ -33,6 +33,7 @@ export default async function (req) {
     const action = body.action;
     const actorLevel = levelOf(user);
     const canManage = actorLevel === "admin_geral" || actorLevel === "administrador";
+    if (!canManage) return Response.json({ error: "Forbidden" }, { status: 403 });
 
     // ---------- LIST ----------
     if (action === "list") {
@@ -124,8 +125,6 @@ export default async function (req) {
 
       return Response.json({ users: [...pending, ...sanitized], actorLevel });
     }
-
-    if (!canManage) return Response.json({ error: "Forbidden" }, { status: 403 });
 
     // ---------- CREATE ----------
     if (action === "create") {
