@@ -18,6 +18,7 @@ import Biblioteca from '@/pages/Biblioteca';
 import Treinamentos from '@/pages/Treinamentos';
 import AW119Training from '@/pages/AW119Training';
 import TreinamentosGerais from '@/pages/TreinamentosGerais';
+import EmConstrucao from '@/pages/EmConstrucao';
 import Gestao from '@/pages/Gestao';
 import Pilotos from '@/pages/Pilotos';
 import Questoes from '@/pages/Questoes';
@@ -81,6 +82,12 @@ const AuthenticatedApp = () => {
         <Route path="/treinamentos" element={<Treinamentos />} />
         <Route path="/aw119-training" element={<AW119Training />} />
         <Route path="/treinamentos-gerais" element={<TreinamentosGerais />} />
+        <Route path="/limitacoes" element={<EmConstrucao title="Limitações" subtitle="Limitações operacionais do AW119Kx Koala." />} />
+        <Route path="/procedimentos-normais" element={<EmConstrucao title="Procedimentos Normais" subtitle="Procedimentos operacionais padrão (POH)." />} />
+        <Route path="/procedimentos-emergencia" element={<EmConstrucao title="Procedimentos de Emergência" subtitle="Procedimentos anormais e de emergência (QRH)." />} />
+        <Route path="/treinamento-recorrente" element={<EmConstrucao title="Treinamento Recorrente" subtitle="Programa de proficiência e reciclagem periódica." />} />
+        <Route path="/recursos-visuais" element={<EmConstrucao title="Recursos Visuais" subtitle="Mídia, diagramas e materiais de apoio visual." />} />
+        <Route path="/briefing-emergencia" element={<EmConstrucao title="Briefing de Emergência" subtitle="Briefings e procedimentos de emergência." />} />
         <Route path="/gestao" element={<RequireModule moduleId="gestao"><Gestao /></RequireModule>} />
         <Route path="/pilotos" element={<Pilotos />} />
         <Route path="/questoes" element={<Questoes />} />
