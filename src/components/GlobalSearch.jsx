@@ -4,6 +4,7 @@ import { Search, BookOpen, Siren, GraduationCap, HelpCircle, X, ChevronRight } f
 import { QRH_PROCEDURES } from "@/lib/qrhData";
 import { AW119_KOALA, GENERAL_MODULES } from "@/lib/trainingData";
 import { SAFETY_TOPICS } from "@/lib/academyData";
+import { AW119_TRAINING, TREINAMENTOS_GERAIS } from "@/lib/aw119TrainingData";
 import { LICENSE_TYPES } from "@/lib/pilotUtils";
 
 // Universal search across static content (QRH, academy, library categories, questions)
@@ -23,7 +24,9 @@ export default function GlobalSearch({ onClose, open }) {
       ...AW119_KOALA.modules.map((m) => ({ title: m.title, type: "Módulo", path: "/treinamentos" })),
       ...GENERAL_MODULES.map((m) => ({ title: m.title, type: "Treinamento geral", path: "/treinamentos" })),
       ...SAFETY_TOPICS.map((t) => ({ title: t, type: "Tópico", path: "/treinamentos" })),
-    ].filter((x) => x.title.toLowerCase().includes(q)).slice(0, 6);
+      ...AW119_TRAINING.modules.map((m) => ({ title: m.title, type: "AW119 Training", path: "/aw119-training" })),
+      ...TREINAMENTOS_GERAIS.modules.map((m) => ({ title: m.title, type: "Treinamentos Gerais", path: "/treinamentos-gerais" })),
+    ].filter((x) => x.title.toLowerCase().includes(q)).slice(0, 8);
     const questions = [
       { title: "Banco de questões", type: "Prova", path: "/questoes" },
       { title: "Simulados", type: "Avaliação", path: "/simulados" },

@@ -16,6 +16,9 @@ import Checklist from '@/pages/Checklist';
 import QRH from '@/pages/QRH';
 import Biblioteca from '@/pages/Biblioteca';
 import Treinamentos from '@/pages/Treinamentos';
+import AW119Training from '@/pages/AW119Training';
+import TreinamentosGerais from '@/pages/TreinamentosGerais';
+import Gestao from '@/pages/Gestao';
 import Pilotos from '@/pages/Pilotos';
 import Questoes from '@/pages/Questoes';
 import Simulados from '@/pages/Simulados';
@@ -76,6 +79,9 @@ const AuthenticatedApp = () => {
         <Route path="/qrh" element={<QRH />} />
         <Route path="/biblioteca" element={<Biblioteca />} />
         <Route path="/treinamentos" element={<Treinamentos />} />
+        <Route path="/aw119-training" element={<AW119Training />} />
+        <Route path="/treinamentos-gerais" element={<TreinamentosGerais />} />
+        <Route path="/gestao" element={<RequireModule moduleId="gestao"><Gestao /></RequireModule>} />
         <Route path="/pilotos" element={<Pilotos />} />
         <Route path="/questoes" element={<Questoes />} />
         <Route path="/simulados" element={<Simulados />} />

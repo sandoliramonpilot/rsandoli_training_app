@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Wind, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Wind, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw, FileBarChart } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
@@ -26,9 +26,16 @@ const navSections = [
   {
     label: "Academy",
     items: [
-      { label: "Treinamento", path: "/treinamentos", icon: GraduationCap, moduleId: "treinamentos" },
+      { label: "AW119 TRAINING", path: "/aw119-training", icon: Crown, moduleId: "aw119_training", badge: "Premium" },
+      { label: "Treinamentos Gerais", path: "/treinamentos-gerais", icon: GraduationCap, moduleId: "treinamentos_gerais" },
+      { label: "Limitações", path: "/limitacoes", icon: Gauge, moduleId: "limitacoes" },
+      { label: "Procedimentos Normais", path: "/procedimentos-normais", icon: FileText, moduleId: "procedimentos_normais" },
+      { label: "Procedimentos de Emergência", path: "/procedimentos-emergencia", icon: Siren, moduleId: "procedimentos_emergencia" },
       { label: "Questões", path: "/questoes", icon: HelpCircle, moduleId: "questoes" },
       { label: "Simulados", path: "/simulados", icon: BarChart3, moduleId: "simulados" },
+      { label: "Treinamento Recorrente", path: "/treinamento-recorrente", icon: RotateCcw, moduleId: "treinamento_recorrente" },
+      { label: "Recursos Visuais", path: "/recursos-visuais", icon: Image, moduleId: "recursos_visuais" },
+      { label: "Briefing de Emergência", path: "/briefing-emergencia", icon: ShieldAlert, moduleId: "briefing_emergencia" },
     ],
   },
   {
@@ -108,6 +115,7 @@ function SidebarContent({ location, onNavigate }) {
       .filter((s) => s.items.length > 0);
   }, [user]);
   const showUsersMenu = canManageUsers(user);
+  const showGestao = can(user, "gestao", "visualizar");
 
   return (
     <>
@@ -147,7 +155,12 @@ function SidebarContent({ location, onNavigate }) {
                     )}
                   >
                     <Icon style={{ width: 18, height: 18 }} />
-                    {item.label}
+                    <span className="flex-1 truncate">{item.label}</span>
+                    {item.badge && (
+                      <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -155,23 +168,40 @@ function SidebarContent({ location, onNavigate }) {
           </div>
         ))}
 
-        {showUsersMenu && (
+        {(showGestao || showUsersMenu) && (
           <div>
             <p className="px-3 mb-1.5 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Administração</p>
             <div className="space-y-1">
-              <Link
-                to="/usuarios"
-                onClick={onNavigate}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
-                  isActive(location, "/usuarios")
-                    ? "bg-amber-500/15 text-amber-300 border border-amber-500/20"
-                    : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
-                )}
-              >
-                <UserCog style={{ width: 18, height: 18 }} />
-                Usuários e Acessos
-              </Link>
+              {showGestao && (
+                <Link
+                  to="/gestao"
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                    isActive(location, "/gestao")
+                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/20"
+                      : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+                  )}
+                >
+                  <FileBarChart style={{ width: 18, height: 18 }} />
+                  Gestão
+                </Link>
+              )}
+              {showUsersMenu && (
+                <Link
+                  to="/usuarios"
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                    isActive(location, "/usuarios")
+                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/20"
+                      : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+                  )}
+                >
+                  <UserCog style={{ width: 18, height: 18 }} />
+                  Usuários e Acessos
+                </Link>
+              )}
             </div>
           </div>
         )}
