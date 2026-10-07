@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Download, Share, Apple, Smartphone, ChevronDown, ChevronUp, Copy, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bot, Apple, Link2, Share, Copy, Check, Download } from "lucide-react";
 
 const APP_URL = "https://rsandoli-training.base44.app";
+const STORAGE_KEY = "pwa_install_dismissed_at";
 
 function isStandalone() {
   return (
@@ -17,8 +17,8 @@ function isIOS() {
 
 export default function InstallSection() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showIOS, setShowIOS] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
 
   useEffect(() => {
     if (isStandalone()) return;
@@ -39,7 +39,25 @@ export default function InstallSection() {
     setDeferredPrompt(null);
   };
 
-  const copyLink = async () => {
+  const showIOS = () => {
+    alert("No iPhone/iPad: Abra no Safari, toque em Compartilhar e selecione 'Adicionar à Tela de Início'.");
+  };
+
+  const openApp = async () => {
+    // Tenta o Web Share API (WhatsApp, e-mail, SMS nativos no mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "RSandoli_Training",
+          text: "Acesse o app RSandoli_Training:",
+          url: APP_URL,
+        });
+        setShared(true);
+        setTimeout(() => setShared(false), 2000);
+        return;
+      } catch {}
+    }
+    // Fallback: copia o link
     try {
       await navigator.clipboard.writeText(APP_URL);
       setCopied(true);
@@ -48,60 +66,54 @@ export default function InstallSection() {
   };
 
   return (
-    <div className="mt-6 pt-5 border-t border-border">
-      <div className="text-center">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">
-          Instale nosso App
-        </p>
-        <div className="flex flex-col sm:flex-row gap-2 justify-center">
-          {deferredPrompt ? (
-            <Button
-              onClick={installAndroid}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm"
-              size="sm"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Instalar no Android
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={() => setShowIOS((s) => !s)}
-              className="text-sm"
-              size="sm"
-            >
-              <Apple className="w-4 h-4 mr-2" />
-              Instalar no iOS
-              {showIOS ? <ChevronUp className="w-3.5 h-3.5 ml-1" /> : <ChevronDown className="w-3.5 h-3.5 ml-1" />}
-            </Button>
-          )}
-        </div>
+    <div className="mt-6">
+      {/* Título */}
+      <p
+        className="text-center font-semibold mb-3"
+        style={{ color: "#333333", fontFamily: "Inter, Roboto, system-ui, sans-serif" }}
+      >
+        Instale nosso App
+      </p>
 
-        {showIOS && (
-          <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border text-left">
-            <div className="flex items-start gap-2">
-              <Smartphone className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                No <strong className="text-foreground">Safari</strong>, toque em{" "}
-                <Share className="inline w-3 h-3 -mt-0.5 text-primary" />{" "}
-                <strong className="text-foreground">Compartilhar</strong> e selecione{" "}
-                <strong className="text-foreground">"Adicionar à Tela de Início"</strong>.
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div className="mt-3 flex items-center justify-center gap-2">
-          <span className="text-[11px] text-muted-foreground">Link de acesso:</span>
-          <button
-            onClick={copyLink}
-            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-          >
-            {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-            {copied ? "Copiado!" : "Copiar link"}
-          </button>
-        </div>
+      {/* Botões lado a lado */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={installAndroid}
+          disabled={!deferredPrompt}
+          className="flex items-center justify-center gap-2 h-11 rounded-lg text-white text-sm font-medium shadow-md transition-all hover:opacity-90 disabled:opacity-50"
+          style={{ background: "#34A853", borderRadius: "8px" }}
+        >
+          {deferredPrompt ? <Download className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+          Instalar no Android
+        </button>
+        <button
+          onClick={showIOS}
+          className="flex items-center justify-center gap-2 h-11 rounded-lg text-white text-sm font-medium shadow-md transition-all hover:opacity-90"
+          style={{ background: "#007AFF", borderRadius: "8px" }}
+        >
+          <Apple className="w-4 h-4" />
+          Instalar no iOS
+        </button>
       </div>
+
+      {/* Texto explicativo iOS */}
+      <p className="text-xs text-center mt-3 px-2 leading-relaxed" style={{ color: "#B0BEC5" }}>
+        No iPhone/iPad: Abra no Safari e toque em "Adicionar à Tela de Início"
+      </p>
+
+      {/* Link Abrir App */}
+      <button
+        onClick={openApp}
+        className="w-full mt-3 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-medium transition-all hover:opacity-80"
+        style={{ background: "#F2F2F2", color: "#0056A3", borderRadius: "8px" }}
+      >
+        {copied || shared ? (
+          <Check className="w-4 h-4" style={{ color: "#34A853" }} />
+        ) : (
+          <Link2 className="w-4 h-4" />
+        )}
+        {copied ? "Link copiado!" : shared ? "Compartilhado!" : "Abrir App"}
+      </button>
     </div>
   );
 }
