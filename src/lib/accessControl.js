@@ -40,6 +40,7 @@ export const PERMISSION_MODULES = [
   { id: "escalas", name: "Escalas", path: "/escalas" },
   { id: "usuarios", name: "Usuários e Acessos", path: "/usuarios" },
   { id: "auditoria", name: "Auditoria", path: "/usuarios/auditoria" },
+  { id: "marcos_projeto", name: "Marcos do Projeto", path: "/marcos-projeto" },
 ];
 
 export const PERMISSION_ACTIONS = [
@@ -84,6 +85,7 @@ export const DEFAULT_PERMISSIONS_BY_LEVEL = {
     escalas: ["visualizar", "criar", "editar", "excluir", "todos"],
     usuarios: ["visualizar", "criar", "editar"],
     auditoria: ["visualizar"],
+    marcos_projeto: ["visualizar", "criar", "editar", "excluir"],
   },
   gestor_supervisor: {
     dashboard: ["visualizar"],

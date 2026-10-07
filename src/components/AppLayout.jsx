@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw, FileBarChart, CalendarDays, TrendingUp } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw,   FileBarChart, CalendarDays, TrendingUp, Megaphone } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
@@ -121,6 +121,7 @@ function SidebarContent({ location, onNavigate }) {
   }, [user]);
   const showUsersMenu = canManageUsers(user);
   const showGestao = can(user, "gestao", "visualizar");
+  const showMarcos = canManageUsers(user);
 
   return (
     <>
@@ -173,7 +174,7 @@ function SidebarContent({ location, onNavigate }) {
           </div>
         ))}
 
-        {(showGestao || showUsersMenu) && (
+        {(showGestao || showUsersMenu || showMarcos) && (
           <div>
             <p className="px-3 mb-1.5 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Administração</p>
             <div className="space-y-1">
@@ -205,6 +206,21 @@ function SidebarContent({ location, onNavigate }) {
                 >
                   <UserCog style={{ width: 18, height: 18 }} />
                   Usuários e Acessos
+                </Link>
+              )}
+              {showMarcos && (
+                <Link
+                  to="/marcos-projeto"
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                    isActive(location, "/marcos-projeto")
+                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/20"
+                      : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+                  )}
+                >
+                  <Megaphone style={{ width: 18, height: 18 }} />
+                  Marcos do Projeto
                 </Link>
               )}
             </div>

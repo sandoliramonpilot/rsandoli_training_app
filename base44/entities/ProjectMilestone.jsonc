@@ -1,0 +1,88 @@
+{
+  "name": "ProjectMilestone",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "T\u00edtulo do marco"
+    },
+    "description": {
+      "type": "string",
+      "title": "Descri\u00e7\u00e3o detalhada"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "feature",
+        "modulo",
+        "integracao",
+        "seguranca",
+        "infra",
+        "conteudo",
+        "outro"
+      ],
+      "default": "feature",
+      "title": "Categoria"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planejado",
+        "em_andamento",
+        "concluido",
+        "publicado"
+      ],
+      "default": "planejado",
+      "title": "Status do marco"
+    },
+    "milestone_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data do marco"
+    },
+    "linkedin_text": {
+      "type": "string",
+      "title": "Texto personalizado para postagem no LinkedIn"
+    },
+    "linkedin_post_urn": {
+      "type": "string",
+      "title": "URN da postagem no LinkedIn"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data e hora da publica\u00e7\u00e3o no LinkedIn"
+    },
+    "auto_publish": {
+      "type": "boolean",
+      "default": false,
+      "title": "Publicar automaticamente ao concluir"
+    }
+  },
+  "required": [
+    "title",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

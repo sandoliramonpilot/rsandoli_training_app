@@ -28,6 +28,7 @@ import Usuarios from '@/pages/Usuarios';
 import MeuPerfil from '@/pages/MeuPerfil';
 import Escalas from '@/pages/Escalas';
 import PainelProgresso from '@/pages/PainelProgresso';
+import MarcosProjeto from '@/pages/MarcosProjeto';
 import RequireModule from '@/components/RequireModule';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -101,6 +102,7 @@ const AuthenticatedApp = () => {
         <Route path="/usuarios" element={<RequireModule moduleId="usuarios"><Usuarios /></RequireModule>} />
         <Route path="/perfil" element={<MeuPerfil />} />
         <Route path="/painel-progresso" element={<PainelProgresso />} />
+        <Route path="/marcos-projeto" element={<MarcosProjeto />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
