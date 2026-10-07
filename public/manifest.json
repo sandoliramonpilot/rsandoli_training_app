@@ -1,0 +1,33 @@
+{
+  "name": "RSANDOLI PILOTS Helicopter Training",
+  "short_name": "RSANDOLI PILOTS",
+  "description": "Plataforma de instrução teórica e treinamento operacional para helicópteros AW119Kx Koala.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#12141A",
+  "theme_color": "#12141A",
+  "categories": ["education", "productivity", "navigation"],
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/de9fbb8d8_generated_image.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/de9fbb8d8_generated_image.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/de9fbb8d8_generated_image.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

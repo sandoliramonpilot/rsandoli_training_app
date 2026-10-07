@@ -34,6 +34,7 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import OAuthConsent from '@/pages/OAuthConsent';
+import InstallPrompt from '@/components/InstallPrompt';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -116,6 +117,7 @@ function App() {
           <ScrollToTop />
           <AuthenticatedApp />
         </Router>
+        <InstallPrompt />
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import InstallSection from "@/components/InstallSection";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { getAccountStatus } from "@/lib/accessControl";
 
@@ -139,6 +140,8 @@ export default function Login() {
           )}
         </Button>
       </form>
+
+      <InstallSection />
     </AuthLayout>
   );
 }
