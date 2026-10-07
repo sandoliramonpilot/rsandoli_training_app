@@ -32,7 +32,7 @@ export default async function (req) {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
     const actorLevel = levelOf(user);
-    const canManage = actorLevel === "admin_geral" || actorLevel === "administrador";
+    const canManage = user.role === "admin" && (actorLevel === "admin_geral" || actorLevel === "administrador");
     if (!canManage) return Response.json({ error: "Forbidden" }, { status: 403 });
 
     // ---------- LIST ----------
