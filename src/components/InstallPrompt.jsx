@@ -15,6 +15,10 @@ function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios/i.test(navigator.userAgent);
 }
 
+function isMobileDevice() {
+  return /android|iphone|ipad|ipod|mobile|iemobile|opera mini/i.test(navigator.userAgent);
+}
+
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [visible, setVisible] = useState(false);
@@ -23,6 +27,11 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     if (isStandalone()) return;
+
+    // A instalação é relevante apenas em dispositivos móveis. No desktop o
+    // navegador também dispara "beforeinstallprompt", o que abria este cartão
+    // sobre a interface sem necessidade e atrapalhava a navegação.
+    if (!isMobileDevice()) return;
 
     const dismissed = sessionStorage.getItem(STORAGE_KEY);
     if (dismissed) return;

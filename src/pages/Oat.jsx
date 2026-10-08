@@ -48,8 +48,12 @@ export default function Oat() {
     try {
       const res = await base44.functions.invoke("manageUsers", { action: "migrate_oats" });
       const d = res.data || {};
-      await load();
-      setMigrateToast(`Migração concluída: ${d.created} OAT(s) criado(s), ${d.linked} vinculado(s), ${d.alreadyLinked} já vinculado(s).`);
+      if (d.error) {
+        setMigrateToast(d.error);
+      } else {
+        await load();
+        setMigrateToast(`Migração concluída: ${d.created} OAT(s) criado(s), ${d.linked} vinculado(s), ${d.alreadyLinked} já vinculado(s).`);
+      }
     } catch (e) {
       setMigrateToast(e?.response?.data?.error || e.message || "Erro ao executar migração.");
     }
