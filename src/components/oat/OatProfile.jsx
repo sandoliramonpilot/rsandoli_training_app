@@ -77,7 +77,7 @@ export default function OatProfile({ oat, me, isManager, onBack, onRefresh }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-1 border-b border-slate-700/60">
+      <div className="flex flex-wrap gap-1 pb-1 border-b border-slate-700/60">
         {TABS.map((t) => (
           <button
             key={t.id}
