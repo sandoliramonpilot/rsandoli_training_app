@@ -158,9 +158,10 @@ export default function Usuarios() {
 
   const toggleMaster = async (u) => {
     const isMaster = !!u.is_master;
-    const run = async () => {
-      const ok = await call({ action: "set_master", user_id: u.id, master: !isMaster });
+    const run = async (code) => {
+      const ok = await call({ action: "set_master", user_id: u.id, master: !isMaster, code });
       if (ok) setToast(isMaster ? `Perfil Master removido de ${u.full_name}.` : `${u.full_name} agora é Administrador Geral Master.`);
+      return ok;
     };
     setPendingSensitive({ label: isMaster ? "Remover perfil Master" : "Conceder perfil Master", run });
   };
@@ -168,9 +169,10 @@ export default function Usuarios() {
   const setStatus = async (u, status) => {
     // Operações sensíveis exigem código de acesso.
     const sensitive = status === "desativada" || (u.access_level === "admin_geral" && status !== "ativa");
-    const run = async () => {
-      const ok = await call({ action: "update", user_id: u.id, account_status: status });
+    const run = async (code) => {
+      const ok = await call({ action: "update", user_id: u.id, account_status: status, code });
       if (ok) setToast(`Situação de ${u.full_name} alterada para "${ACCOUNT_STATUS_LABELS[status]}".`);
+      return ok;
     };
     if (sensitive) {
       setPendingSensitive({ label: status === "desativada" ? "Desativar usuário" : "Alterar situação de administrador", run });
@@ -311,9 +313,10 @@ export default function Usuarios() {
                   <UserRow key={u.id} u={u} me={me} actorLevel={actorLevel} onEdit={() => setModal({ mode: "edit", user: u })} onView={() => setModal({ mode: "view", user: u })} onStatus={setStatus} onAudit={openAudit} onCancelInvite={() => cancelInvite(u)} onResendInvite={() => resendInvite(u)} onToggleMaster={() => toggleMaster(u)} onReset={() => {
                     setPendingSensitive({
                       label: "Redefinir senha de usuário",
-                      run: async () => {
-                        const ok = await call({ action: "reset_password", user_id: u.id });
+                      run: async (code) => {
+                        const ok = await call({ action: "reset_password", user_id: u.id, code });
                         if (ok) setToast(`Redefinição de senha encaminhada para ${u.email}.`);
+                        return ok;
                       },
                     });
                   }} />
@@ -353,10 +356,11 @@ export default function Usuarios() {
       {pendingSensitive && (
         <VerifyCodeModal
           operation={pendingSensitive.label}
-          onVerified={async () => {
-            const run = pendingSensitive.run;
+          onVerified={async (code) => {
+            const ok = await pendingSensitive.run(code);
+            if (!ok) return "Código inválido ou operação não concluída. Verifique o código e tente novamente.";
             setPendingSensitive(null);
-            await run();
+            return null;
           }}
           onClose={() => setPendingSensitive(null)}
         />
@@ -490,6 +494,7 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
   const isCreate = mode === "create";
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [pendingCode, setPendingCode] = useState(false);
   const [showPerms, setShowPerms] = useState(false);
   const [perms, setPerms] = useState({});
   const [form, setForm] = useState({
@@ -530,6 +535,34 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
     });
   };
 
+  const runUpdate = async (code) => {
+    setSaving(true);
+    try {
+      await base44.functions.invoke("manageUsers", {
+        action: "update",
+        user_id: user.id,
+        account_status: form.account_status,
+        access_level: form.access_level !== user.access_level ? form.access_level : undefined,
+        custom_permissions: actorLevel === "admin_geral" && form.access_level !== "admin_geral" ? perms : undefined,
+        code,
+        profile: {
+          full_name: form.full_name,
+          login: form.login,
+          phone: form.phone,
+          registration: form.registration,
+          job_title: form.job_title,
+          unit: form.unit,
+          admin_notes: form.admin_notes,
+        },
+      });
+      onSaved("Cadastro atualizado com sucesso.");
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || "Erro ao salvar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setError("");
@@ -537,10 +570,10 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
       setError("Preencha nome, login, e-mail e selecione um nível de acesso.");
       return;
     }
-    setSaving(true);
-    try {
-      if (isCreate) {
-        const res = await base44.functions.invoke("manageUsers", {
+    if (isCreate) {
+      setSaving(true);
+      try {
+        await base44.functions.invoke("manageUsers", {
           action: "create",
           full_name: form.full_name,
           login: form.login,
@@ -555,30 +588,21 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
           custom_permissions: form.access_level === "admin_geral" ? null : perms,
         });
         onSaved(`Usuário criado com sucesso. Convite enviado para ${form.email}.`);
-      } else {
-        await base44.functions.invoke("manageUsers", {
-          action: "update",
-          user_id: user.id,
-          account_status: form.account_status,
-          access_level: form.access_level !== user.access_level ? form.access_level : undefined,
-          custom_permissions: actorLevel === "admin_geral" && form.access_level !== "admin_geral" ? perms : undefined,
-          profile: {
-            full_name: form.full_name,
-            login: form.login,
-            phone: form.phone,
-            registration: form.registration,
-            job_title: form.job_title,
-            unit: form.unit,
-            admin_notes: form.admin_notes,
-          },
-        });
-        onSaved("Cadastro atualizado com sucesso.");
+      } catch (err) {
+        setError(err?.response?.data?.error || err.message || "Erro ao salvar.");
+      } finally {
+        setSaving(false);
       }
-    } catch (err) {
-      setError(err?.response?.data?.error || err.message || "Erro ao salvar.");
-    } finally {
-      setSaving(false);
+      return;
     }
+    // Edição: mudanças sensíveis de situação exigem código de verificação no backend.
+    const targetLevel = user?.access_level || "operacional";
+    const sensitive = form.account_status === "desativada" || (targetLevel === "admin_geral" && form.account_status !== "ativa");
+    if (sensitive) {
+      setPendingCode(true);
+      return;
+    }
+    await runUpdate(undefined);
   };
 
   const levelOptions = ACCESS_LEVELS.filter((l) => {
@@ -684,6 +708,17 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
             </div>
           )}
         </form>
+        {pendingCode && (
+          <VerifyCodeModal
+            operation={form.account_status === "desativada" ? "Desativar usuário" : "Alterar situação de administrador"}
+            onVerified={async (code) => {
+              setPendingCode(false);
+              await runUpdate(code);
+              return null;
+            }}
+            onClose={() => setPendingCode(false)}
+          />
+        )}
       </div>
     </div>
   );

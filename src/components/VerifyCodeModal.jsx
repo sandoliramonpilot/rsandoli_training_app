@@ -49,10 +49,11 @@ export default function VerifyCodeModal({ operation, onVerified, onClose }) {
     setError("");
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("accessCode", { action: "verify", code, purpose: "sensitive_op" });
-      onVerified(res.data.operation || operation);
+      // A verificação do código agora é feita no backend pela própria operação sensível.
+      const err = await onVerified(code);
+      if (err) setError(typeof err === "string" ? err : "Código inválido ou operação não concluída.");
     } catch (err) {
-      setError(err?.response?.data?.error || "Código inválido. Verifique o código informado e tente novamente.");
+      setError(err?.message || "Código inválido ou operação não concluída.");
     } finally {
       setLoading(false);
     }

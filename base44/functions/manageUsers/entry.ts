@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
-import { AUDITABLE_ACTIONS, canManageLevel, generateTempPassword, rankOf } from "../../shared/accessSecurity.js";
+import { AUDITABLE_ACTIONS, canManageLevel, generateTempPassword, hashString, rankOf } from "../../shared/accessSecurity.js";
 
 const ACCOUNT_STATUSES = ["convite_pendente", "ativa", "bloqueada", "suspensa", "desativada"];
 const ACCESS_LEVELS = ["admin_geral", "administrador", "gestor_supervisor", "operacional", "consulta"];
@@ -21,6 +21,26 @@ async function logAudit(base44, actor, target, action, details) {
       created_at: new Date().toISOString(),
     });
   } catch {}
+}
+
+// Verificação step-up no backend: valida o código de acesso (purpose "sensitive_op")
+// do próprio chamador, consumindo-o em caso de sucesso. Garante que operações sensíveis
+// não dependam apenas da checagem feita no frontend.
+async function verifyAccessCode(base44, user, code) {
+  if (!code || !/^\d{6}$/.test(String(code))) return false;
+  try {
+    const open = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose: "sensitive_op", used: false });
+    const latest = open.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+    if (!latest) return false;
+    if (new Date(latest.expires_at).getTime() < Date.now()) return false;
+    if ((latest.attempts || 0) >= 5) return false;
+    const codeHash = await hashString(String(code) + user.id);
+    if (codeHash !== latest.code_hash) return false;
+    await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export default async function (req) {
@@ -266,6 +286,9 @@ export default async function (req) {
       const invite = await base44.asServiceRole.entities.UserInvite.get(body.invite_id).catch(() => null);
       if (!invite) return Response.json({ error: "Convite não encontrado." }, { status: 404 });
       if (invite.status !== "pending") return Response.json({ error: "Convite já processado." }, { status: 400 });
+      if (actorLevel !== "admin_geral" && !canManageLevel(actorLevel, invite.access_level)) {
+        return Response.json({ error: "Você não pode gerenciar convites de nível igual ou superior ao seu." }, { status: 403 });
+      }
       await base44.asServiceRole.entities.UserInvite.update(body.invite_id, { status: "cancelled" });
       await logAudit(base44, user, { email: invite.email }, AUDITABLE_ACTIONS.user_edited, `Convite cancelado — ${invite.email}`);
       return Response.json({ ok: true });
@@ -276,6 +299,9 @@ export default async function (req) {
       const invite = await base44.asServiceRole.entities.UserInvite.get(body.invite_id).catch(() => null);
       if (!invite) return Response.json({ error: "Convite não encontrado." }, { status: 404 });
       if (invite.status !== "pending") return Response.json({ error: "Convite já processado." }, { status: 400 });
+      if (actorLevel !== "admin_geral" && !canManageLevel(actorLevel, invite.access_level)) {
+        return Response.json({ error: "Você não pode gerenciar convites de nível igual ou superior ao seu." }, { status: 403 });
+      }
       const role = invite.access_level === "admin_geral" || invite.access_level === "administrador" ? "admin" : "user";
       await base44.users.inviteUser(invite.email, role).catch((e) => {});
       await logAudit(base44, user, { email: invite.email }, AUDITABLE_ACTIONS.user_edited, `Convite reenviado — ${invite.email}`);
@@ -307,6 +333,11 @@ export default async function (req) {
               return Response.json({ error: "Não é possível desativar o último Administrador Geral ativo." }, { status: 403 });
             }
           }
+        }
+        const sensitiveStatus = body.account_status === "desativada" || (targetLevel === "admin_geral" && body.account_status !== "ativa");
+        if (sensitiveStatus) {
+          const codeOk = await verifyAccessCode(base44, user, body.code);
+          if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
         }
         patch.account_status = body.account_status;
         changes.push(`Situação: ${target.account_status || "ativa"} → ${body.account_status}`);
@@ -447,6 +478,8 @@ export default async function (req) {
     if (action === "set_master") {
       // Somente o Administrador Geral pode conceder perfil Master.
       if (actorLevel !== "admin_geral") return Response.json({ error: "Forbidden" }, { status: 403 });
+      const codeOk = await verifyAccessCode(base44, user, body.code);
+      if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
       const targetId = body.user_id;
       if (!targetId) return Response.json({ error: "Usuário não informado." }, { status: 400 });
       const target = await base44.asServiceRole.entities.User.get(targetId).catch(() => null);
@@ -471,8 +504,14 @@ export default async function (req) {
 
     // ---------- RESET PASSWORD ----------
     if (action === "reset_password") {
-      const target = await base44.asServiceRole.entities.User.get(body.user_id);
+      const target = await base44.asServiceRole.entities.User.get(body.user_id).catch(() => null);
       if (!target) return Response.json({ error: "Usuário não encontrado." }, { status: 404 });
+      const targetLevel = levelOf(target);
+      if (actorLevel !== "admin_geral" && !canManageLevel(actorLevel, targetLevel)) {
+        return Response.json({ error: "Você não pode redefinir a senha de um usuário de nível igual ou superior." }, { status: 403 });
+      }
+      const codeOk = await verifyAccessCode(base44, user, body.code);
+      if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
       try {
         await base44.asServiceRole.auth.resetPasswordRequest(target.email);
       } catch {}
