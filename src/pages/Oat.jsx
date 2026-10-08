@@ -5,6 +5,7 @@ import BackToDashboard from "@/components/BackToDashboard";
 import NewOatForm from "@/components/oat/NewOatForm";
 import OatProfile from "@/components/oat/OatProfile";
 import OatMapeamento from "@/components/oat/OatMapeamento";
+import OatApprovalsPanel from "@/components/oat/OatApprovalsPanel";
 import {
   Search, Plus, Users, ChevronLeft, Hourglass, AlertTriangle,
   CheckCircle2, Clock, Link2, FileBarChart, CircleUserRound, HeartPulse,
@@ -24,6 +25,7 @@ export default function Oat() {
   const [selected, setSelected] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showMapeamento, setShowMapeamento] = useState(false);
+  const [showApprovals, setShowApprovals] = useState(false);
   const [query, setQuery] = useState("");
   const [fRole, setFRole] = useState("all");
   const [fBase, setFBase] = useState("all");
@@ -157,6 +159,14 @@ export default function Oat() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <BackToDashboard />
+          {isManager && (
+            <button
+              onClick={() => setShowApprovals(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-700 text-slate-200 hover:border-amber-500/40 hover:text-amber-300 transition-colors"
+            >
+              <Hourglass className="w-4 h-4" /> Aprovações
+            </button>
+          )}
           {isGeral && (
             <button
               onClick={migrateOats}
@@ -299,6 +309,9 @@ export default function Oat() {
       )}
       {showMapeamento && (
         <OatMapeamento onClose={() => setShowMapeamento(false)} />
+      )}
+      {showApprovals && (
+        <OatApprovalsPanel onClose={() => setShowApprovals(false)} onDecision={load} />
       )}
 
       {migrateToast && (
