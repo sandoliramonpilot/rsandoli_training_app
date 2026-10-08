@@ -119,7 +119,7 @@ export default function NewOatForm({ me, onClose, onDone }) {
         aircraft_endorsements: data.aircraft_endorsements.length ? JSON.stringify(data.aircraft_endorsements) : undefined,
         documents: data.documents.length ? JSON.stringify(data.documents) : undefined,
         role_secondary: data.role_secondary.length ? JSON.stringify(data.role_secondary) : undefined,
-        approval_status: "approved",
+        approval_status: "pending",
       };
       Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
       await base44.entities.Oat.create(payload);

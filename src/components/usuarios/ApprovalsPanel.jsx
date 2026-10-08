@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  X, CheckCircle2, Loader2, MailCheck, Users, Plane, Hourglass,
+  X, CheckCircle2, Loader2, MailCheck, Users, Plane, Hourglass, HeartPulse,
   ChevronDown, ChevronUp, AlertTriangle,
 } from "lucide-react";
 import { ACCESS_LEVEL_LABELS } from "@/lib/accessControl";
 import { ROLE_LABELS } from "@/lib/pilotUtils";
+import { OAT_FUNCTION_LABELS, OAT_REGISTRATION_STATUS_LABELS } from "@/lib/oatUtils";
 
 export default function ApprovalsPanel({ onClose, onDecision }) {
   const [data, setData] = useState(null);
@@ -21,7 +22,7 @@ export default function ApprovalsPanel({ onClose, onDecision }) {
       const res = await base44.functions.invoke("manageUsers", { action: "list_approvals" });
       setData(res.data);
     } catch {
-      setData({ invites: [], pilots: [], aircraft: [] });
+      setData({ invites: [], pilots: [], aircraft: [], oats: [] });
     }
     setLoading(false);
   };
@@ -41,8 +42,9 @@ export default function ApprovalsPanel({ onClose, onDecision }) {
         user_invite: "approve_invite",
         pilot: "approve_pilot",
         aircraft: "approve_aircraft",
+        oat: "approve_oat",
       };
-      const idField = type === "user_invite" ? "invite_id" : type === "pilot" ? "pilot_id" : "aircraft_id";
+      const idField = type === "user_invite" ? "invite_id" : type === "pilot" ? "pilot_id" : type === "oat" ? "oat_id" : "aircraft_id";
       const res = await base44.functions.invoke("manageUsers", { action: actionMap[type], [idField]: id });
       setToast(res.data?.message || "Aprovado.");
       await load();
@@ -61,8 +63,9 @@ export default function ApprovalsPanel({ onClose, onDecision }) {
         user_invite: "reject_invite",
         pilot: "reject_pilot",
         aircraft: "reject_aircraft",
+        oat: "reject_oat",
       };
-      const idField = type === "user_invite" ? "invite_id" : type === "pilot" ? "pilot_id" : "aircraft_id";
+      const idField = type === "user_invite" ? "invite_id" : type === "pilot" ? "pilot_id" : type === "oat" ? "oat_id" : "aircraft_id";
       const res = await base44.functions.invoke("manageUsers", { action: actionMap[type], [idField]: id, reason });
       setToast(res.data?.message || "Rejeitado.");
       setRejectReason((r) => { const n = { ...r }; delete n[`${type}_${id}`]; return n; });
@@ -75,7 +78,7 @@ export default function ApprovalsPanel({ onClose, onDecision }) {
     setBusy(null);
   };
 
-  const total = (data?.invites?.length || 0) + (data?.pilots?.length || 0) + (data?.aircraft?.length || 0);
+  const total = (data?.invites?.length || 0) + (data?.pilots?.length || 0) + (data?.aircraft?.length || 0) + (data?.oats?.length || 0);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 overflow-y-auto">
@@ -196,6 +199,37 @@ export default function ApprovalsPanel({ onClose, onDecision }) {
                           <Detail label="Ano" value={a.year} />
                           <Detail label="Status operacional" value={a.status} />
                           <Detail label="Criado em" value={a.created_date ? new Date(a.created_date).toLocaleString("pt-BR") : "—"} />
+                        </div>
+                      )}
+                    />
+                  ))}
+                </Section>
+              )}
+
+              {/* OATS */}
+              {data.oats.length > 0 && (
+                <Section title="Cadastro de OATs" icon={HeartPulse} count={data.oats.length}>
+                  {data.oats.map((o) => (
+                    <ApprovalCard
+                      key={`oat_${o.id}`}
+                      item={{ ...o, name: o.name }}
+                      type="oat"
+                      busy={busy}
+                      expanded={expanded}
+                      setExpanded={setExpanded}
+                      rejectReason={rejectReason}
+                      setRejectReason={setRejectReason}
+                      onApprove={() => approve("oat", o.id)}
+                      onReject={() => reject("oat", o.id)}
+                      renderDetails={() => (
+                        <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                          <Detail label="Nome de guerra" value={o.war_name} />
+                          <Detail label="Função" value={OAT_FUNCTION_LABELS[o.role] || o.role} />
+                          <Detail label="E-mail" value={o.email} />
+                          <Detail label="Base" value={o.base} />
+                          <Detail label="CANAC" value={o.anac_code} />
+                          <Detail label="Situação cadastral" value={OAT_REGISTRATION_STATUS_LABELS[o.registration_status] || o.registration_status} />
+                          <Detail label="Criado em" value={o.created_date ? new Date(o.created_date).toLocaleString("pt-BR") : "—"} />
                         </div>
                       )}
                     />

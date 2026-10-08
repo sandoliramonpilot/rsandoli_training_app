@@ -395,6 +395,54 @@ export default async function (req) {
       return Response.json({ ok: true, created: created.length, alreadyLinked: skipped.length });
     }
 
+    // ---------- MIGRATE USERS → OATS + AUTO-LINK ----------
+    if (action === "migrate_oats") {
+      if (actorLevel !== "admin_geral") return Response.json({ error: "Somente o Administrador Geral pode executar a migração de OATs." }, { status: 403 });
+      const users = await base44.asServiceRole.entities.User.list().catch(() => []);
+      const oats = await base44.asServiceRole.entities.Oat.list().catch(() => []);
+      const oatsByUserId = new Map(oats.filter((o) => o.user_id).map((o) => [o.user_id, o]));
+      const oatsByEmail = new Map();
+      for (const o of oats) {
+        const em = (o.email_login || o.email || "").toLowerCase();
+        if (em && !oatsByEmail.has(em)) oatsByEmail.set(em, o);
+      }
+      const created = [];
+      const linked = [];
+      const skipped = [];
+      for (const u of users) {
+        const em = (u.email || "").toLowerCase();
+        if (!em) continue;
+        if (oatsByUserId.has(u.id)) { skipped.push(em); continue; }
+        const existingOat = oatsByEmail.get(em);
+        if (existingOat) {
+          if (!existingOat.user_id) {
+            await base44.asServiceRole.entities.Oat.update(existingOat.id, {
+              user_id: u.id,
+              email_login: u.email,
+            }).catch(() => {});
+            linked.push(em);
+          } else {
+            skipped.push(em);
+          }
+          continue;
+        }
+        try {
+          await base44.asServiceRole.entities.Oat.create({
+            full_name: u.full_name || u.email || "OAT",
+            email: u.email,
+            email_login: u.email,
+            user_id: u.id,
+            role: "oat",
+            registration_status: "active",
+            approval_status: "approved",
+          });
+          created.push(em);
+        } catch {}
+      }
+      await logAudit(base44, user, null, "Migração usuário→OAT", `OATs criados: ${created.length} | Vinculados: ${linked.length} | Já vinculados: ${skipped.length}`);
+      return Response.json({ ok: true, created: created.length, linked: linked.length, alreadyLinked: skipped.length });
+    }
+
     // ---------- SET MASTER (Administrador Geral Master) ----------
     if (action === "set_master") {
       // Somente o Administrador Geral pode conceder perfil Master.
@@ -435,10 +483,11 @@ export default async function (req) {
 
     // ---------- LIST PENDING APPROVALS ----------
     if (action === "list_approvals") {
-      const [invites, pilots, aircraft] = await Promise.all([
+      const [invites, pilots, aircraft, oats] = await Promise.all([
         base44.asServiceRole.entities.UserInvite.list().catch(() => []),
         base44.asServiceRole.entities.Pilot.list().catch(() => []),
         base44.asServiceRole.entities.Aircraft.list().catch(() => []),
+        base44.asServiceRole.entities.Oat.list().catch(() => []),
       ]);
       const pendingInvites = invites
         .filter((i) => i.status === "pending" && (i.approval_status || "approved") === "pending")
@@ -484,7 +533,22 @@ export default async function (req) {
           created_date: a.created_date,
           created_by: a.created_by_id || null,
         }));
-      return Response.json({ invites: pendingInvites, pilots: pendingPilots, aircraft: pendingAircraft });
+      const pendingOats = oats
+        .filter((o) => (o.approval_status || "approved") === "pending")
+        .map((o) => ({
+          id: o.id,
+          type: "oat",
+          name: o.full_name,
+          war_name: o.war_name || null,
+          email: o.email || o.email_login || null,
+          role: o.role || null,
+          base: o.base || null,
+          anac_code: o.anac_code || null,
+          registration_status: o.registration_status || null,
+          created_date: o.created_date,
+          created_by: o.created_by_id || null,
+        }));
+      return Response.json({ invites: pendingInvites, pilots: pendingPilots, aircraft: pendingAircraft, oats: pendingOats });
     }
 
     // ---------- APPROVE / REJECT USER INVITE ----------
@@ -563,6 +627,31 @@ export default async function (req) {
       await base44.asServiceRole.entities.Aircraft.update(body.aircraft_id, { approval_status: "rejected", approval_log: JSON.stringify(log) });
       await logAudit(base44, user, null, "Rejeição de aeronave", `Aeronave rejeitada — ${aircraft.registration}`);
       return Response.json({ ok: true, message: "Aeronave rejeitada." });
+    }
+
+    // ---------- APPROVE / REJECT OAT ----------
+    if (action === "approve_oat") {
+      if (actorLevel !== "admin_geral") return Response.json({ error: "Somente o Administrador Geral pode aprovar OATs." }, { status: 403 });
+      const oat = await base44.asServiceRole.entities.Oat.get(body.oat_id).catch(() => null);
+      if (!oat) return Response.json({ error: "OAT não encontrado." }, { status: 404 });
+      if ((oat.approval_status || "approved") !== "pending") return Response.json({ error: "OAT não está aguardando aprovação." }, { status: 400 });
+      const log = JSON.parse(oat.approval_log || "[]");
+      log.push({ action: "approved", by: user.full_name || user.email, at: new Date().toISOString() });
+      await base44.asServiceRole.entities.Oat.update(body.oat_id, { approval_status: "approved", approval_log: JSON.stringify(log) });
+      await logAudit(base44, user, { full_name: oat.full_name }, "Aprovação de OAT", `OAT aprovado — ${oat.full_name}`);
+      return Response.json({ ok: true, message: "OAT aprovado." });
+    }
+
+    if (action === "reject_oat") {
+      if (actorLevel !== "admin_geral") return Response.json({ error: "Somente o Administrador Geral pode rejeitar OATs." }, { status: 403 });
+      const oat = await base44.asServiceRole.entities.Oat.get(body.oat_id).catch(() => null);
+      if (!oat) return Response.json({ error: "OAT não encontrado." }, { status: 404 });
+      if ((oat.approval_status || "approved") !== "pending") return Response.json({ error: "OAT não está aguardando aprovação." }, { status: 400 });
+      const log = JSON.parse(oat.approval_log || "[]");
+      log.push({ action: "rejected", by: user.full_name || user.email, at: new Date().toISOString(), reason: body.reason || null });
+      await base44.asServiceRole.entities.Oat.update(body.oat_id, { approval_status: "rejected", approval_log: JSON.stringify(log) });
+      await logAudit(base44, user, { full_name: oat.full_name }, "Rejeição de OAT", `OAT rejeitado — ${oat.full_name}`);
+      return Response.json({ ok: true, message: "OAT rejeitado." });
     }
 
     return Response.json({ error: "Ação inválida." }, { status: 400 });

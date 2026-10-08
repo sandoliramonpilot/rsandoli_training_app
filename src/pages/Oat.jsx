@@ -15,6 +15,8 @@ import {
   safeParse, collectExpiries, nextCriticalExpiry, cmaStatus, daysUntil,
   EXPIRY_COLORS, fmtDate,
 } from "@/lib/oatUtils";
+import { getAccessLevel } from "@/lib/accessControl";
+import { RefreshCw } from "lucide-react";
 
 export default function Oat() {
   const [oats, setOats] = useState(null);
@@ -29,8 +31,30 @@ export default function Oat() {
   const [fExpiry, setFExpiry] = useState("all");
   const [sortBy, setSortBy] = useState("name");
   const [activeCard, setActiveCard] = useState(null);
+  const [migrating, setMigrating] = useState(false);
+  const [migrateToast, setMigrateToast] = useState("");
 
   const isManager = can(me, "oat", "editar");
+  const isGeral = getAccessLevel(me) === "admin_geral";
+
+  useEffect(() => {
+    if (!migrateToast) return;
+    const t = setTimeout(() => setMigrateToast(""), 5000);
+    return () => clearTimeout(t);
+  }, [migrateToast]);
+
+  const migrateOats = async () => {
+    setMigrating(true);
+    try {
+      const res = await base44.functions.invoke("manageUsers", { action: "migrate_oats" });
+      const d = res.data || {};
+      await load();
+      setMigrateToast(`Migração concluída: ${d.created} OAT(s) criado(s), ${d.linked} vinculado(s), ${d.alreadyLinked} já vinculado(s).`);
+    } catch (e) {
+      setMigrateToast(e?.response?.data?.error || e.message || "Erro ao executar migração.");
+    }
+    setMigrating(false);
+  };
 
   useEffect(() => {
     base44.auth.me().then((u) => setMe(u)).catch(() => setMe(null));
@@ -129,6 +153,15 @@ export default function Oat() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <BackToDashboard />
+          {isGeral && (
+            <button
+              onClick={migrateOats}
+              disabled={migrating}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-700 text-slate-200 hover:border-amber-500/40 hover:text-amber-300 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${migrating ? "animate-spin" : ""}`} /> Migrar OATs
+            </button>
+          )}
           {isManager && (
             <button
               onClick={() => setShowMapeamento(true)}
@@ -261,6 +294,12 @@ export default function Oat() {
       )}
       {showMapeamento && (
         <OatMapeamento onClose={() => setShowMapeamento(false)} />
+      )}
+
+      {migrateToast && (
+        <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm shadow-lg max-w-sm">
+          {migrateToast}
+        </div>
       )}
     </div>
   );

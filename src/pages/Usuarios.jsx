@@ -79,7 +79,7 @@ export default function Usuarios() {
     base44.functions.invoke("manageUsers", { action: "list_approvals" })
       .then((res) => {
         const d = res.data || {};
-        setPendingCount((d.invites?.length || 0) + (d.pilots?.length || 0) + (d.aircraft?.length || 0));
+        setPendingCount((d.invites?.length || 0) + (d.pilots?.length || 0) + (d.aircraft?.length || 0) + (d.oats?.length || 0));
       })
       .catch(() => {});
   }, [actorLevel, users]);
