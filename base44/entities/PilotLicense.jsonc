@@ -1,0 +1,179 @@
+{
+  "name": "PilotLicense",
+  "type": "object",
+  "properties": {
+    "pilot_id": {
+      "type": "string",
+      "title": "Piloto vinculado"
+    },
+    "pilot_name": {
+      "type": "string",
+      "title": "Nome do piloto (snapshot)"
+    },
+    "license_number": {
+      "type": "string",
+      "title": "N\u00famero da licen\u00e7a ANAC",
+      "description": "Aceita letras e n\u00fameros. Formato livre conforme organiza\u00e7\u00e3o ou autoridade."
+    },
+    "license_type": {
+      "type": "string",
+      "enum": [
+        "pph",
+        "pch",
+        "ppa",
+        "pca_ifr",
+        "pla",
+        "plah",
+        "other"
+      ],
+      "title": "Tipo de licen\u00e7a"
+    },
+    "license_type_label": {
+      "type": "string",
+      "title": "Tipo de licen\u00e7a (r\u00f3tulo)"
+    },
+    "other_license_name": {
+      "type": "string",
+      "title": "Nome da licen\u00e7a (Outra)"
+    },
+    "category": {
+      "type": "string",
+      "title": "Categoria",
+      "description": "Valor alfanum\u00e9rico."
+    },
+    "description": {
+      "type": "string",
+      "title": "Descri\u00e7\u00e3o"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de emiss\u00e3o"
+    },
+    "grant_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de concess\u00e3o"
+    },
+    "revalidation_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de revalida\u00e7\u00e3o"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de validade"
+    },
+    "situation": {
+      "type": "string",
+      "enum": [
+        "valid",
+        "near_expiry",
+        "expired",
+        "suspended",
+        "renewing",
+        "pending",
+        "na"
+      ],
+      "default": "pending",
+      "title": "Situa\u00e7\u00e3o"
+    },
+    "document_uri": {
+      "type": "string",
+      "title": "URI do documento (privado)"
+    },
+    "document_name": {
+      "type": "string",
+      "title": "Nome do documento"
+    },
+    "authority": {
+      "type": "string",
+      "title": "Autoridade emissora"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Observa\u00e7\u00f5es"
+    },
+    "validity_source": {
+      "type": "string",
+      "enum": [
+        "informed",
+        "calculated",
+        "corrected"
+      ],
+      "default": "informed",
+      "title": "Fonte da validade"
+    },
+    "validity_rule": {
+      "type": "string",
+      "title": "Regra de validade utilizada"
+    },
+    "validity_rule_source": {
+      "type": "string",
+      "title": "Fonte da regra"
+    },
+    "validity_base_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data-base do c\u00e1lculo"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "title": "Respons\u00e1vel pela confer\u00eancia"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data e hora da confer\u00eancia"
+    },
+    "review_decision": {
+      "type": "string",
+      "title": "Decis\u00e3o da confer\u00eancia"
+    },
+    "review_justification": {
+      "type": "string",
+      "title": "Justificativa"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending_review",
+        "approved",
+        "rejected"
+      ],
+      "default": "draft",
+      "title": "Status de aprova\u00e7\u00e3o"
+    },
+    "approval_log": {
+      "type": "string",
+      "title": "Log de aprova\u00e7\u00e3o (JSON)"
+    }
+  },
+  "required": [
+    "pilot_id",
+    "license_type"
+  ],
+  "rls": {
+    "create": null,
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

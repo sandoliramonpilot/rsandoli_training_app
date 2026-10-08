@@ -14,6 +14,7 @@ import {
   REGISTRATION_STATUS_LABELS, REGISTRATION_STATUS_STYLES,
 } from "@/lib/pilotUtils";
 import NewPilotForm from "@/components/pilots/NewPilotForm";
+import PilotLicensesSection from "@/components/pilots/PilotLicensesSection";
 
 export default function Pilotos() {
   const [pilots, setPilots] = useState(null);
@@ -365,28 +366,9 @@ function PilotDetail({ pilot, me, isManager, onBack, onRefresh }) {
         )}
       </Section>
 
-      {/* Licenses */}
-      <Section title={`Licenças e Habilitações (${licenses.length})`} onEdit={isManager ? () => setEditing(editing === "licenses" ? null : "licenses") : null}>
-        {editing === "licenses" ? (
-          <EditList
-            kind="licenses"
-            pilot={pilot}
-            types={LICENSE_TYPES}
-            onCancel={() => setEditing(null)}
-            onSaved={onRefresh}
-          />
-        ) : licenses.length === 0 ? (
-          <p className="text-sm text-slate-500">Nenhuma licença cadastrada.</p>
-        ) : (
-          <ItemsList
-            items={licenses}
-            render={(l) => ({
-              title: l.typeLabel || l.type || "Licença",
-              sub: l.number ? `Nº ${l.number}` : "",
-              badge: l.expiry ? { d: days(l.expiry), text: fmt(l.expiry) } : null,
-            })}
-          />
-        )}
+      {/* Licenses — entidade PilotLicense */}
+      <Section title="Licenças e Habilitações">
+        <PilotLicensesSection pilot={pilot} isManager={isManager} onRefresh={onRefresh} />
       </Section>
 
       {/* Certificates */}

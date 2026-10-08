@@ -289,3 +289,58 @@ export function maskRG(rg) {
   if (rg.length <= 4) return rg;
   return `${"•".repeat(rg.length - 4)}${rg.slice(-4)}`;
 }
+
+// ===== LICENÇAS (entidade PilotLicense) =====
+export const PILOT_LICENSE_TYPES = [
+  { id: "pph", label: "PPH" },
+  { id: "pch", label: "PCH" },
+  { id: "ppa", label: "PPA" },
+  { id: "pca_ifr", label: "PCA/IFR" },
+  { id: "pla", label: "PLA" },
+  { id: "plah", label: "PLAH" },
+  { id: "other", label: "Outra licença" },
+];
+
+export const PILOT_LICENSE_SITUATIONS = [
+  { id: "valid", label: "Válida" },
+  { id: "near_expiry", label: "Próxima do vencimento" },
+  { id: "expired", label: "Vencida" },
+  { id: "suspended", label: "Suspensa" },
+  { id: "renewing", label: "Em renovação" },
+  { id: "pending", label: "Pendente de conferência" },
+  { id: "na", label: "Não aplicável" },
+];
+
+export const PILOT_LICENSE_SITUATION_STYLES = {
+  valid: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
+  near_expiry: "bg-amber-500/10 text-amber-300 border-amber-500/30",
+  expired: "bg-rose-500/10 text-rose-300 border-rose-500/30",
+  suspended: "bg-orange-500/10 text-orange-300 border-orange-500/30",
+  renewing: "bg-sky-500/10 text-sky-300 border-sky-500/30",
+  pending: "bg-slate-500/10 text-slate-300 border-slate-500/30",
+  na: "bg-slate-700/20 text-slate-500 border-slate-600/40",
+};
+
+export const PILOT_LICENSE_APPROVAL_STATUS = {
+  draft: { label: "Rascunho", style: "bg-slate-500/10 text-slate-400 border-slate-500/30" },
+  pending_review: { label: "Pendente de conferência", style: "bg-amber-500/10 text-amber-300 border-amber-500/30" },
+  approved: { label: "Aprovado", style: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30" },
+  rejected: { label: "Rejeitado", style: "bg-rose-500/10 text-rose-300 border-rose-500/30" },
+};
+
+export const PILOT_LICENSE_VALIDITY_SOURCES = [
+  { id: "informed", label: "Informada conforme documento" },
+  { id: "calculated", label: "Calculada por regra cadastrada" },
+  { id: "corrected", label: "Corrigida manualmente" },
+];
+
+export function licenseSituationAuto(license) {
+  if (!license || !license.expiry_date) return license?.situation || "pending";
+  const manual = ["suspended", "renewing", "pending", "na"];
+  if (license.situation && manual.includes(license.situation)) return license.situation;
+  const d = daysUntil(license.expiry_date);
+  if (d === null) return license.situation || "pending";
+  if (d < 0) return "expired";
+  if (d <= 90) return "near_expiry";
+  return "valid";
+}
