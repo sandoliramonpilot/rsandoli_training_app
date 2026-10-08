@@ -74,6 +74,8 @@ export default function Aircraft() {
       else await base44.entities.Aircraft.create({ ...payload, approval_status: "pending" });
       setShowForm(false);
       await load();
+    } catch (err) {
+      alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar aeronave.");
     } finally {
       setSaving(false);
     }

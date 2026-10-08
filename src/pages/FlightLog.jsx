@@ -260,6 +260,8 @@ export default function FlightLog() {
               else await base44.entities.FlightLog.create(payload);
               setShowForm(false);
               await load();
+            } catch (err) {
+              alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar voo.");
             } finally {
               setSaving(false);
             }

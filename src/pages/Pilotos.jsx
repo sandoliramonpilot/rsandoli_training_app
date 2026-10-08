@@ -516,9 +516,19 @@ const inputCls = "w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-7
 async function savePilotUpdate({ me, pilotId, changes, fields }) {
   if (fields) {
     const patch = {};
-    Object.entries(fields).forEach(([k, v]) => { if (v !== undefined) patch[k] = v; });
-    await base44.entities.Pilot.update(pilotId, patch);
+    Object.entries(fields).forEach(([k, v]) => {
+      if (v !== undefined) patch[k] = v === "" ? null : v;
+    });
+    try {
+      await base44.entities.Pilot.update(pilotId, patch);
+      return true;
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar.";
+      alert(msg);
+      return false;
+    }
   }
+  return true;
 }
 
 function EditPersonalSections({ pilot, onCancel, onSaved }) {
@@ -535,8 +545,8 @@ function EditPersonalSections({ pilot, onCancel, onSaved }) {
     e.preventDefault();
     setSaving(true);
     try {
-      await savePilotUpdate({ pilotId: pilot.id, fields: f });
-      onSaved(); onCancel();
+      const ok = await savePilotUpdate({ pilotId: pilot.id, fields: f });
+      if (ok) { onSaved(); onCancel(); }
     } finally { setSaving(false); }
   };
 
@@ -567,7 +577,7 @@ function EditOperational({ pilot, onCancel, onSaved }) {
   const [saving, setSaving] = useState(false);
   const submit = async (e) => {
     e.preventDefault(); setSaving(true);
-    try { await savePilotUpdate({ pilotId: pilot.id, fields: f }); onSaved(); onCancel(); } finally { setSaving(false); }
+    try { const ok = await savePilotUpdate({ pilotId: pilot.id, fields: f }); if (ok) { onSaved(); onCancel(); } } finally { setSaving(false); }
   };
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -592,8 +602,8 @@ function EditHours({ pilot, hours, onCancel, onSaved }) {
     e.preventDefault(); setSaving(true);
     try {
       const clean = Object.fromEntries(keys.map(([k]) => [k, f[k] === "" ? 0 : Number(f[k])]));
-      await savePilotUpdate({ pilotId: pilot.id, fields: { hours: JSON.stringify({ ...hours, ...clean }) } });
-      onSaved(); onCancel();
+      const ok = await savePilotUpdate({ pilotId: pilot.id, fields: { hours: JSON.stringify({ ...hours, ...clean }) } });
+      if (ok) { onSaved(); onCancel(); }
     } finally { setSaving(false); }
   };
   return (
@@ -626,8 +636,8 @@ function EditList({ kind, pilot, types, onCancel, onSaved }) {
           if (tl) it.typeLabel = tl;
         }
       }
-      await savePilotUpdate({ pilotId: pilot.id, fields: { [kind]: JSON.stringify(clean) } });
-      onSaved(); onCancel();
+      const ok = await savePilotUpdate({ pilotId: pilot.id, fields: { [kind]: JSON.stringify(clean) } });
+      if (ok) { onSaved(); onCancel(); }
     } finally { setSaving(false); }
   };
 
@@ -690,8 +700,8 @@ function EditDocuments({ pilot, onCancel, onSaved }) {
           if (cl) d.categoryLabel = cl;
         }
       }
-      await savePilotUpdate({ pilotId: pilot.id, fields: { documents: JSON.stringify(clean) } });
-      onSaved(); onCancel();
+      const ok = await savePilotUpdate({ pilotId: pilot.id, fields: { documents: JSON.stringify(clean) } });
+      if (ok) { onSaved(); onCancel(); }
     } finally { setSaving(false); }
   };
 
