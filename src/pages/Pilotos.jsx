@@ -2,32 +2,33 @@ import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { can } from "@/lib/accessControl";
 import BackToDashboard from "@/components/BackToDashboard";
+import NewPilotForm from "@/components/pilots/NewPilotForm";
+import PilotProfile from "@/components/pilots/PilotProfile";
 import {
-  Search, Plus, Users, ChevronLeft, Camera, Star, ShieldCheck,
-  Clock, AlertTriangle, CheckCircle2, X, Calendar, Phone, Mail,
-  MapPin, Building2, Hourglass, FileText, History, ChevronRight,
-  CircleUserRound, Loader2, BadgeCheck, XCircle,
+  Search, Plus, Users, ChevronLeft, Hourglass, AlertTriangle,
+  CheckCircle2, Clock, HeartPulse, ShieldCheck, FileWarning, X,
+  Loader2, BadgeCheck,
 } from "lucide-react";
 import {
-  ROLE_LABELS, safeParse, collectExpiries, nextCriticalExpiry,
-  EXPIRY_COLORS, LICENSE_TYPES, CERTIFICATE_TYPES, DOC_CATEGORIES,
-  REGISTRATION_STATUS_LABELS, REGISTRATION_STATUS_STYLES,
+  ROLE_LABELS, REGISTRATION_STATUS_LABELS, REGISTRATION_STATUS_STYLES,
+  safeParse, collectExpiries, nextCriticalExpiry, cmaStatus, daysUntil,
+  EXPIRY_COLORS,
 } from "@/lib/pilotUtils";
-import NewPilotForm from "@/components/pilots/NewPilotForm";
-import PilotLicensesSection from "@/components/pilots/PilotLicensesSection";
 
 export default function Pilotos() {
   const [pilots, setPilots] = useState(null);
   const [me, setMe] = useState(null);
   const [selected, setSelected] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showApprovals, setShowApprovals] = useState(false);
+  const [requests, setRequests] = useState([]);
   const [query, setQuery] = useState("");
   const [fRole, setFRole] = useState("all");
   const [fBase, setFBase] = useState("all");
   const [fStatus, setFStatus] = useState("all");
+  const [fExpiry, setFExpiry] = useState("all");
   const [sortBy, setSortBy] = useState("name");
-  const [showApprovals, setShowApprovals] = useState(false);
-  const [requests, setRequests] = useState([]);
+  const [activeCard, setActiveCard] = useState(null);
 
   const isManager = can(me, "pilotos", "editar");
 
@@ -51,21 +52,61 @@ export default function Pilotos() {
     let list = [...pilots];
     if (fRole !== "all") list = list.filter((p) => p.role === fRole);
     if (fBase !== "all") list = list.filter((p) => p.base === fBase);
-    if (fStatus !== "all") list = list.filter((p) => p.status === fStatus);
+    if (fStatus !== "all") list = list.filter((p) => p.registration_status === fStatus);
+    if (activeCard) list = applyCardFilter(list, activeCard);
+    if (fExpiry !== "all") {
+      list = list.filter((p) => {
+        const exp = collectExpiries(p);
+        if (fExpiry === "expired") return exp.some((e) => daysUntil(e.date) < 0);
+        if (fExpiry === "15") return exp.some((e) => { const d = daysUntil(e.date); return d >= 0 && d <= 15; });
+        if (fExpiry === "30") return exp.some((e) => { const d = daysUntil(e.date); return d > 15 && d <= 30; });
+        if (fExpiry === "60") return exp.some((e) => { const d = daysUntil(e.date); return d > 30 && d <= 60; });
+        if (fExpiry === "90") return exp.some((e) => { const d = daysUntil(e.date); return d > 60 && d <= 90; });
+        return true;
+      });
+    }
     const q = query.trim().toLowerCase();
-    if (q) list = list.filter((p) => [p.full_name, p.war_name, p.registration, p.company].filter(Boolean).join(" ").toLowerCase().includes(q));
+    if (q) list = list.filter((p) => [p.full_name, p.war_name, p.registration, p.anac_code, p.email].filter(Boolean).join(" ").toLowerCase().includes(q));
     list.sort((a, b) => {
       if (sortBy === "expiry") {
         const ea = nextCriticalExpiry(a)?.days ?? 9999;
         const eb = nextCriticalExpiry(b)?.days ?? 9999;
         return ea - eb;
       }
+      if (sortBy === "cma") {
+        const ca = cmaStatus(safeParse(a.cma, null)).days ?? 9999;
+        const cb = cmaStatus(safeParse(b.cma, null)).days ?? 9999;
+        return ca - cb;
+      }
       return (a.full_name || "").localeCompare(b.full_name || "");
     });
     return list;
-  }, [pilots, fRole, fBase, fStatus, query, sortBy]);
+  }, [pilots, fRole, fBase, fStatus, fExpiry, query, sortBy, activeCard]);
 
-  const fromList = selected ? pilots.find((p) => p.id === selected.id) : null;
+  const indicators = useMemo(() => {
+    if (!pilots) return null;
+    const active = pilots.filter((p) => p.registration_status === "active").length;
+    const training = pilots.filter((p) => p.registration_status === "training").length;
+    const pending = pilots.filter((p) => p.registration_status === "pending" || p.approval_status === "pending").length;
+    let cma30 = 0, cmaExpired = 0, habNear = 0, habExpired = 0, docPending = 0;
+    pilots.forEach((p) => {
+      const cma = safeParse(p.cma, null);
+      const cs = cmaStatus(cma);
+      if (cs.status === "expired") cmaExpired++;
+      else if (cs.days !== null && cs.days <= 30) cma30++;
+      const exp = collectExpiries(p);
+      exp.forEach((e) => {
+        const d = daysUntil(e.date);
+        if (d < 0) { if (e.kind === "Habilitação") habExpired++; }
+        else if (d <= 90 && e.kind === "Habilitação") habNear++;
+      });
+      const docs = safeParse(p.documents, []);
+      docPending += docs.filter((d) => !d.category).length;
+    });
+    return { active, training, pending, cma30, cmaExpired, habNear, habExpired, docPending };
+  }, [pilots]);
+
+  const fromList = selected ? pilots?.find((p) => p.id === selected.id) : null;
   const selectedPilot = fromList || selected;
 
   if (!pilots || !me) {
@@ -86,11 +127,11 @@ export default function Pilotos() {
           </h1>
           <p className="text-slate-400 mt-2 text-sm">Gestão documental, habilitações, vencimentos e experiência operacional.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <BackToDashboard />
           {isManager && (
             <button
-              onClick={() => { setShowApprovals(true); }}
+              onClick={() => setShowApprovals(true)}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-700 text-slate-200 hover:border-amber-500/40 hover:text-amber-300 transition-colors"
             >
               <Hourglass className="w-4 h-4" /> Aprovações
@@ -108,7 +149,7 @@ export default function Pilotos() {
       </header>
 
       {selectedPilot ? (
-        <PilotDetail
+        <PilotProfile
           pilot={selectedPilot}
           me={me}
           isManager={isManager}
@@ -117,6 +158,26 @@ export default function Pilotos() {
         />
       ) : (
         <>
+          {/* Indicators */}
+          {indicators && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              <Indicator label="Pilotos ativos" value={indicators.active} color="emerald" icon={CheckCircle2} onClick={() => setActiveCard("active")} active={activeCard === "active"} />
+              <Indicator label="Em treinamento" value={indicators.training} color="violet" icon={Clock} onClick={() => setActiveCard("training")} active={activeCard === "training"} />
+              <Indicator label="Cadastros pendentes" value={indicators.pending} color="amber" icon={Hourglass} onClick={() => setActiveCard("pending")} active={activeCard === "pending"} />
+              <Indicator label="CMA ≤ 30 dias" value={indicators.cma30} color="orange" icon={HeartPulse} onClick={() => setActiveCard("cma30")} active={activeCard === "cma30"} />
+              <Indicator label="CMA vencidos" value={indicators.cmaExpired} color="rose" icon={HeartPulse} onClick={() => setActiveCard("cmaExpired")} active={activeCard === "cmaExpired"} />
+              <Indicator label="Habilitações vencendo" value={indicators.habNear} color="yellow" icon={ShieldCheck} onClick={() => setActiveCard("habNear")} active={activeCard === "habNear"} />
+              <Indicator label="Habilitações vencidas" value={indicators.habExpired} color="rose" icon={ShieldCheck} onClick={() => setActiveCard("habExpired")} active={activeCard === "habExpired"} />
+              <Indicator label="Documentos pendentes" value={indicators.docPending} color="amber" icon={FileWarning} onClick={() => setActiveCard("docPending")} active={activeCard === "docPending"} />
+            </div>
+          )}
+
+          {activeCard && (
+            <button onClick={() => setActiveCard(null)} className="text-xs text-amber-400 hover:text-amber-300 inline-flex items-center gap-1">
+              <ChevronLeft className="w-3 h-3" /> Remover filtro do card
+            </button>
+          )}
+
           {/* Filters + search */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="relative lg:col-span-2">
@@ -130,13 +191,23 @@ export default function Pilotos() {
             </div>
             <Select value={fRole} onChange={setFRole} options={[{ v: "all", l: "Todas funções" }, ...Object.entries(ROLE_LABELS).map(([v, l]) => ({ v, l }))]} />
             <Select value={fBase} onChange={setFBase} options={[{ v: "all", l: "Todas bases" }, ...bases.map((b) => ({ v: b, l: b }))]} />
-            <Select value={fStatus} onChange={setFStatus} options={[{ v: "all", l: "Todos status" }, { v: "active", l: "Ativo" }, { v: "inactive", l: "Inativo" }]} />
+            <Select value={fStatus} onChange={setFStatus} options={[{ v: "all", l: "Todas situações" }, ...Object.entries(REGISTRATION_STATUS_LABELS).map(([v, l]) => ({ v, l }))]} />
           </div>
 
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500">{filtered.length} piloto(s)</p>
-            <button onClick={() => setSortBy(sortBy === "name" ? "expiry" : "name")} className="text-xs font-medium text-amber-400 hover:text-amber-300">
-              {sortBy === "name" ? "Ordenar por vencimento" : "Ordenar por nome"} <ChevronRight className="w-3 h-3 inline" />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-slate-500">{filtered.length} piloto(s)</p>
+              <Select value={fExpiry} onChange={setFExpiry} options={[
+                { v: "all", l: "Todos vencimentos" },
+                { v: "expired", l: "Vencidos" },
+                { v: "15", l: "≤ 15 dias" },
+                { v: "30", l: "≤ 30 dias" },
+                { v: "60", l: "≤ 60 dias" },
+                { v: "90", l: "≤ 90 dias" },
+              ]} small />
+            </div>
+            <button onClick={() => setSortBy(sortBy === "name" ? "expiry" : sortBy === "expiry" ? "cma" : "name")} className="text-xs font-medium text-amber-400 hover:text-amber-300">
+              Ordenar por: {sortBy === "name" ? "Nome" : sortBy === "expiry" ? "Vencimento" : "CMA"}
             </button>
           </div>
 
@@ -147,6 +218,8 @@ export default function Pilotos() {
               {filtered.map((p) => {
                 const crit = nextCriticalExpiry(p);
                 const exp = crit ? EXPIRY_COLORS[crit.status] : EXPIRY_COLORS.none;
+                const cma = safeParse(p.cma, null);
+                const cmaSt = cmaStatus(cma);
                 return (
                   <button
                     key={p.id}
@@ -164,7 +237,7 @@ export default function Pilotos() {
                     )}
                     {p.approval_status === "rejected" && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30 mb-2">
-                        <XCircle className="w-3 h-3" /> Rejeitado
+                        <X className="w-3 h-3" /> Rejeitado
                       </span>
                     )}
                     <div className="flex items-start gap-4">
@@ -172,23 +245,29 @@ export default function Pilotos() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <h3 className="font-semibold text-slate-100 truncate">{p.full_name}</h3>
+                          {p.is_master && <BadgeCheck className="w-4 h-4 text-amber-400 shrink-0" />}
                         </div>
                         <p className="text-xs text-amber-400/90 font-medium">{ROLE_LABELS[p.role] || p.role}</p>
                         <p className="text-[11px] text-slate-500 mt-1 truncate">
-                          {p.registration ? `#CANAC/CPF ${p.registration} · ` : ""}{p.base || "Sem base"}
+                          {p.registration ? `#CANAC/CPF ${p.registration} · ` : p.anac_code ? `CANAC ${p.anac_code} · ` : ""}{p.base || "Sem base"}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-700/40">
-                      <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${p.status === "active" ? "text-emerald-400" : "text-slate-500"}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${p.status === "active" ? "bg-emerald-500" : "bg-slate-500"}`} />
-                        {p.status === "active" ? "Ativo" : "Inativo"}
+                      <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border ${REGISTRATION_STATUS_STYLES[p.registration_status] || REGISTRATION_STATUS_STYLES.inactive || ""}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+                        {REGISTRATION_STATUS_LABELS[p.registration_status] || p.registration_status}
                       </span>
                       <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border ${exp.pill}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${exp.dot}`} />
                         {crit ? `${crit.kind} ${crit.label}` : "Sem vencimentos"}
                       </span>
                     </div>
+                    {cma && (
+                      <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500">
+                        <HeartPulse className="w-3 h-3" /> CMA: {cmaSt.label}
+                      </div>
+                    )}
                   </button>
                 );
               })}
@@ -217,15 +296,65 @@ export default function Pilotos() {
   );
 }
 
-function Select({ value, onChange, options }) {
+function applyCardFilter(list, card) {
+  switch (card) {
+    case "active": return list.filter((p) => p.registration_status === "active");
+    case "training": return list.filter((p) => p.registration_status === "training");
+    case "pending": return list.filter((p) => p.registration_status === "pending" || p.approval_status === "pending");
+    case "cma30": return list.filter((p) => { const cs = cmaStatus(safeParse(p.cma, null)); return cs.days !== null && cs.days >= 0 && cs.days <= 30; });
+    case "cmaExpired": return list.filter((p) => cmaStatus(safeParse(p.cma, null)).status === "expired");
+    case "habNear": return list.filter((p) => collectExpiries(p).some((e) => { const d = daysUntil(e.date); return e.kind === "Habilitação" && d >= 0 && d <= 90; }));
+    case "habExpired": return list.filter((p) => collectExpiries(p).some((e) => { const d = daysUntil(e.date); return e.kind === "Habilitação" && d < 0; }));
+    case "docPending": return list.filter((p) => safeParse(p.documents, []).some((d) => !d.category));
+    default: return list;
+  }
+}
+
+function Select({ value, onChange, options, small }) {
   return (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="px-3 py-2.5 rounded-xl bg-[#1A1D25] border border-slate-700/60 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50"
+      className={`${small ? "px-2.5 py-1.5 text-xs" : "px-3 py-2.5 text-sm"} rounded-xl bg-[#1A1D25] border border-slate-700/60 text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50`}
     >
       {options.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
     </select>
+  );
+}
+
+function Indicator({ label, value, color, icon: Icon, onClick, active }) {
+  const map = {
+    emerald: "from-emerald-500/20 border-emerald-500/30 text-emerald-300",
+    violet: "from-violet-500/20 border-violet-500/30 text-violet-300",
+    amber: "from-amber-500/20 border-amber-500/30 text-amber-300",
+    orange: "from-orange-500/20 border-orange-500/30 text-orange-300",
+    rose: "from-rose-500/20 border-rose-500/30 text-rose-300",
+    yellow: "from-yellow-500/20 border-yellow-500/30 text-yellow-300",
+  };
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-2xl border bg-gradient-to-br ${map[color]} to-transparent p-4 text-left transition-all ${active ? "ring-2 ring-amber-500/50 scale-[1.02]" : "hover:scale-[1.01]"}`}
+    >
+      <div className="flex items-center justify-between">
+        <Icon className="w-4 h-4 opacity-70" />
+        <span className="text-2xl font-bold">{value}</span>
+      </div>
+      <p className="text-[11px] opacity-80 mt-1">{label}</p>
+    </button>
+  );
+}
+
+function Avatar({ pilot, size = "md" }) {
+  const cls = size === "lg" ? "w-14 h-14 rounded-xl" : "w-16 h-16 rounded-xl";
+  return (
+    <div className={`${cls} bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center shrink-0 overflow-hidden`}>
+      {pilot?.photo_uri ? (
+        <img src={pilot.photo_uri} alt={pilot?.full_name || "Foto"} className="w-full h-full object-cover" />
+      ) : (
+        <span className="text-lg font-bold text-amber-400/60">{(pilot?.full_name || "?").slice(0, 2).toUpperCase()}</span>
+      )}
+    </div>
   );
 }
 
@@ -238,535 +367,7 @@ function EmptyState() {
   );
 }
 
-function Avatar({ pilot, size = "md", uri }) {
-  const src = uri || pilot?.photo_uri;
-  const cls = size === "lg" ? "w-14 h-14 rounded-xl" : "w-16 h-16 rounded-xl";
-  return (
-    <div className={`${cls} bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center shrink-0 overflow-hidden`}>
-      {src ? (
-        <img src={src} alt={pilot?.full_name || "Foto"} className="w-full h-full object-cover" />
-      ) : (
-        <CircleUserRound className="w-8 h-8 text-slate-500" />
-      )}
-    </div>
-  );
-}
-
-// ---------- PILOT DETAIL ----------
-function PilotDetail({ pilot, me, isManager, onBack, onRefresh }) {
-  const [editing, setEditing] = useState(null); // 'personal'|'operational'|'licenses'|'certificates'|'docs'
-  const hours = safeParse(pilot.hours, {});
-  const licenses = safeParse(pilot.licenses, []);
-  const certificates = safeParse(pilot.certificates, []);
-  const documents = safeParse(pilot.documents, []);
-  const expiries = collectExpiries(pilot);
-
-  const stats = {
-    expired: expiries.filter((e) => days(e.date) < 0).length,
-    "30": expiries.filter((e) => { const d = days(e.date); return d >= 0 && d <= 30; }).length,
-    "60": expiries.filter((e) => { const d = days(e.date); return d > 30 && d <= 60; }).length,
-    "90": expiries.filter((e) => { const d = days(e.date); return d > 60 && d <= 90; }).length,
-  };
-
-  return (
-    <div className="space-y-4">
-      <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-amber-300 transition-colors">
-        <ChevronLeft className="w-4 h-4" /> Voltar à lista
-      </button>
-
-      {/* Header card */}
-      <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-6 flex flex-col sm:flex-row gap-5">
-        <Avatar pilot={pilot} size="lg" />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-2xl font-bold text-slate-100">{pilot.full_name}</h2>
-            {pilot.war_name && <span className="text-sm text-amber-400/80">"{pilot.war_name}"</span>}
-          </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-slate-400">
-            <span className="inline-flex items-center gap-1.5"><BadgeCheck className="w-4 h-4 text-amber-400" /> {ROLE_LABELS[pilot.role] || pilot.role}</span>
-            <span className="inline-flex items-center gap-1.5"><Building2 className="w-4 h-4 text-slate-500" /> {pilot.company || "—"}</span>
-            <span className="inline-flex items-center gap-1.5"><MapPin className="w-4 h-4 text-slate-500" /> {pilot.base || "—"}</span>
-            <span className="inline-flex items-center gap-1.5"><Mail className="w-4 h-4 text-slate-500" /> {pilot.email || "—"}</span>
-            <span className="inline-flex items-center gap-1.5"><Phone className="w-4 h-4 text-slate-500" /> {pilot.phone || "—"}</span>
-          </div>
-        </div>
-        {isManager && (
-          <button onClick={() => editing ? setEditing(null) : setEditing("personal")} className="self-start px-4 py-2 rounded-lg text-sm font-medium border border-slate-700 text-slate-200 hover:border-amber-500/40 hover:text-amber-300">
-            {editing ? "Concluir" : "Editar"}
-          </button>
-        )}
-      </div>
-
-      {/* Expiry panel */}
-      {expiries.length > 0 && (
-        <div className="bg-[#12141A] rounded-2xl border border-slate-700/60 p-5">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-200 mb-4"><AlertTriangle className="w-4 h-4 text-amber-400" /> Controle de Vencimentos</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <Stat mini color="rose" label="Vencidos" value={stats.expired} />
-            <Stat mini color="amber" label="≤ 30 dias" value={stats["30"]} />
-            <Stat mini color="yellow" label="≤ 60 dias" value={stats["60"]} />
-            <Stat mini color="emerald" label="≤ 90 dias" value={stats["90"]} />
-          </div>
-          <ul className="space-y-2">
-            {expiries.map((e, i) => {
-              const d = days(e.date);
-              const st = d < 0 ? "expired" : d <= 30 ? "30" : d <= 60 ? "60" : d <= 90 ? "90" : "ok";
-              const c = EXPIRY_COLORS[st];
-              return (
-                <li key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-700/30 last:border-0">
-                  <span className="flex items-center gap-2 text-slate-300">
-                    <span className={`w-2 h-2 rounded-full ${c.dot}`} />
-                    <span className="text-[11px] uppercase tracking-wider text-slate-500">{e.kind}</span>
-                    {e.label}
-                  </span>
-                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${c.pill}`}>{fmt(e.date)}{st === "ok" ? "" : ` · ${c.label}`}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      {/* Personal */}
-      <Section title="Dados Pessoais" onEdit={isManager ? () => setEditing(editing === "personal" ? null : "personal") : null}>
-        {editing === "personal" ? (
-          <EditPersonalSections pilot={pilot} onCancel={() => setEditing(null)} onSaved={onRefresh} />
-        ) : (
-          <Grid rows={[
-            ["Nome completo", pilot.full_name], ["Nome de guerra", pilot.war_name], ["Nascimento", fmt(pilot.birth_date)],
-            ["CPF", pilot.cpf], ["RG", pilot.rg], ["#CANAC/CPF", pilot.registration],
-            ["Nacionalidade", pilot.nationality], ["Estado civil", pilot.marital_status], ["Tipo sanguíneo", pilot.blood_type],
-            ["Telefone", pilot.phone], ["E-mail", pilot.email], ["Endereço", pilot.address],
-          ]} />
-        )}
-      </Section>
-
-      {/* Operational */}
-      <Section title="Dados Operacionais" onEdit={isManager ? () => setEditing(editing === "operational" ? null : "operational") : null}>
-        {editing === "operational" ? (
-          <EditOperational pilot={pilot} onCancel={() => setEditing(null)} onSaved={onRefresh} />
-        ) : (
-          <Grid rows={[
-            ["Função", ROLE_LABELS[pilot.role] || pilot.role], ["Base operacional", pilot.base], ["Empresa", pilot.company],
-            ["Admissão", fmt(pilot.admission_date)], ["Código ANAC", pilot.anac_code], ["Status", pilot.status === "active" ? "Ativo" : "Inativo"],
-          ]} />
-        )}
-      </Section>
-
-      {/* Hours */}
-      <Section title="Horas de Voo" onEdit={isManager ? () => setEditing(editing === "hours" ? null : "hours") : null}>
-        {editing === "hours" ? (
-          <EditHours pilot={pilot} hours={hours} onCancel={() => setEditing(null)} onSaved={onRefresh} />
-        ) : (
-          <Grid rows={[
-            ["Horas totais", hours.total ?? "—"], ["Em helicópteros", hours.rotary ?? "—"], ["No AW119Kx", hours.aw119 ?? "—"],
-            ["IFR", hours.ifr ?? "—"], ["NVG", hours.nvg ?? "—"], ["Últimos 30 dias", hours.d30 ?? "—"],
-            ["Últimos 90 dias", hours.d90 ?? "—"], ["Últimos 12 meses", hours.d12 ?? "—"],
-          ]} />
-        )}
-      </Section>
-
-      {/* Licenses — entidade PilotLicense */}
-      <Section title="Licenças e Habilitações">
-        <PilotLicensesSection pilot={pilot} isManager={isManager} onRefresh={onRefresh} />
-      </Section>
-
-      {/* Certificates */}
-      <Section title={`Certificados e Cursos (${certificates.length})`} onEdit={isManager ? () => setEditing(editing === "certificates" ? null : "certificates") : null}>
-        {editing === "certificates" ? (
-          <EditList
-            kind="certificates"
-            pilot={pilot}
-            types={CERTIFICATE_TYPES}
-            onCancel={() => setEditing(null)}
-            onSaved={onRefresh}
-          />
-        ) : certificates.length === 0 ? (
-          <p className="text-sm text-slate-500">Nenhum curso cadastrado.</p>
-        ) : (
-          <ItemsList
-            items={certificates}
-            render={(c) => ({
-              title: c.typeLabel || c.type || "Curso",
-              sub: c.institution ? c.institution : "",
-              badge: c.expiry ? { d: days(c.expiry), text: fmt(c.expiry) } : null,
-            })}
-          />
-        )}
-      </Section>
-
-      {/* Documents */}
-      <Section title={`Documentos (${documents.length})`} onEdit={isManager ? () => setEditing(editing === "docs" ? null : "docs") : null}>
-        {editing === "docs" ? (
-          <EditDocuments pilot={pilot} onCancel={() => setEditing(null)} onSaved={onRefresh} />
-        ) : documents.length === 0 ? (
-          <p className="text-sm text-slate-500">Nenhum documento anexado.</p>
-        ) : (
-          <ItemsList
-            items={documents}
-            render={(d) => ({
-              title: d.label || d.categoryLabel || "Documento",
-              sub: d.note || "",
-              badge: d.expiry ? { d: days(d.expiry), text: fmt(d.expiry) } : null,
-              action: d.file_uri ? { label: "Abrir", onClick: () => openFile(d.file_uri) } : null,
-            })}
-          />
-        )}
-      </Section>
-    </div>
-  );
-}
-
-function days(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (isNaN(d)) return null;
-  const now = new Date(); now.setHours(0,0,0,0); d.setHours(0,0,0,0);
-  return Math.round((d - now) / 86400000);
-}
-function fmt(dateStr) {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  if (isNaN(d)) return dateStr;
-  return d.toLocaleDateString("pt-BR");
-}
-async function openFile(file_uri) {
-  try {
-    const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri });
-    window.open(signed_url, "_blank");
-  } catch { alert("Não foi possível abrir o arquivo."); }
-}
-
-function Section({ title, onEdit, children }) {
-  return (
-    <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3.5 bg-[#12141A] border-b border-slate-700/60">
-        <h3 className="font-semibold text-sm text-slate-200">{title}</h3>
-        {onEdit && (
-          <button onClick={onEdit} className="text-xs font-medium text-amber-400 hover:text-amber-300">
-            {onEdit ? "Editar" : ""}
-          </button>
-        )}
-      </div>
-      <div className="px-5 py-4">{children}</div>
-    </div>
-  );
-}
-
-function Grid({ rows }) {
-  return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-      {rows.map(([k, v]) => (
-        <div key={k} className="flex justify-between gap-2 text-sm border-b border-slate-700/30 pb-2">
-          <span className="text-slate-500 shrink-0">{k}</span>
-          <span className="text-slate-200 text-right truncate">{v || "—"}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ItemsList({ items, render }) {
-  return (
-    <div className="space-y-2">
-      {items.map((it, i) => {
-        const r = render(it);
-        const c = r.badge ? EXPIRY_COLORS[r.badge.d < 0 ? "expired" : r.badge.d <= 30 ? "30" : r.badge.d <= 60 ? "60" : r.badge.d <= 90 ? "90" : "ok"] : EXPIRY_COLORS.none;
-        return (
-          <div key={i} className="flex items-center justify-between gap-3 py-2 border-b border-slate-700/30 last:border-0">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-slate-200 truncate">{r.title}</p>
-              {r.sub && <p className="text-xs text-slate-500 truncate">{r.sub}</p>}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {r.badge && <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${c.pill}`}>{r.badge.text}</span>}
-              {r.action && (
-                <button onClick={r.action.onClick} className="text-xs font-medium text-amber-400 hover:text-amber-300">{r.action.label}</button>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function Stat({ mini, color, label, value }) {
-  const map = { rose: "from-rose-500/20 border-rose-500/30 text-rose-300", amber: "from-amber-500/20 border-amber-500/30 text-amber-300", yellow: "from-yellow-500/20 border-yellow-500/30 text-yellow-300", emerald: "from-emerald-500/20 border-emerald-500/30 text-emerald-300" };
-  return (
-    <div className={`rounded-xl border bg-gradient-to-br ${map[color]} to-transparent p-3 text-center`}>
-      <p className="text-xl font-bold">{value}</p>
-      <p className="text-[11px] opacity-80">{label}</p>
-    </div>
-  );
-}
-
-// ---------- FORMS (editing sections) ----------
-function Field({ label, children }) {
-  return (
-    <label className="block">
-      <span className="block text-xs font-medium text-slate-400 mb-1">{label}</span>
-      {children}
-    </label>
-  );
-}
-const inputCls = "w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50";
-
-// Saves edit of pilot fields; uses change-request flow for non-managers
-async function savePilotUpdate({ me, pilotId, changes, fields }) {
-  if (fields) {
-    const patch = {};
-    Object.entries(fields).forEach(([k, v]) => {
-      if (v !== undefined) patch[k] = v === "" ? null : v;
-    });
-    try {
-      await base44.entities.Pilot.update(pilotId, patch);
-      return true;
-    } catch (err) {
-      const msg = err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar.";
-      alert(msg);
-      return false;
-    }
-  }
-  return true;
-}
-
-function EditPersonalSections({ pilot, onCancel, onSaved }) {
-  const [f, setF] = useState(() => ({
-    full_name: pilot.full_name || "", war_name: pilot.war_name || "", birth_date: pilot.birth_date || "",
-    cpf: pilot.cpf || "", rg: pilot.rg || "", registration: pilot.registration || "",
-    nationality: pilot.nationality || "", marital_status: pilot.marital_status || "", blood_type: pilot.blood_type || "",
-    phone: pilot.phone || "", email: pilot.email || "", address: pilot.address || "",
-  }));
-  const [saving, setSaving] = useState(false);
-  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const ok = await savePilotUpdate({ pilotId: pilot.id, fields: f });
-      if (ok) { onSaved(); onCancel(); }
-    } finally { setSaving(false); }
-  };
-
-  return (
-    <form onSubmit={submit} className="space-y-4">
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <Field label="Nome completo"><input className={inputCls} value={f.full_name} onChange={set("full_name")} /></Field>
-        <Field label="Nome de guerra"><input className={inputCls} value={f.war_name} onChange={set("war_name")} /></Field>
-        <Field label="Nascimento"><input type="date" className={inputCls} value={f.birth_date} onChange={set("birth_date")} /></Field>
-        <Field label="CPF"><input className={inputCls} value={f.cpf} onChange={set("cpf")} /></Field>
-        <Field label="RG"><input className={inputCls} value={f.rg} onChange={set("rg")} /></Field>
-        <Field label="#CANAC/CPF"><input className={inputCls} value={f.registration} onChange={set("registration")} /></Field>
-        <Field label="Nacionalidade"><input className={inputCls} value={f.nationality} onChange={set("nationality")} /></Field>
-        <Field label="Estado civil"><input className={inputCls} value={f.marital_status} onChange={set("marital_status")} /></Field>
-        <Field label="Tipo sanguíneo"><input className={inputCls} value={f.blood_type} onChange={set("blood_type")} /></Field>
-        <Field label="Telefone"><input className={inputCls} value={f.phone} onChange={set("phone")} /></Field>
-        <Field label="E-mail"><input className={inputCls} value={f.email} onChange={set("email")} /></Field>
-        <Field label="Endereço"><input className={inputCls} value={f.address} onChange={set("address")} /></Field>
-      </div>
-      <FormActions saving={saving} onCancel={onCancel} />
-    </form>
-  );
-}
-
-function EditOperational({ pilot, onCancel, onSaved }) {
-  const [f, setF] = useState(() => ({ role: pilot.role || "copilot", base: pilot.base || "", company: pilot.company || "", admission_date: pilot.admission_date || "", anac_code: pilot.anac_code || "", status: pilot.status || "active" }));
-  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
-  const [saving, setSaving] = useState(false);
-  const submit = async (e) => {
-    e.preventDefault(); setSaving(true);
-    try { const ok = await savePilotUpdate({ pilotId: pilot.id, fields: f }); if (ok) { onSaved(); onCancel(); } } finally { setSaving(false); }
-  };
-  return (
-    <form onSubmit={submit} className="space-y-4">
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <Field label="Função"><select className={inputCls} value={f.role} onChange={set("role")}>{Object.entries(ROLE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
-        <Field label="Base operacional"><input className={inputCls} value={f.base} onChange={set("base")} /></Field>
-        <Field label="Empresa"><input className={inputCls} value={f.company} onChange={set("company")} /></Field>
-        <Field label="Admissão"><input type="date" className={inputCls} value={f.admission_date} onChange={set("admission_date")} /></Field>
-        <Field label="Código ANAC"><input className={inputCls} value={f.anac_code} onChange={set("anac_code")} /></Field>
-        <Field label="Status"><select className={inputCls} value={f.status} onChange={set("status")}><option value="active">Ativo</option><option value="inactive">Inativo</option></select></Field>
-      </div>
-      <FormActions saving={saving} onCancel={onCancel} />
-    </form>
-  );
-}
-
-function EditHours({ pilot, hours, onCancel, onSaved }) {
-  const keys = [["total", "Horas totais"], ["rotary", "Em helicópteros"], ["aw119", "No AW119Kx"], ["ifr", "IFR"], ["nvg", "NVG"], ["d30", "Últimos 30 dias"], ["d90", "Últimos 90 dias"], ["d12", "Últimos 12 meses"]];
-  const [f, setF] = useState(() => Object.fromEntries(keys.map(([k]) => [k, hours[k] ?? ""])));
-  const [saving, setSaving] = useState(false);
-  const submit = async (e) => {
-    e.preventDefault(); setSaving(true);
-    try {
-      const clean = Object.fromEntries(keys.map(([k]) => [k, f[k] === "" ? 0 : Number(f[k])]));
-      const ok = await savePilotUpdate({ pilotId: pilot.id, fields: { hours: JSON.stringify({ ...hours, ...clean }) } });
-      if (ok) { onSaved(); onCancel(); }
-    } finally { setSaving(false); }
-  };
-  return (
-    <form onSubmit={submit} className="space-y-4">
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {keys.map(([k, l]) => (
-          <Field key={k} label={l}><input type="number" min="0" className={inputCls} value={f[k]} onChange={(e) => setF((p) => ({ ...p, [k]: e.target.value }))} /></Field>
-        ))}
-      </div>
-      <FormActions saving={saving} onCancel={onCancel} />
-    </form>
-  );
-}
-
-function EditList({ kind, pilot, types, onCancel, onSaved }) {
-  const [items, setItems] = useState(() => safeParse(pilot[kind], []));
-  const [saving, setSaving] = useState(false);
-
-  const addRow = () => setItems((p) => [...p, { type: "", typeLabel: "", number: "", issue: "", expiry: "", institution: "", note: "" }]);
-  const upd = (i, k, v) => setItems((arr) => arr.map((x, j) => j === i ? { ...x, [k]: v } : x));
-  const del = (i) => setItems((arr) => arr.filter((_, j) => j !== i));
-
-  const submit = async (e) => {
-    e.preventDefault(); setSaving(true);
-    try {
-      const clean = items.filter((x) => x.type || x.typeLabel || x.number || x.expiry);
-      for (const it of clean) {
-        if (it.type) {
-          const tl = (types.find((t) => t.id === it.type) || {}).label;
-          if (tl) it.typeLabel = tl;
-        }
-      }
-      const ok = await savePilotUpdate({ pilotId: pilot.id, fields: { [kind]: JSON.stringify(clean) } });
-      if (ok) { onSaved(); onCancel(); }
-    } finally { setSaving(false); }
-  };
-
-  return (
-    <form onSubmit={submit} className="space-y-4">
-      {items.length === 0 && <p className="text-sm text-slate-500">Nenhum item — adicione abaixo.</p>}
-      {items.map((it, i) => (
-        <div key={i} className="rounded-xl border border-slate-700/60 bg-[#12141A] p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Item {i + 1}</span>
-            <button type="button" onClick={() => del(i)} className="text-xs text-rose-400 hover:text-rose-300">Remover</button>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-2">
-            <Field label="Tipo">
-              <select className={inputCls} value={it.type} onChange={(e) => upd(i, "type", e.target.value)}>
-                <option value="">Selecione…</option>
-                {types.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-              </select>
-            </Field>
-            <Field label="Número"><input className={inputCls} value={it.number} onChange={(e) => upd(i, "number", e.target.value)} /></Field>
-            <Field label="Emissão"><input type="date" className={inputCls} value={it.issue} onChange={(e) => upd(i, "issue", e.target.value)} /></Field>
-            <Field label="Vencimento"><input type="date" className={inputCls} value={it.expiry} onChange={(e) => upd(i, "expiry", e.target.value)} /></Field>
-            <Field label="Instituição"><input className={inputCls} value={it.institution} onChange={(e) => upd(i, "institution", e.target.value)} /></Field>
-            <Field label="Observações"><input className={inputCls} value={it.note} onChange={(e) => upd(i, "note", e.target.value)} /></Field>
-          </div>
-        </div>
-      ))}
-      <button type="button" onClick={addRow} className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-400 hover:text-amber-300">
-        <Plus className="w-4 h-4" /> Adicionar item
-      </button>
-      <FormActions saving={saving} onCancel={onCancel} />
-    </form>
-  );
-}
-
-function EditDocuments({ pilot, onCancel, onSaved }) {
-  const [items, setItems] = useState(() => safeParse(pilot.documents, []));
-  const [uploading, setUploading] = useState(null);
-  const [saving, setSaving] = useState(false);
-
-  const addFile = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploading(file.name);
-    try {
-      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
-      setItems((arr) => [...arr, { category: "", categoryLabel: "", label: file.name, note: "", expiry: "", file_uri, file_name: file.name }]);
-    } catch { alert("Erro ao enviar arquivo."); }
-    setUploading(null);
-    e.target.value = "";
-  };
-
-  const submit = async (e) => {
-    e.preventDefault(); setSaving(true);
-    try {
-      const clean = items.filter((x) => x.category || x.label);
-      for (const d of clean) {
-        if (d.category) {
-          const cl = (DOC_CATEGORIES.find((c) => c.id === d.category) || {}).label;
-          if (cl) d.categoryLabel = cl;
-        }
-      }
-      const ok = await savePilotUpdate({ pilotId: pilot.id, fields: { documents: JSON.stringify(clean) } });
-      if (ok) { onSaved(); onCancel(); }
-    } finally { setSaving(false); }
-  };
-
-  return (
-    <form onSubmit={submit} className="space-y-4">
-      <div>
-        <label className="inline-flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border border-dashed border-slate-600 text-sm text-slate-300 hover:border-amber-400/60 hover:text-amber-300">
-          <UploadIcon /> {uploading ? `Enviando ${uploading}…` : "Anexar PDF ou imagem"}
-          <input type="file" accept="application/pdf,image/*" className="hidden" onChange={addFile} />
-        </label>
-      </div>
-      {items.length === 0 && <p className="text-sm text-slate-500">Nenhum documento anexado.</p>}
-      {items.map((d, i) => (
-        <div key={i} className="rounded-xl border border-slate-700/60 bg-[#12141A] p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 flex items-center gap-1.5 truncate"><FileText className="w-3.5 h-3.5 shrink-0" /> {d.file_name || d.label}</span>
-            <button type="button" onClick={() => setItems((arr) => arr.filter((_, j) => j !== i))} className="text-xs text-rose-400 hover:text-rose-300 shrink-0">Remover</button>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-2">
-            <Field label="Categoria">
-              <select className={inputCls} value={d.category} onChange={(e) => setItems((arr) => arr.map((x, j) => j === i ? { ...x, category: e.target.value } : x))}>
-                <option value="">Selecione…</option>
-                {DOC_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-              </select>
-            </Field>
-            <Field label="Vencimento"><input type="date" className={inputCls} value={d.expiry} onChange={(e) => setItems((arr) => arr.map((x, j) => j === i ? { ...x, expiry: e.target.value } : x))} /></Field>
-            <Field label="Observação"><input className={inputCls} value={d.note} onChange={(e) => setItems((arr) => arr.map((x, j) => j === i ? { ...x, note: e.target.value } : x))} /></Field>
-          </div>
-        </div>
-      ))}
-      <FormActions saving={saving} onCancel={onCancel} />
-    </form>
-  );
-}
-
-function UploadIcon() { return <FileText className="w-4 h-4" />; }
-
-function FormActions({ saving, onCancel }) {
-  return (
-    <div className="flex justify-end gap-2 pt-1">
-      <button type="button" onClick={onCancel} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-700/40">Cancelar</button>
-      <button type="submit" disabled={saving} className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-amber-500 hover:bg-amber-400 text-slate-900 disabled:opacity-50">
-        {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando…</> : <><CheckCircle2 className="w-4 h-4" /> Salvar</>}
-      </button>
-    </div>
-  );
-}
-
-function Modal({ onClose, title, children }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-      <div className="bg-[#1A1D25] w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl border border-slate-700/60 max-h-[92vh] overflow-y-auto">
-        <div className="sticky top-0 bg-[#1A1D25]/95 backdrop-blur px-6 py-4 border-b border-slate-700/60 flex items-center justify-between">
-          <h2 className="font-semibold text-lg text-slate-100">{title}</h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-700/40"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="px-6 py-5">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 // ---------- APPROVALS ----------
-const REQUEST_MANAGER_MAP = { admin: "admin", instructor: "instructor", manager: "manager" };
-
 function ApprovalsPanel({ requests, setRequests, onClose, onDecision }) {
   useEffect(() => {
     base44.entities.PilotChangeRequest.list("-created_date", 100).then((r) => setRequests(r)).catch(() => setRequests([]));
@@ -778,7 +379,6 @@ function ApprovalsPanel({ requests, setRequests, onClose, onDecision }) {
     await base44.entities.PilotChangeRequest.update(req.id, {
       status, reviewed_by: by, reviewed_at: new Date().toISOString(),
     });
-    // apply approved changes
     if (status === "approved") {
       const changes = safeParse(req.changes, {});
       let patch = {};
@@ -796,38 +396,46 @@ function ApprovalsPanel({ requests, setRequests, onClose, onDecision }) {
   };
 
   return (
-    <Modal onClose={onClose} title="Fluxo de Aprovação">
-      {requests.length === 0 ? (
-        <p className="text-sm text-slate-500 py-6 text-center">Nenhuma alteração pendente.</p>
-      ) : (
-        <div className="space-y-3">
-          {requests.map((r) => {
-            const changes = safeParse(r.changes, {});
-            return (
-              <div key={r.id} className="rounded-xl border border-slate-700/60 bg-[#12141A] p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-slate-200">{r.pilot_name}</p>
-                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${r.status === "pending" ? "border-amber-500/30 text-amber-300 bg-amber-500/10" : r.status === "approved" ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10" : "border-rose-500/30 text-rose-300 bg-rose-500/10"}`}>
-                    {r.status === "pending" ? "Pendente" : r.status === "approved" ? "Aprovado" : "Rejeitado"}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Solicitado por {r.requested_by}</p>
-                <p className="text-xs text-slate-400 mt-2 line-clamp-2">{(changes.fields && Object.keys(changes.fields).join(", ")) || "Campos alterados"}</p>
-                {r.status === "pending" && (
-                  <div className="flex gap-2 mt-3">
-                    <button onClick={() => decide(r, "approved")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Aprovar
-                    </button>
-                    <button onClick={() => decide(r, "rejected")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25">
-                      <X className="w-3.5 h-3.5" /> Rejeitar
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+      <div className="bg-[#1A1D25] w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl border border-slate-700/60 max-h-[92vh] overflow-y-auto">
+        <div className="sticky top-0 bg-[#1A1D25]/95 backdrop-blur px-6 py-4 border-b border-slate-700/60 flex items-center justify-between">
+          <h2 className="font-semibold text-lg text-slate-100">Fluxo de Aprovação</h2>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-700/40"><X className="w-5 h-5" /></button>
         </div>
-      )}
-    </Modal>
+        <div className="px-6 py-5">
+          {requests.length === 0 ? (
+            <p className="text-sm text-slate-500 py-6 text-center">Nenhuma alteração pendente.</p>
+          ) : (
+            <div className="space-y-3">
+              {requests.map((r) => {
+                const changes = safeParse(r.changes, {});
+                return (
+                  <div key={r.id} className="rounded-xl border border-slate-700/60 bg-[#12141A] p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-slate-200">{r.pilot_name}</p>
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${r.status === "pending" ? "border-amber-500/30 text-amber-300 bg-amber-500/10" : r.status === "approved" ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10" : "border-rose-500/30 text-rose-300 bg-rose-500/10"}`}>
+                        {r.status === "pending" ? "Pendente" : r.status === "approved" ? "Aprovado" : "Rejeitado"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">Solicitado por {r.requested_by}</p>
+                    <p className="text-xs text-slate-400 mt-2 line-clamp-2">{(changes.fields && Object.keys(changes.fields).join(", ")) || (changes.description) || "Campos alterados"}</p>
+                    {r.status === "pending" && (
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={() => decide(r, "approved")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Aprovar
+                        </button>
+                        <button onClick={() => decide(r, "rejected")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25">
+                          <X className="w-3.5 h-3.5" /> Rejeitar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
