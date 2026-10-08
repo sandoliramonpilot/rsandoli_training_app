@@ -383,6 +383,8 @@ function TabFuncoes({ oat, isManager, onSaved }) {
     try {
       await base44.entities.Oat.update(oat.id, { functions_exercised: JSON.stringify(items), role_secondary: JSON.stringify(sec) });
       onSaved();
+    } catch (err) {
+      alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar OAT.");
     } finally { setSaving(false); }
   };
 
