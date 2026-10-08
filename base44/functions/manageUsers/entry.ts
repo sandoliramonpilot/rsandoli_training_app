@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
-import { AUDITABLE_ACTIONS, canManageLevel, generateTempPassword, hashString, rankOf } from "../../shared/accessSecurity.js";
+import { AUDITABLE_ACTIONS, canManageLevel, generateTempPassword, hashString, isActiveAccount, rankOf } from "../../shared/accessSecurity.js";
 
 const ACCOUNT_STATUSES = ["convite_pendente", "ativa", "bloqueada", "suspensa", "desativada"];
 const ACCESS_LEVELS = ["admin_geral", "administrador", "gestor_supervisor", "operacional", "consulta"];
@@ -26,16 +26,27 @@ async function logAudit(base44, actor, target, action, details) {
 // Verificação step-up no backend: valida o código de acesso (purpose "sensitive_op")
 // do próprio chamador, consumindo-o em caso de sucesso. Garante que operações sensíveis
 // não dependam apenas da checagem feita no frontend.
+const MAX_CODE_ATTEMPTS = 5;
 async function verifyAccessCode(base44, user, code) {
   if (!code || !/^\d{6}$/.test(String(code))) return false;
   try {
     const open = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose: "sensitive_op", used: false });
     const latest = open.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
     if (!latest) return false;
-    if (new Date(latest.expires_at).getTime() < Date.now()) return false;
-    if ((latest.attempts || 0) >= 5) return false;
+    if (new Date(latest.expires_at).getTime() < Date.now()) {
+      await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
+      return false;
+    }
+    if ((latest.attempts || 0) >= MAX_CODE_ATTEMPTS) {
+      await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
+      return false;
+    }
     const codeHash = await hashString(String(code) + user.id);
-    if (codeHash !== latest.code_hash) return false;
+    if (codeHash !== latest.code_hash) {
+      const attempts = (latest.attempts || 0) + 1;
+      await base44.asServiceRole.entities.AccessCode.update(latest.id, { attempts, used: attempts >= MAX_CODE_ATTEMPTS });
+      return false;
+    }
     await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
     return true;
   } catch {
@@ -48,6 +59,7 @@ export default async function (req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    if (!isActiveAccount(user)) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;

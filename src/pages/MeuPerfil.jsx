@@ -108,7 +108,8 @@ export default function MeuPerfil() {
     setPwdSaving(true);
     try {
       await base44.auth.changePassword({ currentPassword: currentPwd, newPassword: newPwd });
-      await base44.auth.updateMe({ must_change_password: false });
+      await base44.functions.invoke("completePasswordChange", {});
+      await checkUserAuth();
       setPwdMsg("Senha alterada com sucesso.");
       setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
     } catch (err) {

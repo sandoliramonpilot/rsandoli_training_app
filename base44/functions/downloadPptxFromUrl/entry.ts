@@ -1,21 +1,23 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
+import { isActiveAccount } from "../../shared/accessSecurity.js";
 
 // ---- IP / SSRF validation ----
 // Normalizes alternate IPv4 encodings (decimal, hex, octal, mixed bases) to
 // dotted-decimal and validates against private/reserved ranges. DNS names are
 // resolved (best-effort, runtime-dependent) and every resolved address is
 // checked, so a public hostname that points at an internal IP is rejected.
+// When the resolver is unavailable the request is rejected (no unvalidated fetch).
+// For HTTP the validated IP is pinned for the fetch (with the original Host) to
+// close the DNS-rebinding TOCTOU; HTTPS fetches by hostname (TLS/SNI requires it).
 
 function parseIpv4Literal(host) {
   const h = String(host).toLowerCase();
-  // dotted decimal
   const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (m) {
     const oct = [m[1], m[2], m[3], m[4]].map(Number);
     if (oct.some((o) => o > 255)) return null;
     return oct.join(".");
   }
-  // single integer (decimal or hex) — e.g. 2130706433 or 0x7f000001
   if (/^\d+$/.test(h)) {
     const n = Number(h);
     if (!Number.isFinite(n) || n < 0 || n > 0xffffffff) return null;
@@ -26,7 +28,6 @@ function parseIpv4Literal(host) {
     if (n < 0 || n > 0xffffffff) return null;
     return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".");
   }
-  // dotted with mixed bases — e.g. 0x7f.0.0.1 or 0177.0.0.1
   if (h.includes(".") && /^[0-9a-fx.]+$/i.test(h)) {
     const parts = h.split(".");
     if (parts.length !== 4) return null;
@@ -44,35 +45,33 @@ function parseIpv4Literal(host) {
 
 function isPrivateIpv4(ip) {
   const m = String(ip).match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (!m) return true; // not a valid dotted ipv4 -> reject
+  if (!m) return true;
   const a = +m[1], b = +m[2];
   if (a === 0 || a === 127 || a === 10) return true;
   if (a === 192 && b === 168) return true;
   if (a === 172 && b >= 16 && b <= 31) return true;
   if (a === 169 && b === 254) return true;
   if (a === 100 && b >= 64 && b <= 127) return true;
-  if (a >= 224) return true; // multicast / reserved
+  if (a >= 224) return true;
   return false;
 }
 
 function isPrivateIpv6(ip) {
   const h = String(ip).toLowerCase().replace(/^\[|\]$/g, "");
   if (h === "::1" || h === "::") return true;
-  // IPv4-mapped IPv6 (::ffff:a.b.c.d)
   const mapped = h.match(/::ffff:([0-9.]+)$/);
   if (mapped) return isPrivateIpv4(mapped[1]);
   const parts = h.split(":");
   const head = parts[0] === "" ? "0" : parts[0];
   const headHex = parseInt(head, 16) || 0;
-  if (headHex >= 0xfe80 && headHex <= 0xfebf) return true; // link-local
-  if (headHex >= 0xfc00 && headHex <= 0xfdff) return true;  // unique local (fc00::/7)
-  if (headHex >= 0xff00) return true;                       // multicast
+  if (headHex >= 0xfe80 && headHex <= 0xfebf) return true;
+  if (headHex >= 0xfc00 && headHex <= 0xfdff) return true;
+  if (headHex >= 0xff00) return true;
   return false;
 }
 
 let _resolver = null; // null = not probed; function | false
 async function buildResolver() {
-  // Prefer Deno-native DNS, then node:dns/promises; false if neither available.
   try {
     if (typeof Deno !== "undefined" && typeof Deno.resolveDns === "function") {
       return async (host) => {
@@ -99,54 +98,66 @@ async function buildResolver() {
 
 async function resolveHost(host) {
   if (_resolver === null) _resolver = await buildResolver();
-  if (!_resolver) return null; // resolution unavailable
+  if (!_resolver) return null;
   return _resolver(host);
 }
 
-async function isAllowedHost(host) {
-  if (!host) return false;
-  const h = host.toLowerCase().replace(/^\[|\]$/g, "");
-  if (h === "localhost" || h.endsWith(".localhost")) return false;
-  const v4 = parseIpv4Literal(h);
-  if (v4) return !isPrivateIpv4(v4);
-  if (h.includes(":")) return !isPrivateIpv6(h);
-  // DNS name — resolve and validate every returned address.
-  const addrs = await resolveHost(h);
-  if (addrs === null) return true; // resolver unavailable: keep current behavior
-  if (!addrs.length) return false;  // did not resolve -> reject
-  return addrs.every((a) => (a.includes(":") ? !isPrivateIpv6(a) : !isPrivateIpv4(a)));
-}
-
-async function safeUrl(rawUrl) {
+async function validateUrl(rawUrl) {
   let parsed;
   try { parsed = new URL(rawUrl); } catch { return null; }
   if (!/^https?:$/.test(parsed.protocol)) return null;
-  if (!(await isAllowedHost(parsed.hostname))) return null;
-  return parsed;
+  const h = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (h === "localhost" || h.endsWith(".localhost")) return null;
+  const v4 = parseIpv4Literal(h);
+  if (v4) return isPrivateIpv4(v4) ? null : { parsed, pinIp: null };
+  if (h.includes(":")) return isPrivateIpv6(h) ? null : { parsed, pinIp: null };
+  const addrs = await resolveHost(h);
+  if (addrs === null) return null; // resolver unavailable -> reject
+  if (!addrs.length) return null;
+  const publicAddrs = addrs.filter((a) => (a.includes(":") ? !isPrivateIpv6(a) : !isPrivateIpv4(a)));
+  if (publicAddrs.length !== addrs.length) return null;
+  // Pin the validated IP for HTTP (HTTPS can't pin without breaking TLS/SNI).
+  const pinIp = parsed.protocol === "http:" ? (publicAddrs.find((a) => !a.includes(":")) || null) : null;
+  return { parsed, pinIp };
 }
 
-export default async function(req) {
+function fetchValidated(validated) {
+  const { parsed, pinIp } = validated;
+  if (pinIp) {
+    const pinned = new URL(parsed.href);
+    pinned.hostname = pinIp;
+    return fetch(pinned.href, {
+      signal: AbortSignal.timeout(60000),
+      redirect: "manual",
+      headers: { Host: parsed.hostname },
+    });
+  }
+  return fetch(parsed.href, { signal: AbortSignal.timeout(60000), redirect: "manual" });
+}
+
+export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (user.role !== 'admin') return Response.json({ error: 'Apenas administradores podem baixar arquivos.' }, { status: 403 });
+    if (!isActiveAccount(user)) return Response.json({ error: 'Conta não está ativa.' }, { status: 403 });
 
     const body = await req.json();
     const url = body?.url;
     if (!url || typeof url !== 'string') return Response.json({ error: 'URL inválida.' }, { status: 400 });
 
-    const parsed = await safeUrl(url);
-    if (!parsed) return Response.json({ error: 'URL inválida ou destino não permitido.' }, { status: 400 });
+    const validated = await validateUrl(url);
+    if (!validated) return Response.json({ error: 'URL inválida ou destino não permitido.' }, { status: 400 });
 
     let res;
-    let current = parsed.href;
+    let current = validated;
     for (let i = 0; i < 5; i++) {
-      res = await fetch(current, { signal: AbortSignal.timeout(60000), redirect: 'manual' });
+      res = await fetchValidated(current);
       if (res.status >= 300 && res.status < 400 && res.headers.get('location')) {
-        const next = await safeUrl(new URL(res.headers.get('location'), current).href);
+        const next = await validateUrl(new URL(res.headers.get('location'), current.parsed.href).href);
         if (!next) return Response.json({ error: 'Redirecionamento para destino não permitido.' }, { status: 400 });
-        current = next.href;
+        current = next;
         continue;
       }
       break;
@@ -157,7 +168,7 @@ export default async function(req) {
     if (blob.size === 0) return Response.json({ error: 'Arquivo vazio.' }, { status: 400 });
     if (blob.size > 50 * 1024 * 1024) return Response.json({ error: 'Arquivo excede 50 MB.' }, { status: 413 });
 
-    const pathParts = parsed.pathname.split('/');
+    const pathParts = validated.parsed.pathname.split('/');
     let filename = body?.file_name || pathParts[pathParts.length - 1] || 'apresentacao.pptx';
     if (!/\.pptx$/i.test(filename)) filename += '.pptx';
 

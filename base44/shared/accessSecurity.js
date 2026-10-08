@@ -38,6 +38,12 @@ export function canManageLevel(actorLevel, targetLevel) {
   return rankOf(actorLevel) > rankOf(targetLevel);
 }
 
+export const ACTIVE_ACCOUNT_STATUSES = ["ativa", "convite_pendente"];
+export function isActiveAccount(user) {
+  const s = user?.account_status || "ativa";
+  return ACTIVE_ACCOUNT_STATUSES.includes(s);
+}
+
 export const AUDITABLE_ACTIONS = {
   user_created: "Criação de usuário",
   user_edited: "Edição cadastral",
