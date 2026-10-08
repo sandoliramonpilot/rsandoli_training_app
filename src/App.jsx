@@ -42,7 +42,7 @@ import InstallPrompt from '@/components/InstallPrompt';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const [termsAccepted, setTermsAccepted] = useState(
-    () => sessionStorage.getItem("terms_accepted") === "true"
+    () => localStorage.getItem("terms_accepted") === "true"
   );
 
   // Show loading spinner while checking app public settings or auth

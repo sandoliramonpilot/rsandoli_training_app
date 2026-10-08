@@ -23,6 +23,14 @@ export default function PilotLicensesSection({ pilot, isManager, onRefresh }) {
   const [rejecting, setRejecting] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const isGeral = getAccessLevel(me) === "admin_geral";
+  // O próprio piloto pode gerenciar as licenças do seu cadastro (auto-atendimento).
+  const isSelf = !!(
+    me &&
+    pilot &&
+    ((pilot.user_id && me.id === pilot.user_id) ||
+      (pilot.email && me.email && String(pilot.email).toLowerCase() === String(me.email).toLowerCase()))
+  );
+  const canEdit = isManager || isSelf;
 
   const load = useCallback(async () => {
     const list = await base44.entities.PilotLicense.filter({ pilot_id: pilot.id }).catch(() => []);
@@ -206,10 +214,10 @@ export default function PilotLicensesSection({ pilot, isManager, onRefresh }) {
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-700/40">
-                  {isManager && (
+                  {canEdit && (
                     <ActionBtn onClick={() => { setEditing(lic); setShowForm(true); }} icon={Pencil} label="Editar" />
                   )}
-                  {isManager && lic.approval_status === "draft" && (
+                  {canEdit && lic.approval_status === "draft" && (
                     <ActionBtn onClick={() => sendForReview(lic)} icon={Send} label="Enviar para conferência" busy={isBusy} tone="amber" />
                   )}
                   {canReview && lic.approval_status === "pending_review" && (
@@ -228,7 +236,7 @@ export default function PilotLicensesSection({ pilot, isManager, onRefresh }) {
         </div>
       )}
 
-      {isManager && (
+      {canEdit && (
         <button onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-400 hover:text-amber-300">
           <Plus className="w-4 h-4" /> Adicionar licença
         </button>

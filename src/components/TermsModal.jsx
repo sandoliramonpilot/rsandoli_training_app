@@ -34,11 +34,11 @@ export default function TermsModal({ onAccept }) {
         session_id: sessionStorage.getItem("terms_session_id") || crypto.randomUUID(),
         terms_version: TERMS_VERSION,
       });
-      sessionStorage.setItem("terms_accepted", "true");
+      localStorage.setItem("terms_accepted", "true");
       onAccept();
     } catch (e) {
       // Mesmo em caso de erro de rede, permite prosseguir mas registra localmente
-      sessionStorage.setItem("terms_accepted", "true");
+      localStorage.setItem("terms_accepted", "true");
       onAccept();
     } finally {
       setSubmitting(false);
