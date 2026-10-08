@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   OAT_FUNCTION_LABELS, OAT_REGISTRATION_STATUS_LABELS,
@@ -74,13 +74,15 @@ export default function NewOatForm({ me, onClose, onDone }) {
 
   const set = (k, v) => setData((d) => ({ ...d, [k]: v }));
 
-  const canAdvance = useMemo(() => {
-    if (step === 1 && !data.full_name.trim()) return false;
-    return true;
-  }, [step, data]);
-
-  const next = () => { setError(""); if (step < STEPS.length - 1) setStep(step + 1); };
-  const back = () => { setError(""); if (step > 0) setStep(step - 1); };
+  const next = () => {
+    setError("");
+    if (step === 1 && !data.full_name.trim()) {
+      setError("Informe o nome completo para avançar.");
+      return;
+    }
+    if (step < STEPS.length - 1) setStep((s) => s + 1);
+  };
+  const back = () => { setError(""); if (step > 0) setStep((s) => s - 1); };
 
   const submit = async () => {
     setError("");
@@ -132,9 +134,9 @@ export default function NewOatForm({ me, onClose, onDone }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 p-0 sm:p-4">
       <div className="bg-[#1A1D25] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl shadow-2xl border border-slate-700/60 max-h-[94vh] flex flex-col">
-        <div className="sticky top-0 bg-[#1A1D25]/95 backdrop-blur px-6 py-4 border-b border-slate-700/60 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-[#1A1D25] px-6 py-4 border-b border-slate-700/60 flex items-center justify-between z-10">
           <div>
             <h2 className="font-semibold text-lg text-slate-100">Novo OAT</h2>
             <p className="text-xs text-slate-500 mt-0.5">Etapa {step + 1} de {STEPS.length} — {STEPS[step].label}</p>
@@ -205,12 +207,12 @@ export default function NewOatForm({ me, onClose, onDone }) {
           {step === 11 && <StepConfirmacao data={data} set={set} />}
         </div>
 
-        <div className="sticky bottom-0 bg-[#1A1D25]/95 backdrop-blur px-6 py-4 border-t border-slate-700/60 flex items-center justify-between">
+        <div className="sticky bottom-0 bg-[#1A1D25] px-6 py-4 border-t border-slate-700/60 flex items-center justify-between">
           <button onClick={back} disabled={step === 0} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 disabled:opacity-30">
             <ChevronLeft className="w-4 h-4" /> Voltar
           </button>
           {step < STEPS.length - 1 ? (
-            <button onClick={next} disabled={!canAdvance} className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-medium bg-amber-500 hover:bg-amber-400 text-slate-900 disabled:opacity-50">
+            <button onClick={next} className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-medium bg-amber-500 hover:bg-amber-400 text-slate-900">
               Avançar <ChevronRight className="w-4 h-4" />
             </button>
           ) : (

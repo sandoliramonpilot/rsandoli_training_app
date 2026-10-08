@@ -83,7 +83,7 @@ export default function InstallPrompt() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-4 inset-x-4 sm:bottom-6 sm:right-6 sm:left-auto sm:w-[380px] z-[60] animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-4 inset-x-4 sm:bottom-6 sm:right-6 sm:left-auto sm:w-[380px] z-30 animate-in slide-in-from-bottom-4 duration-300">
       <div className="bg-white rounded-2xl shadow-2xl border overflow-hidden" style={{ borderColor: "#F2F2F2" }}>
         <div className="flex items-center justify-between px-5 py-3 border-b" style={{ background: "#E3F2FD", borderColor: "#E3F2FD" }}>
           <div className="flex items-center gap-2">
