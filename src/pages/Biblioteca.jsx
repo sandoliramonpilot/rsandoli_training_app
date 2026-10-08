@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { LIBRARY_CATEGORIES, DOC_STATUS_LABELS } from "@/lib/libraryData";
-import { Search, Upload, FileText, Star, Loader2, X, Download, BookOpen } from "lucide-react";
+import { Search, Upload, FileText, Star, Loader2, X, Download, BookOpen, Link2, Presentation } from "lucide-react";
 import UploadModal from "@/components/library/UploadModal";
 import PdfViewer from "@/components/library/PdfViewer";
+import PptxViewer from "@/components/library/PptxViewer";
+import DownloadUrlModal from "@/components/library/DownloadUrlModal";
 
 // Legacy categories que podem existir em documentos antigos
 const LEGACY_LABELS = {
@@ -26,6 +28,7 @@ export default function Biblioteca() {
   const [aircraftFilter, setAircraftFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
   const [showUpload, setShowUpload] = useState(false);
+  const [showDownloadUrl, setShowDownloadUrl] = useState(false);
   const [viewer, setViewer] = useState(null);
   const [favorites, setFavorites] = useState(() => {
     try { return JSON.parse(localStorage.getItem("library_favorites") || "[]"); } catch { return []; }
@@ -106,9 +109,14 @@ export default function Biblioteca() {
 
   const openDoc = async (doc) => {
     if (!doc.file_uri) return;
+    const isPptx = (doc.file_name || "").toLowerCase().endsWith(".pptx");
+    if (isPptx) {
+      setViewer({ doc, type: "pptx" });
+      return;
+    }
     try {
       const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: doc.file_uri });
-      setViewer({ doc, url: signed_url });
+      setViewer({ doc, url: signed_url, type: "pdf" });
     } catch (e) {
       alert("Não foi possível abrir o documento.");
     }
@@ -151,12 +159,20 @@ export default function Biblioteca() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">Biblioteca Técnica</h1>
           <p className="text-slate-400 mt-2 text-sm">Manuais, procedimentos e publicações técnicas aeronáuticas — organização, consulta e gestão de PDFs.</p>
         </div>
-        <button
-          onClick={() => setShowUpload(true)}
-          className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-900 text-sm font-medium px-4 py-2.5 rounded-lg transition-colors shadow-lg shadow-amber-500/20"
-        >
-          <Upload className="w-4 h-4" /> Enviar PDF
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setShowDownloadUrl(true)}
+            className="inline-flex items-center gap-2 border border-slate-700 text-slate-200 hover:border-amber-500/40 hover:text-amber-300 text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
+          >
+            <Link2 className="w-4 h-4" /> Baixar PPTX de URL
+          </button>
+          <button
+            onClick={() => setShowUpload(true)}
+            className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-900 text-sm font-medium px-4 py-2.5 rounded-lg transition-colors shadow-lg shadow-amber-500/20"
+          >
+            <Upload className="w-4 h-4" /> Enviar PDF
+          </button>
+        </div>
       </header>
 
       {/* Busca */}
@@ -221,7 +237,7 @@ export default function Biblioteca() {
               <div key={doc.id} className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-5 hover:border-amber-500/30 hover:shadow-lg hover:shadow-black/30 transition-all flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-11 h-11 rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/20 to-transparent flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-amber-400" />
+                    {(doc.file_name || "").toLowerCase().endsWith(".pptx") ? <Presentation className="w-5 h-5 text-amber-400" /> : <FileText className="w-5 h-5 text-amber-400" />}
                   </div>
                   <div className="flex items-center gap-1">
                     {isOffline && <Download className="w-4 h-4 text-emerald-400" />}
@@ -255,7 +271,9 @@ export default function Biblioteca() {
       )}
 
       {showUpload && <UploadModal aircraft={aircraft} onClose={() => setShowUpload(false)} onDone={load} />}
-      {viewer && <PdfViewer doc={viewer.doc} url={viewer.url} onClose={() => setViewer(null)} />}
+      {showDownloadUrl && <DownloadUrlModal aircraft={aircraft} onClose={() => setShowDownloadUrl(false)} onDone={load} />}
+      {viewer?.type === "pdf" && <PdfViewer doc={viewer.doc} url={viewer.url} onClose={() => setViewer(null)} />}
+      {viewer?.type === "pptx" && <PptxViewer doc={viewer.doc} onClose={() => setViewer(null)} />}
     </div>
   );
 }
