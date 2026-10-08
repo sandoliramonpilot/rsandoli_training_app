@@ -33,7 +33,7 @@ export default function InstallPrompt() {
     // sobre a interface sem necessidade e atrapalhava a navegação.
     if (!isMobileDevice()) return;
 
-    const dismissed = sessionStorage.getItem(STORAGE_KEY);
+    const dismissed = localStorage.getItem(STORAGE_KEY);
     if (dismissed) return;
 
     const handler = (e) => {
@@ -59,7 +59,7 @@ export default function InstallPrompt() {
 
   const dismiss = () => {
     setVisible(false);
-    sessionStorage.setItem(STORAGE_KEY, Date.now().toString());
+    localStorage.setItem(STORAGE_KEY, Date.now().toString());
   };
 
   const installAndroid = async () => {
