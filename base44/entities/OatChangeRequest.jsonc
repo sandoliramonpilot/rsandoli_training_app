@@ -1,0 +1,92 @@
+{
+  "name": "OatChangeRequest",
+  "type": "object",
+  "properties": {
+    "oat_id": {
+      "type": "string",
+      "title": "ID do OAT"
+    },
+    "oat_name": {
+      "type": "string",
+      "title": "Nome do OAT"
+    },
+    "requested_by": {
+      "type": "string",
+      "title": "Solicitado por"
+    },
+    "change_type": {
+      "type": "string",
+      "enum": [
+        "simple",
+        "operational",
+        "critical"
+      ],
+      "default": "simple",
+      "title": "Tipo de altera\u00e7\u00e3o"
+    },
+    "changes": {
+      "type": "string",
+      "title": "Altera\u00e7\u00f5es propostas (JSON)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending",
+        "in_review",
+        "doc_check",
+        "tech_review",
+        "approved",
+        "rejected",
+        "cancelled",
+        "expired",
+        "completed"
+      ],
+      "default": "pending",
+      "title": "Status"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "title": "Analisado por"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data da an\u00e1lise"
+    },
+    "reason": {
+      "type": "string",
+      "title": "Motivo/justificativa"
+    }
+  },
+  "required": [
+    "oat_id",
+    "requested_by",
+    "changes"
+  ],
+  "rls": {
+    "create": null,
+    "read": {
+      "$or": [
+        {
+          "data.requested_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

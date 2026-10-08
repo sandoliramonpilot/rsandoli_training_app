@@ -29,6 +29,7 @@ import MeuPerfil from '@/pages/MeuPerfil';
 import Escalas from '@/pages/Escalas';
 import PainelProgresso from '@/pages/PainelProgresso';
 import MarcosProjeto from '@/pages/MarcosProjeto';
+import Oat from '@/pages/Oat';
 import RequireModule from '@/components/RequireModule';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -96,6 +97,7 @@ const AuthenticatedApp = () => {
         <Route path="/briefing-emergencia" element={<EmConstrucao title="Briefing de Emergência" subtitle="Briefings e procedimentos de emergência." />} />
         <Route path="/gestao" element={<RequireModule moduleId="gestao"><Gestao /></RequireModule>} />
         <Route path="/pilotos" element={<Pilotos />} />
+        <Route path="/oat" element={<Oat />} />
         <Route path="/escalas" element={<Escalas />} />
         <Route path="/questoes" element={<Questoes />} />
         <Route path="/simulados" element={<Simulados />} />

@@ -1,0 +1,290 @@
+{
+  "name": "Oat",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "title": "Nome completo"
+    },
+    "war_name": {
+      "type": "string",
+      "title": "Nome de guerra"
+    },
+    "photo_uri": {
+      "type": "string",
+      "title": "URI da foto (privada)"
+    },
+    "birth_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de nascimento"
+    },
+    "cpf": {
+      "type": "string",
+      "title": "CPF"
+    },
+    "rg": {
+      "type": "string",
+      "title": "RG"
+    },
+    "rg_issuer": {
+      "type": "string",
+      "title": "\u00d3rg\u00e3o emissor do RG"
+    },
+    "rg_issue_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de emiss\u00e3o do RG"
+    },
+    "nationality": {
+      "type": "string",
+      "title": "Nacionalidade"
+    },
+    "marital_status": {
+      "type": "string",
+      "title": "Estado civil"
+    },
+    "blood_type": {
+      "type": "string",
+      "title": "Tipo sangu\u00edneo"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Telefone celular"
+    },
+    "phone_alt": {
+      "type": "string",
+      "title": "Telefone alternativo"
+    },
+    "email": {
+      "type": "string",
+      "title": "E-mail de contato"
+    },
+    "email_login": {
+      "type": "string",
+      "title": "E-mail de login (somente leitura, origina da conta)"
+    },
+    "emergency_contact_name": {
+      "type": "string",
+      "title": "Contato de emerg\u00eancia \u2014 nome"
+    },
+    "emergency_contact_phone": {
+      "type": "string",
+      "title": "Contato de emerg\u00eancia \u2014 telefone"
+    },
+    "emergency_contact_relation": {
+      "type": "string",
+      "title": "Contato de emerg\u00eancia \u2014 rela\u00e7\u00e3o/v\u00ednculo"
+    },
+    "cep": {
+      "type": "string",
+      "title": "CEP"
+    },
+    "logradouro": {
+      "type": "string",
+      "title": "Logradouro"
+    },
+    "address_number": {
+      "type": "string",
+      "title": "N\u00famero"
+    },
+    "address_complement": {
+      "type": "string",
+      "title": "Complemento"
+    },
+    "bairro": {
+      "type": "string",
+      "title": "Bairro"
+    },
+    "city": {
+      "type": "string",
+      "title": "Cidade"
+    },
+    "state": {
+      "type": "string",
+      "title": "Estado (UF)"
+    },
+    "country": {
+      "type": "string",
+      "title": "Pa\u00eds"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "ID do usu\u00e1rio vinculado (interno, imut\u00e1vel)"
+    },
+    "legacy_pilot_id": {
+      "type": "string",
+      "title": "ID do piloto legado (refer\u00eancia somente, sem v\u00ednculo)"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "oat",
+        "oat_nurse",
+        "instructor",
+        "pilot_collaborator",
+        "other"
+      ],
+      "default": "oat",
+      "title": "Fun\u00e7\u00e3o principal"
+    },
+    "role_secondary": {
+      "type": "string",
+      "title": "Fun\u00e7\u00f5es secund\u00e1rias (JSON)"
+    },
+    "functions_exercised": {
+      "type": "string",
+      "title": "Fun\u00e7\u00f5es exercidas com situa\u00e7\u00e3o e datas (JSON)"
+    },
+    "base": {
+      "type": "string",
+      "title": "Base operacional"
+    },
+    "unit": {
+      "type": "string",
+      "title": "Unidade"
+    },
+    "organization": {
+      "type": "string",
+      "title": "Organiza\u00e7\u00e3o"
+    },
+    "admission_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de admiss\u00e3o ou in\u00edcio"
+    },
+    "anac_code": {
+      "type": "string",
+      "title": "C\u00f3digo ANAC/CANAC"
+    },
+    "license_anac": {
+      "type": "string",
+      "title": "N\u00famero da licen\u00e7a ANAC"
+    },
+    "category": {
+      "type": "string",
+      "title": "Categoria da licen\u00e7a"
+    },
+    "registration_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "vacation",
+        "leave",
+        "training",
+        "pending"
+      ],
+      "default": "active",
+      "title": "Situa\u00e7\u00e3o cadastral"
+    },
+    "registration_status_start": {
+      "type": "string",
+      "format": "date",
+      "title": "In\u00edcio da situa\u00e7\u00e3o cadastral"
+    },
+    "registration_status_end": {
+      "type": "string",
+      "format": "date",
+      "title": "T\u00e9rmino previsto da situa\u00e7\u00e3o cadastral"
+    },
+    "registration_status_reason": {
+      "type": "string",
+      "title": "Motivo da situa\u00e7\u00e3o cadastral"
+    },
+    "operational_restriction": {
+      "type": "string",
+      "title": "Restri\u00e7\u00e3o operacional"
+    },
+    "hours": {
+      "type": "string",
+      "title": "Horas (JSON)"
+    },
+    "hours_ref_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de refer\u00eancia das horas"
+    },
+    "hours_source": {
+      "type": "string",
+      "title": "Fonte das horas (declarada | importada | administrativa | aprovada)"
+    },
+    "experience": {
+      "type": "string",
+      "title": "Experi\u00eancia operacional hist\u00f3rica (JSON)"
+    },
+    "licenses": {
+      "type": "string",
+      "title": "Licen\u00e7as e habilita\u00e7\u00f5es (JSON)"
+    },
+    "certificates": {
+      "type": "string",
+      "title": "Certificados e cursos (JSON)"
+    },
+    "cma": {
+      "type": "string",
+      "title": "CMA \u2014 Certificado M\u00e9dico Aeron\u00e1utico (JSON)"
+    },
+    "aircraft_endorsements": {
+      "type": "string",
+      "title": "Aeronaves e endossos (JSON)"
+    },
+    "documents": {
+      "type": "string",
+      "title": "Documentos (JSON)"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "pending",
+        "rejected"
+      ],
+      "default": "approved",
+      "title": "Status de aprova\u00e7\u00e3o"
+    },
+    "approval_log": {
+      "type": "string",
+      "title": "Log de aprova\u00e7\u00e3o (JSON)"
+    },
+    "account_status_snapshot": {
+      "type": "string",
+      "title": "Situa\u00e7\u00e3o da conta (snapshot do Usu\u00e1rios e Acessos)"
+    },
+    "permission": {
+      "type": "string",
+      "title": "N\u00edvel de permiss\u00e3o do cadastro",
+      "description": "full | restricted",
+      "default": "restricted"
+    }
+  },
+  "required": [
+    "full_name",
+    "role"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
