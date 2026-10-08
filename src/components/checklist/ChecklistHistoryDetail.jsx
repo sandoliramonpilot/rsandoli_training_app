@@ -7,9 +7,11 @@ export default function ChecklistHistoryDetail({ record, onClose }) {
   const [exporting, setExporting] = useState(false);
   const progress = JSON.parse(record.phases_progress || "{}");
 
+  const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
   const handlePrint = () => {
     const win = window.open("", "_blank");
-    win.document.write(`<html><head><title>Checklist ${record.aircraft_registration}</title>
+    win.document.write(`<html><head><title>Checklist ${escapeHtml(record.aircraft_registration)}</title>
       <style>body{font-family:sans-serif;padding:24px;color:#111} h1{font-size:18px} h2{font-size:14px;margin-top:16px} li{margin:3px 0;font-size:12px} .done{color:#059669} .pending{color:#dc2626} .just{color:#b45309}</style>
       </head><body>${printRef.current.innerHTML}</body></html>`);
     win.document.close();
