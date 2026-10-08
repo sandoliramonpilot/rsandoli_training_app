@@ -153,25 +153,29 @@ export default function Checklist() {
     });
     const durationMinutes = startedAt ? Math.round((Date.now() - startedAt) / 60000) : 0;
     const endTime = new Date().toTimeString().slice(0, 5);
-    await base44.entities.ChecklistRecord.create({
-      ...setup,
-      end_time: endTime,
-      finalized_at: new Date().toISOString(),
-      finalized_by: user?.full_name || user?.email || "",
-      executed_by: user?.full_name || user?.email || "",
-      phases_progress: JSON.stringify(phasesProgress),
-      justification: "",
-      status: "ok",
-      duration_minutes: durationMinutes,
-    });
-    localStorage.removeItem(DRAFT_KEY);
-    setSetup(null);
-    setCheckedByPhase({});
-    setStartedAt(null);
-    setShowFinalize(false);
-    const r = await base44.entities.ChecklistRecord.list("-date", 100).catch(() => []);
-    setRecords(r);
-    setView("history");
+    try {
+      await base44.entities.ChecklistRecord.create({
+        ...setup,
+        end_time: endTime,
+        finalized_at: new Date().toISOString(),
+        finalized_by: user?.full_name || user?.email || "",
+        executed_by: user?.full_name || user?.email || "",
+        phases_progress: JSON.stringify(phasesProgress),
+        justification: "",
+        status: "ok",
+        duration_minutes: durationMinutes,
+      });
+      localStorage.removeItem(DRAFT_KEY);
+      setSetup(null);
+      setCheckedByPhase({});
+      setStartedAt(null);
+      setShowFinalize(false);
+      const r = await base44.entities.ChecklistRecord.list("-date", 100).catch(() => []);
+      setRecords(r);
+      setView("history");
+    } catch (err) {
+      alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao finalizar checklist.");
+    }
   };
 
   const duplicateRecord = (record) => {

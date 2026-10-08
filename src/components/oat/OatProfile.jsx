@@ -250,7 +250,14 @@ function EditPessoais({ oat, onCancel, onSaved }) {
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
   const submit = async (e) => {
     e.preventDefault(); setSaving(true);
-    try { await base44.entities.Oat.update(oat.id, f); onSaved(); onCancel(); } finally { setSaving(false); }
+    try {
+      const patch = {};
+      Object.entries(f).forEach(([k, v]) => { if (v !== undefined) patch[k] = v === "" ? null : v; });
+      await base44.entities.Oat.update(oat.id, patch);
+      onSaved(); onCancel();
+    } catch (err) {
+      alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar OAT.");
+    } finally { setSaving(false); }
   };
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -314,7 +321,14 @@ function EditOperacionais({ oat, onCancel, onSaved }) {
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
   const submit = async (e) => {
     e.preventDefault(); setSaving(true);
-    try { await base44.entities.Oat.update(oat.id, f); onSaved(); onCancel(); } finally { setSaving(false); }
+    try {
+      const patch = {};
+      Object.entries(f).forEach(([k, v]) => { if (v !== undefined) patch[k] = v === "" ? null : v; });
+      await base44.entities.Oat.update(oat.id, patch);
+      onSaved(); onCancel();
+    } catch (err) {
+      alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar OAT.");
+    } finally { setSaving(false); }
   };
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -456,7 +470,7 @@ function TabLicencas({ oat, isManager, onSaved }) {
   const del = (i) => setList(list.filter((_, j) => j !== i));
   const submit = async (e) => {
     e.preventDefault(); setSaving(true);
-    try { await base44.entities.Oat.update(oat.id, { licenses: JSON.stringify(list) }); onSaved(); } finally { setSaving(false); }
+    try { await base44.entities.Oat.update(oat.id, { licenses: JSON.stringify(list) }); onSaved(); } catch (err) { alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar OAT."); } finally { setSaving(false); }
   };
   if (!isManager) {
     return (
@@ -517,7 +531,7 @@ function TabCertificados({ oat, isManager, onSaved }) {
   const del = (i) => setList(list.filter((_, j) => j !== i));
   const submit = async (e) => {
     e.preventDefault(); setSaving(true);
-    try { await base44.entities.Oat.update(oat.id, { certificates: JSON.stringify(list) }); onSaved(); } finally { setSaving(false); }
+    try { await base44.entities.Oat.update(oat.id, { certificates: JSON.stringify(list) }); onSaved(); } catch (err) { alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar OAT."); } finally { setSaving(false); }
   };
   if (!isManager) {
     return (
@@ -578,7 +592,7 @@ function TabCMA({ oat, isManager, onSaved }) {
   const setCma = (k, v) => setData((d) => ({ ...d, [k]: v }));
   const submit = async (e) => {
     e.preventDefault(); setSaving(true);
-    try { await base44.entities.Oat.update(oat.id, { cma: hasCma ? JSON.stringify(data) : undefined }); onSaved(); } finally { setSaving(false); }
+    try { await base44.entities.Oat.update(oat.id, { cma: hasCma ? JSON.stringify(data) : undefined }); onSaved(); } catch (err) { alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar OAT."); } finally { setSaving(false); }
   };
   const st = cmaStatus(hasCma ? data : null);
   if (!isManager) {
@@ -642,7 +656,7 @@ function TabAeronaves({ oat, isManager, onSaved }) {
   const del = (i) => setList(list.filter((_, j) => j !== i));
   const submit = async (e) => {
     e.preventDefault(); setSaving(true);
-    try { await base44.entities.Oat.update(oat.id, { aircraft_endorsements: JSON.stringify(list) }); onSaved(); } finally { setSaving(false); }
+    try { await base44.entities.Oat.update(oat.id, { aircraft_endorsements: JSON.stringify(list) }); onSaved(); } catch (err) { alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar OAT."); } finally { setSaving(false); }
   };
   if (!isManager) {
     return (
@@ -718,7 +732,7 @@ function TabDocumentos({ oat, isManager, onSaved }) {
   const del = (i) => setList(list.filter((_, j) => j !== i));
   const submit = async (e) => {
     e.preventDefault(); setSaving(true);
-    try { await base44.entities.Oat.update(oat.id, { documents: JSON.stringify(list) }); onSaved(); } finally { setSaving(false); }
+    try { await base44.entities.Oat.update(oat.id, { documents: JSON.stringify(list) }); onSaved(); } catch (err) { alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar OAT."); } finally { setSaving(false); }
   };
   return (
     <form onSubmit={submit} className="space-y-4">

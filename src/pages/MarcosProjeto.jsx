@@ -84,10 +84,16 @@ export default function MarcosProjeto() {
   const saveMilestone = async (form) => {
     const wasConcluido = modal?.milestone?.status === "concluido" || modal?.milestone?.status === "publicado";
     let saved;
-    if (modal.milestone) {
-      saved = await base44.entities.ProjectMilestone.update(modal.milestone.id, form);
-    } else {
-      saved = await base44.entities.ProjectMilestone.create(form);
+    try {
+      if (modal.milestone) {
+        saved = await base44.entities.ProjectMilestone.update(modal.milestone.id, form);
+      } else {
+        saved = await base44.entities.ProjectMilestone.create(form);
+      }
+    } catch (err) {
+      setToast(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar marco.");
+      setModal(null);
+      return;
     }
     await loadMilestones();
     setModal(null);
