@@ -3,12 +3,18 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
 import BackToDashboard from "@/components/BackToDashboard";
-import { Plus, X, Plane, Trash2, Edit3, Wrench, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Plus, X, Plane, Trash2, Edit3, Wrench, CheckCircle2, AlertTriangle, Hourglass, XCircle } from "lucide-react";
 
 const STATUS = {
   available: { label: "Disponível", color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
   in_maintenance: { label: "Em manutenção", color: "text-amber-700 bg-amber-50 border-amber-200", icon: Wrench },
   grounded: { label: "Aterrissada", color: "text-rose-700 bg-rose-50 border-rose-200", icon: AlertTriangle },
+};
+
+const APPROVAL = {
+  approved: null,
+  pending: { label: "Aguardando aprovação", color: "text-amber-700 bg-amber-50 border-amber-200", icon: Hourglass },
+  rejected: { label: "Rejeitada", color: "text-rose-700 bg-rose-50 border-rose-200", icon: XCircle },
 };
 
 const emptyForm = {
@@ -65,7 +71,7 @@ export default function Aircraft() {
     };
     try {
       if (editing) await base44.entities.Aircraft.update(editing.id, payload);
-      else await base44.entities.Aircraft.create(payload);
+      else await base44.entities.Aircraft.create({ ...payload, approval_status: "pending" });
       setShowForm(false);
       await load();
     } finally {
@@ -118,8 +124,16 @@ export default function Aircraft() {
           {aircraft.map((a) => {
             const st = STATUS[a.status] || STATUS.available;
             const StIcon = st.icon;
+            const ap = APPROVAL[a.approval_status] || null;
+            const ApIcon = ap?.icon;
             return (
-              <div key={a.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex flex-col hover:shadow-md transition-shadow">
+              <div key={a.id} className={`bg-white rounded-2xl border shadow-sm p-5 flex flex-col hover:shadow-md transition-shadow ${ap ? "border-amber-300/60 ring-1 ring-amber-200/40" : "border-slate-200/80"}`}>
+                {ap && (
+                  <div className={`mb-3 inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border ${ap.color}`}>
+                    <ApIcon className="w-3.5 h-3.5" />
+                    {ap.label}
+                  </div>
+                )}
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-lg font-bold tracking-tight text-slate-900">{a.registration || "—"}</p>

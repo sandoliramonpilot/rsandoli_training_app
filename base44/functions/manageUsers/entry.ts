@@ -95,6 +95,7 @@ export default async function (req) {
           email: i.email,
           access_level: i.access_level,
           account_status: "convite_pendente",
+          approval_status: i.approval_status || "approved",
           login: i.login || null,
           registration: i.registration || null,
           phone: i.phone || null,
@@ -152,15 +153,19 @@ export default async function (req) {
         return Response.json({ error: "Já existe um usuário com este login." }, { status: 409 });
       }
 
-      // Envia o convite de cadastro (o convidado define a própria senha via link por e-mail).
-      // A conta só passa a constar na lista de usuários após o convidado aceitar o convite.
-      // Os metadados pretendidos ficam gravados em UserInvite e são aplicados automaticamente
-      // assim que o convidado concluir o cadastro (ver "list").
+      // Fluxo de aprovação: somente o Administrador Geral envia convites imediatamente.
+      // Administradores criam convites pendentes de aprovação — o e-mail só é enviado
+      // após um Administrador Geral aprovar (ver "approve_invite").
       const role = accessLevel === "admin_geral" || accessLevel === "administrador" ? "admin" : "user";
-      try {
-        await base44.users.inviteUser(email, role);
-      } catch (inviteErr) {
-        return Response.json({ error: `Falha ao enviar convite: ${inviteErr?.message || inviteErr}` }, { status: 500 });
+      const needsApproval = actorLevel !== "admin_geral";
+      const approvalStatus = needsApproval ? "pending" : "approved";
+
+      if (!needsApproval) {
+        try {
+          await base44.users.inviteUser(email, role);
+        } catch (inviteErr) {
+          return Response.json({ error: `Falha ao enviar convite: ${inviteErr?.message || inviteErr}` }, { status: 500 });
+        }
       }
 
       const invitePayload = {
@@ -174,6 +179,7 @@ export default async function (req) {
         job_title: body.job_title ? String(body.job_title).trim() : null,
         admin_notes: body.admin_notes || null,
         status: "pending",
+        approval_status: approvalStatus,
         invited_by_user_id: user.id,
         invited_by_name: user.full_name || user.email || null,
         created_at: new Date().toISOString(),
@@ -215,9 +221,18 @@ export default async function (req) {
         user,
         { email, full_name: fullName },
         AUDITABLE_ACTIONS.user_created,
-        `Convite enviado — Nível: ${accessLevel} | Login: ${login}`
+        needsApproval
+          ? `Convite criado (aguardando aprovação) — Nível: ${accessLevel} | Login: ${login}`
+          : `Convite enviado — Nível: ${accessLevel} | Login: ${login}`
       );
-      return Response.json({ ok: true, inviteSent: true, message: "Convite enviado. O convidado receberá um e-mail para concluir o cadastro." });
+      return Response.json({
+        ok: true,
+        inviteSent: !needsApproval,
+        needsApproval,
+        message: needsApproval
+          ? "Convite criado e aguardando aprovação do Administrador Geral. O e-mail será enviado após a aprovação."
+          : "Convite enviado. O convidado receberá um e-mail para concluir o cadastro.",
+      });
     }
 
     // ---------- FIND PILOT MATCHES ----------
@@ -416,6 +431,138 @@ export default async function (req) {
       await base44.asServiceRole.entities.User.update(target.id, { must_change_password: true });
       await logAudit(base44, user, target, AUDITABLE_ACTIONS.password_reset_requested, "Redefinição encaminhada pelo administrador");
       return Response.json({ ok: true });
+    }
+
+    // ---------- LIST PENDING APPROVALS ----------
+    if (action === "list_approvals") {
+      const [invites, pilots, aircraft] = await Promise.all([
+        base44.asServiceRole.entities.UserInvite.list().catch(() => []),
+        base44.asServiceRole.entities.Pilot.list().catch(() => []),
+        base44.asServiceRole.entities.Aircraft.list().catch(() => []),
+      ]);
+      const pendingInvites = invites
+        .filter((i) => i.status === "pending" && (i.approval_status || "approved") === "pending")
+        .map((i) => ({
+          id: i.id,
+          type: "user_invite",
+          name: i.full_name || i.login || i.email,
+          email: i.email,
+          access_level: i.access_level,
+          login: i.login || null,
+          registration: i.registration || null,
+          unit: i.unit || null,
+          job_title: i.job_title || null,
+          created_at: i.created_at,
+          invited_by_name: i.invited_by_name || null,
+          admin_notes: i.admin_notes || null,
+        }));
+      const pendingPilots = pilots
+        .filter((p) => p.approval_status === "pending")
+        .map((p) => ({
+          id: p.id,
+          type: "pilot",
+          name: p.full_name,
+          war_name: p.war_name || null,
+          email: p.email || null,
+          role: p.role || null,
+          base: p.base || null,
+          anac_code: p.anac_code || null,
+          registration: p.registration || null,
+          created_date: p.created_date,
+          created_by: p.created_by_id || null,
+        }));
+      const pendingAircraft = aircraft
+        .filter((a) => (a.approval_status || "approved") === "pending")
+        .map((a) => ({
+          id: a.id,
+          type: "aircraft",
+          name: a.registration,
+          model: a.model || null,
+          manufacturer: a.manufacturer || null,
+          year: a.year || null,
+          status: a.status || null,
+          created_date: a.created_date,
+          created_by: a.created_by_id || null,
+        }));
+      return Response.json({ invites: pendingInvites, pilots: pendingPilots, aircraft: pendingAircraft });
+    }
+
+    // ---------- APPROVE / REJECT USER INVITE ----------
+    if (action === "approve_invite") {
+      if (actorLevel !== "admin_geral") return Response.json({ error: "Somente o Administrador Geral pode aprovar convites." }, { status: 403 });
+      const invite = await base44.asServiceRole.entities.UserInvite.get(body.invite_id).catch(() => null);
+      if (!invite) return Response.json({ error: "Convite não encontrado." }, { status: 404 });
+      if (invite.status !== "pending") return Response.json({ error: "Convite já processado." }, { status: 400 });
+      if ((invite.approval_status || "approved") !== "pending") return Response.json({ error: "Convite não está aguardando aprovação." }, { status: 400 });
+      const role = invite.access_level === "admin_geral" || invite.access_level === "administrador" ? "admin" : "user";
+      try {
+        await base44.users.inviteUser(invite.email, role);
+      } catch (inviteErr) {
+        return Response.json({ error: `Falha ao enviar convite: ${inviteErr?.message || inviteErr}` }, { status: 500 });
+      }
+      await base44.asServiceRole.entities.UserInvite.update(body.invite_id, { approval_status: "approved" });
+      await logAudit(base44, user, { email: invite.email, full_name: invite.full_name }, "Aprovação de convite", `Convite aprovado e enviado — ${invite.email}`);
+      return Response.json({ ok: true, message: "Convite aprovado e enviado." });
+    }
+
+    if (action === "reject_invite") {
+      if (actorLevel !== "admin_geral") return Response.json({ error: "Somente o Administrador Geral pode rejeitar convites." }, { status: 403 });
+      const invite = await base44.asServiceRole.entities.UserInvite.get(body.invite_id).catch(() => null);
+      if (!invite) return Response.json({ error: "Convite não encontrado." }, { status: 404 });
+      if (invite.status !== "pending") return Response.json({ error: "Convite já processado." }, { status: 400 });
+      await base44.asServiceRole.entities.UserInvite.update(body.invite_id, { approval_status: "rejected", status: "cancelled" });
+      await logAudit(base44, user, { email: invite.email, full_name: invite.full_name }, "Rejeição de convite", `Convite rejeitado — ${invite.email}`);
+      return Response.json({ ok: true, message: "Convite rejeitado." });
+    }
+
+    // ---------- APPROVE / REJECT PILOT ----------
+    if (action === "approve_pilot") {
+      if (actorLevel !== "admin_geral") return Response.json({ error: "Somente o Administrador Geral pode aprovar pilotos." }, { status: 403 });
+      const pilot = await base44.asServiceRole.entities.Pilot.get(body.pilot_id).catch(() => null);
+      if (!pilot) return Response.json({ error: "Piloto não encontrado." }, { status: 404 });
+      if (pilot.approval_status !== "pending") return Response.json({ error: "Piloto não está aguardando aprovação." }, { status: 400 });
+      const log = JSON.parse(pilot.approval_log || "[]");
+      log.push({ action: "approved", by: user.full_name || user.email, at: new Date().toISOString() });
+      await base44.asServiceRole.entities.Pilot.update(body.pilot_id, { approval_status: "approved", approval_log: JSON.stringify(log) });
+      await logAudit(base44, user, { full_name: pilot.full_name }, "Aprovação de piloto", `Piloto aprovado — ${pilot.full_name}`);
+      return Response.json({ ok: true, message: "Piloto aprovado." });
+    }
+
+    if (action === "reject_pilot") {
+      if (actorLevel !== "admin_geral") return Response.json({ error: "Somente o Administrador Geral pode rejeitar pilotos." }, { status: 403 });
+      const pilot = await base44.asServiceRole.entities.Pilot.get(body.pilot_id).catch(() => null);
+      if (!pilot) return Response.json({ error: "Piloto não encontrado." }, { status: 404 });
+      if (pilot.approval_status !== "pending") return Response.json({ error: "Piloto não está aguardando aprovação." }, { status: 400 });
+      const log = JSON.parse(pilot.approval_log || "[]");
+      log.push({ action: "rejected", by: user.full_name || user.email, at: new Date().toISOString(), reason: body.reason || null });
+      await base44.asServiceRole.entities.Pilot.update(body.pilot_id, { approval_status: "rejected", approval_log: JSON.stringify(log) });
+      await logAudit(base44, user, { full_name: pilot.full_name }, "Rejeição de piloto", `Piloto rejeitado — ${pilot.full_name}`);
+      return Response.json({ ok: true, message: "Piloto rejeitado." });
+    }
+
+    // ---------- APPROVE / REJECT AIRCRAFT ----------
+    if (action === "approve_aircraft") {
+      if (actorLevel !== "admin_geral") return Response.json({ error: "Somente o Administrador Geral pode aprovar aeronaves." }, { status: 403 });
+      const aircraft = await base44.asServiceRole.entities.Aircraft.get(body.aircraft_id).catch(() => null);
+      if (!aircraft) return Response.json({ error: "Aeronave não encontrada." }, { status: 404 });
+      if ((aircraft.approval_status || "approved") !== "pending") return Response.json({ error: "Aeronave não está aguardando aprovação." }, { status: 400 });
+      const log = JSON.parse(aircraft.approval_log || "[]");
+      log.push({ action: "approved", by: user.full_name || user.email, at: new Date().toISOString() });
+      await base44.asServiceRole.entities.Aircraft.update(body.aircraft_id, { approval_status: "approved", approval_log: JSON.stringify(log) });
+      await logAudit(base44, user, null, "Aprovação de aeronave", `Aeronave aprovada — ${aircraft.registration}`);
+      return Response.json({ ok: true, message: "Aeronave aprovada." });
+    }
+
+    if (action === "reject_aircraft") {
+      if (actorLevel !== "admin_geral") return Response.json({ error: "Somente o Administrador Geral pode rejeitar aeronaves." }, { status: 403 });
+      const aircraft = await base44.asServiceRole.entities.Aircraft.get(body.aircraft_id).catch(() => null);
+      if (!aircraft) return Response.json({ error: "Aeronave não encontrada." }, { status: 404 });
+      if ((aircraft.approval_status || "approved") !== "pending") return Response.json({ error: "Aeronave não está aguardando aprovação." }, { status: 400 });
+      const log = JSON.parse(aircraft.approval_log || "[]");
+      log.push({ action: "rejected", by: user.full_name || user.email, at: new Date().toISOString(), reason: body.reason || null });
+      await base44.asServiceRole.entities.Aircraft.update(body.aircraft_id, { approval_status: "rejected", approval_log: JSON.stringify(log) });
+      await logAudit(base44, user, null, "Rejeição de aeronave", `Aeronave rejeitada — ${aircraft.registration}`);
+      return Response.json({ ok: true, message: "Aeronave rejeitada." });
     }
 
     return Response.json({ error: "Ação inválida." }, { status: 400 });

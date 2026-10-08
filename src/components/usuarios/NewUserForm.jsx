@@ -102,7 +102,7 @@ export default function NewUserForm({ actorLevel, onClose, onSaved, onError }) {
     if (!step1Valid || !step2Valid) { setError("Revise os campos obrigatórios."); return; }
     setSaving(true);
     try {
-      await base44.functions.invoke("manageUsers", {
+      const res = await base44.functions.invoke("manageUsers", {
         action: "create",
         full_name: f.full_name.trim(),
         login: f.email.trim().toLowerCase(),
@@ -119,7 +119,7 @@ export default function NewUserForm({ actorLevel, onClose, onSaved, onError }) {
         custom_permissions: f.access_level === "admin_geral" ? null : perms,
         photo_uri: f.photo_uri || undefined,
       });
-      onSaved("Usuário criado com sucesso. O cadastro de piloto associado foi criado ou vinculado conforme as informações disponíveis.");
+      onSaved(res.data?.message || "Usuário criado com sucesso.");
     } catch (err) {
       setError(err?.response?.data?.error || err.message || "Erro ao criar usuário.");
     } finally {

@@ -6,7 +6,7 @@ import {
   Search, Plus, Users, ChevronLeft, Camera, Star, ShieldCheck,
   Clock, AlertTriangle, CheckCircle2, X, Calendar, Phone, Mail,
   MapPin, Building2, Hourglass, FileText, History, ChevronRight,
-  CircleUserRound, Loader2, BadgeCheck,
+  CircleUserRound, Loader2, BadgeCheck, XCircle,
 } from "lucide-react";
 import {
   ROLE_LABELS, safeParse, collectExpiries, nextCriticalExpiry,
@@ -150,14 +150,27 @@ export default function Pilotos() {
                   <button
                     key={p.id}
                     onClick={() => setSelected(p)}
-                    className="text-left bg-[#1A1D25] rounded-2xl border border-slate-700/60 hover:border-amber-500/40 transition-colors p-5 hover:shadow-lg hover:shadow-black/30 group"
+                    className={`text-left bg-[#1A1D25] rounded-2xl border transition-colors p-5 hover:shadow-lg hover:shadow-black/30 group ${
+                      p.approval_status === "pending" ? "border-amber-500/40 ring-1 ring-amber-500/20" :
+                      p.approval_status === "rejected" ? "border-rose-500/40 ring-1 ring-rose-500/20" :
+                      "border-slate-700/60 hover:border-amber-500/40"
+                    }`}
                   >
+                    {p.approval_status === "pending" && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 mb-2">
+                        <Hourglass className="w-3 h-3" /> Aguardando aprovação
+                      </span>
+                    )}
+                    {p.approval_status === "rejected" && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30 mb-2">
+                        <XCircle className="w-3 h-3" /> Rejeitado
+                      </span>
+                    )}
                     <div className="flex items-start gap-4">
                       <Avatar pilot={p} size="lg" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <h3 className="font-semibold text-slate-100 truncate">{p.full_name}</h3>
-                          {p.approval_status === "pending" && <Hourglass className="w-4 h-4 text-amber-400 shrink-0" />}
                         </div>
                         <p className="text-xs text-amber-400/90 font-medium">{ROLE_LABELS[p.role] || p.role}</p>
                         <p className="text-[11px] text-slate-500 mt-1 truncate">

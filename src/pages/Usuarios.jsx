@@ -18,10 +18,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import VerifyCodeModal from "@/components/VerifyCodeModal";
 import NewUserForm from "@/components/usuarios/NewUserForm";
+import ApprovalsPanel from "@/components/usuarios/ApprovalsPanel";
 import {
   Users, Search, Plus, Loader2, ShieldCheck, Lock, Unlock, PauseCircle, PlayCircle,
   Ban, Eye, EyeOff, Pencil, History, KeyRound, X, ChevronDown, ChevronUp,
-  MailCheck, Send, Trash2, Star, StarOff, RefreshCw,
+  MailCheck, Send, Trash2, Star, StarOff, RefreshCw, Hourglass,
 } from "lucide-react";
 
 const STATUS_STYLES = {
@@ -56,6 +57,8 @@ export default function Usuarios() {
   const [showAudit, setShowAudit] = useState(false);
   const [auditLogs, setAuditLogs] = useState([]);
   const [pendingSensitive, setPendingSensitive] = useState(null); // { label, run }
+  const [showApprovals, setShowApprovals] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const load = async () => {
     const res = await base44.functions.invoke("manageUsers", { action: "list" });
@@ -69,6 +72,17 @@ export default function Usuarios() {
     const t = setTimeout(() => setToast(""), 4000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  // Carrega contador de aprovações pendentes
+  useEffect(() => {
+    if (actorLevel !== "admin_geral") return;
+    base44.functions.invoke("manageUsers", { action: "list_approvals" })
+      .then((res) => {
+        const d = res.data || {};
+        setPendingCount((d.invites?.length || 0) + (d.pilots?.length || 0) + (d.aircraft?.length || 0));
+      })
+      .catch(() => {});
+  }, [actorLevel, users]);
 
   const filtered = useMemo(() => {
     if (!users) return [];
@@ -195,6 +209,16 @@ export default function Usuarios() {
           {actorLevel === "admin_geral" && (
             <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-amber-300" onClick={runMigration} title="Criar registros de Piloto para usuários sem piloto vinculado">
               <RefreshCw className="w-4 h-4 mr-2" /> Migrar pilotos
+            </Button>
+          )}
+          {actorLevel === "admin_geral" && (
+            <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-amber-300 relative" onClick={() => setShowApprovals(true)}>
+              <Hourglass className="w-4 h-4 mr-2" /> Aprovações
+              {pendingCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-500 text-slate-900 text-[10px] font-bold flex items-center justify-center">
+                  {pendingCount}
+                </span>
+              )}
             </Button>
           )}
           {actorLevel === "admin_geral" && (
@@ -337,6 +361,12 @@ export default function Usuarios() {
           onClose={() => setPendingSensitive(null)}
         />
       )}
+      {showApprovals && (
+        <ApprovalsPanel
+          onClose={() => setShowApprovals(false)}
+          onDecision={() => load()}
+        />
+      )}
     </div>
   );
 }
@@ -375,7 +405,11 @@ function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onCance
       </td>
       <td className="px-4 py-3">
         {isInvite ? (
-          <span className="text-xs px-2.5 py-1 rounded-full border text-amber-300 bg-amber-500/10 border-amber-500/30">Convite pendente</span>
+          u.approval_status === "pending" ? (
+            <span className="text-xs px-2.5 py-1 rounded-full border text-orange-300 bg-orange-500/10 border-orange-500/30">Aguardando aprovação</span>
+          ) : (
+            <span className="text-xs px-2.5 py-1 rounded-full border text-amber-300 bg-amber-500/10 border-amber-500/30">Convite pendente</span>
+          )
         ) : (
           <span className={`text-xs px-2.5 py-1 rounded-full border ${st}`}>{ACCOUNT_STATUS_LABELS[u.account_status]}</span>
         )}

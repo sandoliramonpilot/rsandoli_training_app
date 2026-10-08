@@ -52,6 +52,16 @@
       "default": "pending",
       "title": "Status do convite"
     },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "pending",
+        "rejected"
+      ],
+      "default": "approved",
+      "title": "Status de aprova\u00e7\u00e3o do convite"
+    },
     "invited_by_user_id": {
       "type": "string",
       "title": "Convidado por"
