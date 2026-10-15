@@ -39,9 +39,40 @@ export function canManageLevel(actorLevel, targetLevel) {
 }
 
 export const ACTIVE_ACCOUNT_STATUSES = ["ativa", "convite_pendente"];
-export function isActiveAccount(user) {
-  const s = user?.account_status || "ativa";
-  return ACTIVE_ACCOUNT_STATUSES.includes(s);
+
+// Fonte autoritativa de situação da conta: entidade AccountStatus (gravável apenas
+// por administradores via backend). O campo User.account_status permanece gravável
+// pelo próprio usuário via updateMe, então NÃO é confiável. Quando não há registro
+// (usuário legado sem backfill), cai para o fallback do User.
+export async function isActiveAccount(base44, user) {
+  const fallback = user?.account_status || "ativa";
+  try {
+    const recs = await base44.asServiceRole.entities.AccountStatus.filter({ user_id: user.id });
+    if (recs && recs.length) {
+      const latest = recs
+        .slice()
+        .sort((a, b) => new Date(b.set_at || b.created_date || 0).getTime() - new Date(a.set_at || a.created_date || 0).getTime())[0];
+      return ACTIVE_ACCOUNT_STATUSES.includes(latest.status);
+    }
+  } catch {}
+  return ACTIVE_ACCOUNT_STATUSES.includes(fallback);
+}
+
+// Cria ou atualiza o registro autoritativo de situação da conta (backend only,
+// via asServiceRole). Usado por manageUsers sempre que o status é alterado.
+export async function setAccountStatusRecord(base44, userId, status, actor, reason) {
+  try {
+    const existing = await base44.asServiceRole.entities.AccountStatus.filter({ user_id: userId });
+    const now = new Date().toISOString();
+    if (existing && existing.length) {
+      const latest = existing
+        .slice()
+        .sort((a, b) => new Date(b.set_at || b.created_date || 0).getTime() - new Date(a.set_at || a.created_date || 0).getTime())[0];
+      await base44.asServiceRole.entities.AccountStatus.update(latest.id, { status, set_by: actor || null, set_at: now, reason: reason || "" });
+    } else {
+      await base44.asServiceRole.entities.AccountStatus.create({ user_id: userId, status, set_by: actor || null, set_at: now, reason: reason || "" });
+    }
+  } catch {}
 }
 
 export const AUDITABLE_ACTIONS = {

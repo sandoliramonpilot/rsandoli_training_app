@@ -1,0 +1,61 @@
+{
+  "name": "AccountStatus",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "ID do usu\u00e1rio"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ativa",
+        "convite_pendente",
+        "bloqueada",
+        "suspensa",
+        "desativada"
+      ],
+      "default": "ativa",
+      "title": "Situa\u00e7\u00e3o da conta"
+    },
+    "set_by": {
+      "type": "string",
+      "title": "Definido por"
+    },
+    "set_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data e hora"
+    },
+    "reason": {
+      "type": "string",
+      "title": "Motivo"
+    }
+  },
+  "required": [
+    "user_id",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

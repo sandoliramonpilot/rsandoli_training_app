@@ -116,23 +116,64 @@ async function validateUrl(rawUrl) {
   if (!addrs.length) return null;
   const publicAddrs = addrs.filter((a) => (a.includes(":") ? !isPrivateIpv6(a) : !isPrivateIpv4(a)));
   if (publicAddrs.length !== addrs.length) return null;
-  // Pin the validated IP for HTTP (HTTPS can't pin without breaking TLS/SNI).
-  const pinIp = parsed.protocol === "http:" ? (publicAddrs.find((a) => !a.includes(":")) || null) : null;
+  // Pin the validated public IPv4 for both HTTP and HTTPS. For HTTPS the pinned
+  // connection uses SNI/cert validation against the original hostname, closing
+  // the DNS-rebinding TOCTOU. IPv6-only hosts (no public v4) fall back to hostname.
+  const pinIp = publicAddrs.find((a) => !a.includes(":")) || null;
   return { parsed, pinIp };
 }
 
-function fetchValidated(validated) {
-  const { parsed, pinIp } = validated;
-  if (pinIp) {
-    const pinned = new URL(parsed.href);
-    pinned.hostname = pinIp;
-    return fetch(pinned.href, {
-      signal: AbortSignal.timeout(60000),
-      redirect: "manual",
-      headers: { Host: parsed.hostname },
-    });
+let _nodeHttp = null;
+async function loadNodeHttp() {
+  if (_nodeHttp !== null) return _nodeHttp;
+  try {
+    _nodeHttp = { http: await import("node:http"), https: await import("node:https") };
+  } catch {
+    _nodeHttp = false;
   }
-  return fetch(parsed.href, { signal: AbortSignal.timeout(60000), redirect: "manual" });
+  return _nodeHttp;
+}
+
+// Faz a requisição ao IP validado (pinning) preservando SNI/Host do hostname.
+// HTTP: conecta ao IP com header Host = hostname. HTTPS: conecta ao IP com
+// servername = hostname (SNI + validação de cert contra o hostname), eliminando
+// a janela de DNS rebinding entre validação e fetch. Fallback por hostname só
+// quando não há IPv4 público pinável ou node:http/https indisponível.
+async function pinnedRequest(validated) {
+  const { parsed, pinIp } = validated;
+  const fallback = async () => {
+    const res = await fetch(parsed.href, { signal: AbortSignal.timeout(60000), redirect: "manual" });
+    const buf = new Uint8Array(await res.arrayBuffer());
+    return { status: res.status, headers: Object.fromEntries(res.headers.entries()), bodyBuffer: buf };
+  };
+  if (!pinIp) return fallback();
+  const mods = await loadNodeHttp();
+  if (!mods) return fallback();
+  const { Buffer } = await import("node:buffer");
+  const isHttps = parsed.protocol === "https:";
+  const mod = isHttps ? mods.https : mods.http;
+  return new Promise((resolve, reject) => {
+    const options = {
+      method: "GET",
+      hostname: pinIp,
+      port: parsed.port || (isHttps ? 443 : 80),
+      path: parsed.pathname + parsed.search,
+      headers: { Host: parsed.hostname, "User-Agent": "base44-pptx/1.0" },
+      timeout: 60000,
+    };
+    if (isHttps) {
+      options.rejectUnauthorized = true;
+      options.servername = parsed.hostname;
+    }
+    const req = mod.request(options, (res) => {
+      const chunks = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, bodyBuffer: Buffer.concat(chunks) }));
+    });
+    req.on("error", reject);
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    req.end();
+  });
 }
 
 export default async function (req) {
@@ -141,7 +182,7 @@ export default async function (req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (user.role !== 'admin') return Response.json({ error: 'Apenas administradores podem baixar arquivos.' }, { status: 403 });
-    if (!isActiveAccount(user)) return Response.json({ error: 'Conta não está ativa.' }, { status: 403 });
+    if (!(await isActiveAccount(base44, user))) return Response.json({ error: 'Conta não está ativa.' }, { status: 403 });
 
     const body = await req.json();
     const url = body?.url;
@@ -153,29 +194,30 @@ export default async function (req) {
     let res;
     let current = validated;
     for (let i = 0; i < 5; i++) {
-      res = await fetchValidated(current);
-      if (res.status >= 300 && res.status < 400 && res.headers.get('location')) {
-        const next = await validateUrl(new URL(res.headers.get('location'), current.parsed.href).href);
+      res = await pinnedRequest(current);
+      const loc = res.headers?.location || res.headers?.Location || null;
+      if (res.status >= 300 && res.status < 400 && loc) {
+        const next = await validateUrl(new URL(loc, current.parsed.href).href);
         if (!next) return Response.json({ error: 'Redirecionamento para destino não permitido.' }, { status: 400 });
         current = next;
         continue;
       }
       break;
     }
-    if (!res || !res.ok) return Response.json({ error: 'Falha ao baixar o arquivo (HTTP ' + (res ? res.status : 0) + ').' }, { status: 502 });
+    if (!res || res.status < 200 || res.status >= 300) return Response.json({ error: 'Falha ao baixar o arquivo (HTTP ' + (res ? res.status : 0) + ').' }, { status: 502 });
 
-    const blob = await res.blob();
-    if (blob.size === 0) return Response.json({ error: 'Arquivo vazio.' }, { status: 400 });
-    if (blob.size > 50 * 1024 * 1024) return Response.json({ error: 'Arquivo excede 50 MB.' }, { status: 413 });
+    const size = res.bodyBuffer ? res.bodyBuffer.length : 0;
+    if (size === 0) return Response.json({ error: 'Arquivo vazio.' }, { status: 400 });
+    if (size > 50 * 1024 * 1024) return Response.json({ error: 'Arquivo excede 50 MB.' }, { status: 413 });
 
     const pathParts = validated.parsed.pathname.split('/');
     let filename = body?.file_name || pathParts[pathParts.length - 1] || 'apresentacao.pptx';
     if (!/\.pptx$/i.test(filename)) filename += '.pptx';
 
-    const file = new File([blob], filename, { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+    const file = new File([res.bodyBuffer], filename, { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
     const result = await base44.asServiceRole.integrations.Core.UploadPrivateFile({ file });
 
-    return Response.json({ file_uri: result.file_uri, file_name: filename, file_size: blob.size });
+    return Response.json({ file_uri: result.file_uri, file_name: filename, file_size: size });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

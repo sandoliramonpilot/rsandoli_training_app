@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
-import { AUDITABLE_ACTIONS, generateNumericCode, hashString } from "../../shared/accessSecurity.js";
+import { AUDITABLE_ACTIONS, generateNumericCode, hashString, isActiveAccount } from "../../shared/accessSecurity.js";
 
 const CODE_TTL_MINUTES = 5;
 const MAX_ATTEMPTS = 5;
@@ -46,8 +46,7 @@ export default async function (req) {
 
     // ---------- SEND ----------
     if (action === "send") {
-      const status = user.account_status || "ativa";
-      if (status !== "ativa" && status !== "convite_pendente") {
+      if (!(await isActiveAccount(base44, user))) {
         return Response.json({ error: "Conta não está ativa." }, { status: 403 });
       }
       const recent = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose, used: false });

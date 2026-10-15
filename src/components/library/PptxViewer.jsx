@@ -115,7 +115,7 @@ export default function PptxViewer({ doc, onClose }) {
             <div className="w-44 shrink-0 overflow-y-auto bg-[#12141A] border-r border-slate-700/60 p-2 space-y-2">
               {thumbs.map((svgStr, i) => (
                 <button key={i} onClick={() => go(i)} className={`block w-full rounded-lg overflow-hidden border-2 transition-colors ${i === current ? "border-amber-500" : "border-transparent hover:border-slate-600"}`}>
-                  <div className="bg-white" dangerouslySetInnerHTML={{ __html: svgStr }} />
+                  <img src={"data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgStr)} alt="" className="block w-full h-auto bg-white" />
                 </button>
               ))}
             </div>

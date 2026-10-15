@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
-import { AUDITABLE_ACTIONS, canManageLevel, generateTempPassword, hashString, isActiveAccount, rankOf } from "../../shared/accessSecurity.js";
+import { AUDITABLE_ACTIONS, canManageLevel, generateTempPassword, hashString, isActiveAccount, rankOf, setAccountStatusRecord } from "../../shared/accessSecurity.js";
 
 const ACCOUNT_STATUSES = ["convite_pendente", "ativa", "bloqueada", "suspensa", "desativada"];
 const ACCESS_LEVELS = ["admin_geral", "administrador", "gestor_supervisor", "operacional", "consulta"];
@@ -59,7 +59,7 @@ export default async function (req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    if (!isActiveAccount(user)) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
+    if (!(await isActiveAccount(base44, user))) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
@@ -154,6 +154,22 @@ export default async function (req) {
           ? (pilot.approval_status === "pending" ? "incompleto" : "completo")
           : "sem_vinculo";
         u.pilot_canac = pilot?.anac_code || pilot?.registration || null;
+      }
+
+      // Backfill do registro autoritativo de situação (AccountStatus) para usuários
+      // legados sem registro. Cria apenas os ausentes; não sobrescreve existentes.
+      const allStatuses = await base44.asServiceRole.entities.AccountStatus.list().catch(() => []);
+      const statusByUser = new Set((allStatuses || []).map((s) => s.user_id));
+      for (const u of sanitized) {
+        if (u.id && !statusByUser.has(u.id)) {
+          await base44.asServiceRole.entities.AccountStatus.create({
+            user_id: u.id,
+            status: u.account_status || "ativa",
+            set_by: "Sistema (backfill)",
+            set_at: new Date().toISOString(),
+            reason: "",
+          }).catch(() => {});
+        }
       }
 
       return Response.json({ users: [...pending, ...sanitized], actorLevel });
@@ -352,6 +368,7 @@ export default async function (req) {
           if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
         }
         patch.account_status = body.account_status;
+        await setAccountStatusRecord(base44, target.id, body.account_status, user.full_name || user.email, body.reason || "");
         changes.push(`Situação: ${target.account_status || "ativa"} → ${body.account_status}`);
       }
 
@@ -505,6 +522,7 @@ export default async function (req) {
         is_master: master,
         custom_permissions: null, // acesso irrestrito
       });
+      await setAccountStatusRecord(base44, targetId, "ativa", user.full_name || user.email, "Perfil Master");
       // Sincroniza o piloto vinculado ao e-mail, marcando is_master.
       const pilots = await base44.asServiceRole.entities.Pilot.filter({ email: target.email }).catch(() => []);
       for (const p of pilots) {

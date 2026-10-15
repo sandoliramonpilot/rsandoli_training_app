@@ -23,7 +23,7 @@ export default async function (req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    if (!isActiveAccount(user)) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
+    if (!(await isActiveAccount(base44, user))) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
     await base44.asServiceRole.entities.User.update(user.id, { must_change_password: false });
     await logAudit(base44, user, AUDITABLE_ACTIONS.password_reset_completed, "Troca de senha concluída pelo próprio usuário");
     return Response.json({ ok: true });
