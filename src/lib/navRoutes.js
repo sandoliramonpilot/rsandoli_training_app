@@ -15,7 +15,7 @@ export const NAV_MODULE_ROUTES = [
   { label: "Questões", path: "/questoes", moduleId: "questoes" },
   { label: "Simulados", path: "/simulados", moduleId: "simulados" },
   { label: "Treinamento Recorrente", path: "/treinamento-recorrente", moduleId: "treinamento_recorrente" },
-  { label: "Recursos Visuais", path: "/recursos-visuais", moduleId: "recursos_visuais" },
+  { label: "Recursos Audiovisuais", path: "/recursos-audiovisuais", moduleId: "recursos_visuais" },
   { label: "Briefing de Emergência", path: "/briefing-emergencia", moduleId: "briefing_emergencia" },
   { label: "Gestão", path: "/gestao", moduleId: "gestao" },
   { label: "Biblioteca", path: "/biblioteca", moduleId: "biblioteca" },

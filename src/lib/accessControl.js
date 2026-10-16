@@ -34,7 +34,7 @@ export const PERMISSION_MODULES = [
   { id: "procedimentos_emergencia", name: "Procedimentos de Emergência", path: "/procedimentos-emergencia" },
   { id: "simulados", name: "Simulados", path: "/simulados" },
   { id: "questoes", name: "Questões de prova", path: "/questoes" },
-  { id: "recursos_visuais", name: "Recursos Visuais", path: "/recursos-visuais" },
+  { id: "recursos_visuais", name: "Recursos Audiovisuais", path: "/recursos-audiovisuais" },
   { id: "briefing_emergencia", name: "Briefing de Emergência", path: "/briefing-emergencia" },
   { id: "treinamento_recorrente", name: "Treinamento Recorrente", path: "/treinamento-recorrente" },
   { id: "gestao", name: "Gestão", path: "/gestao" },

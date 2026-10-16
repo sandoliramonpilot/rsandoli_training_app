@@ -21,6 +21,9 @@ import AW119Training from '@/pages/AW119Training';
 import TreinamentosGerais from '@/pages/TreinamentosGerais';
 import EmConstrucao from '@/pages/EmConstrucao';
 import ProcedimentosEmergencia from '@/pages/ProcedimentosEmergencia';
+import TreinamentoRecorrente from '@/pages/TreinamentoRecorrente';
+import BriefingEmergencia from '@/pages/BriefingEmergencia';
+import RecursosAudiovisuais from '@/pages/RecursosAudiovisuais';
 import ProcedimentosNormais from '@/pages/ProcedimentosNormais';
 import Limitacoes from '@/pages/Limitacoes';
 import Gestao from '@/pages/Gestao';
@@ -95,9 +98,10 @@ const AuthenticatedApp = () => {
         <Route path="/limitacoes" element={<Limitacoes />} />
         <Route path="/procedimentos-normais" element={<ProcedimentosNormais />} />
         <Route path="/procedimentos-emergencia" element={<ProcedimentosEmergencia />} />
-        <Route path="/treinamento-recorrente" element={<EmConstrucao title="Treinamento Recorrente" subtitle="Programa de proficiência e reciclagem periódica." />} />
-        <Route path="/recursos-visuais" element={<EmConstrucao title="Recursos Visuais" subtitle="Mídia, diagramas e materiais de apoio visual." />} />
-        <Route path="/briefing-emergencia" element={<EmConstrucao title="Briefing de Emergência" subtitle="Briefings e procedimentos de emergência." />} />
+        <Route path="/treinamento-recorrente" element={<TreinamentoRecorrente />} />
+        <Route path="/recursos-visuais" element={<RecursosAudiovisuais />} />
+        <Route path="/recursos-audiovisuais" element={<RecursosAudiovisuais />} />
+        <Route path="/briefing-emergencia" element={<BriefingEmergencia />} />
         <Route path="/gestao" element={<RequireModule moduleId="gestao"><Gestao /></RequireModule>} />
         <Route path="/pilotos" element={<Pilotos />} />
         <Route path="/oat" element={<Oat />} />
