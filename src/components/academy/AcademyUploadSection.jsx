@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
 import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import MediaThumb from "@/components/academy/MediaThumb";
+import DocumentListItem from "@/components/academy/DocumentListItem";
 import { DIDATIC_NOTICE } from "@/lib/aw119TrainingData";
 import { Upload, Loader2, X, ShieldAlert, Inbox } from "lucide-react";
 
@@ -12,11 +13,11 @@ const VIDEO_EXTS = ["mp4", "mov", "avi", "mkv", "webm", "wmv"];
 
 const MEDIA_MODES = {
   document: {
-    accept: ".pdf,.ppsx,.pptx",
-    extensions: ["pdf", "ppsx", "pptx"],
-    selectLabel: "Selecionar PDF/PPSX",
-    linkLabel: "Anexar documento (.pdf, .ppsx)",
-    invalidMsg: "Formato não suportado. Use PDF, PPSX ou PPTX.",
+    accept: ".pdf,.ppsx,.pptx,.doc,.docx",
+    extensions: ["pdf", "ppsx", "pptx", "doc", "docx"],
+    selectLabel: "Selecionar arquivo",
+    linkLabel: "Anexar documento (.pdf, .ppsx, .doc, .docx)",
+    invalidMsg: "Formato não suportado. Use PDF, PPSX, PPTX, DOC ou DOCX.",
   },
   image: {
     accept: ".jpg,.jpeg,.png,.heic,.gif,.pdf,.ppsx",
@@ -128,23 +129,7 @@ export default function AcademyUploadSection({
               {mediaMode === "image" ? "Imagens e documentos" : mediaMode === "video" ? "Vídeos" : "Documentos anexados"}
             </p>
             {docs.map((d) => (
-              <a
-                key={d.id}
-                href="#"
-                onClick={async (e) => {
-                  e.preventDefault();
-                  const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: d.file_uri });
-                  window.open(signed_url, "_blank");
-                }}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-slate-700/30 border border-slate-700/40 hover:border-amber-500/40 transition-colors text-sm"
-              >
-                <MediaThumb file_uri={d.file_uri} file_type={d.file_type} file_name={d.file_name} />
-                <div className="min-w-0 flex-1">
-                  <span className="text-slate-300 truncate block">{d.title}</span>
-                  <AcademyApprovalBadge status={d.approval_status} size="xs" />
-                </div>
-                <span className="text-xs text-slate-500 ml-auto uppercase shrink-0">{d.file_type}</span>
-              </a>
+              <DocumentListItem key={d.id} doc={d} canEdit={canEdit} onUpdated={loadDocs} />
             ))}
           </div>
         ) : (

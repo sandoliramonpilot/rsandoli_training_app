@@ -5,6 +5,7 @@ import { can } from "@/lib/accessControl";
 import { AW119_TRAINING, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/aw119TrainingData";
 import BackToDashboard from "@/components/BackToDashboard";
 import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
+import DocumentListItem from "@/components/academy/DocumentListItem";
 import {
   GraduationCap, Crown, Monitor, Plane, Settings, ChevronRight, ChevronDown,
   FileText, Upload, Loader2, X, AlertTriangle, ShieldAlert, BookOpen, Layers,
@@ -24,11 +25,12 @@ export default function AW119Training() {
   const canEdit = can(user, "treinamentos", "editar");
   const mod = AW119_TRAINING.modules.find((m) => m.id === activeModule) || AW119_TRAINING.modules[0];
 
-  useEffect(() => {
-    base44.entities.TrainingDocument.filter({ discipline: "aw119_training", status: "active" })
-      .then(setTrainingDocs)
-      .catch(() => setTrainingDocs([]));
-  }, []);
+  const loadDocs = async () => {
+    const docs = await base44.entities.TrainingDocument.filter({ discipline: "aw119_training", status: "active" }).catch(() => []);
+    setTrainingDocs(docs);
+  };
+
+  useEffect(() => { loadDocs(); }, []);
 
   const toggleChapter = (id) => {
     setExpandedChapters((prev) => {
@@ -44,8 +46,8 @@ export default function AW119Training() {
     const file = e.target.files?.[0];
     if (!file || !uploadChapter) return;
     const ext = file.name.split(".").pop()?.toLowerCase();
-    if (!["pdf", "ppsx", "pptx"].includes(ext)) {
-      alert("Formato não suportado. Use PDF, PPSX ou PPTX.");
+    if (!["pdf", "ppsx", "pptx", "doc", "docx"].includes(ext)) {
+      alert("Formato não suportado. Use PDF, PPSX, PPTX, DOC ou DOCX.");
       return;
     }
     setUploading(true);
@@ -55,7 +57,7 @@ export default function AW119Training() {
         title: uploadTitle || file.name.replace(/\.[^/.]+$/, ""),
         discipline: "aw119_training",
         chapter: uploadChapter,
-        file_type: ext === "pdf" ? "pdf" : ext === "ppsx" ? "ppsx" : "pptx",
+        file_type: ["pdf", "ppsx", "pptx"].includes(ext) ? ext : "other",
         file_uri,
         file_name: file.name,
         file_size: file.size,
@@ -64,8 +66,7 @@ export default function AW119Training() {
       });
       setUploadTitle("");
       setUploadChapter(null);
-      const docs = await base44.entities.TrainingDocument.filter({ discipline: "aw119_training", status: "active" }).catch(() => []);
-      setTrainingDocs(docs);
+      await loadDocs();
     } catch (err) {
       alert("Erro ao enviar arquivo: " + (err.message || "tente novamente."));
     } finally {
@@ -168,6 +169,7 @@ export default function AW119Training() {
               onUploadClick={() => setUploadChapter(ch.id)}
               onCancelUpload={() => setUploadChapter(null)}
               onFileSelect={handleUpload}
+              onUpdated={loadDocs}
             />
           );
         })}
@@ -189,7 +191,7 @@ export default function AW119Training() {
   );
 }
 
-function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUploadOpen, uploadTitle, setUploadTitle, onUploadClick, onCancelUpload, onFileSelect }) {
+function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUploadOpen, uploadTitle, setUploadTitle, onUploadClick, onCancelUpload, onFileSelect, onUpdated }) {
   const fileInputRef = React.useRef(null);
   return (
     <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 overflow-hidden">
@@ -236,23 +238,7 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
             <div className="space-y-2 pt-2 border-t border-slate-700/40">
               <p className="text-xs uppercase tracking-wider text-slate-500 font-medium pt-2">Documentos anexados</p>
               {docs.map((d) => (
-                <a
-                  key={d.id}
-                  href="#"
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: d.file_uri });
-                    window.open(signed_url, "_blank");
-                  }}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-slate-700/30 border border-slate-700/40 hover:border-amber-500/40 transition-colors text-sm"
-                >
-                  <FileText className="w-4 h-4 text-amber-400 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <span className="text-slate-300 truncate block">{d.title}</span>
-                    <AcademyApprovalBadge status={d.approval_status} size="xs" />
-                  </div>
-                  <span className="text-xs text-slate-500 ml-auto uppercase shrink-0">{d.file_type}</span>
-                </a>
+                <DocumentListItem key={d.id} doc={d} canEdit={canEdit} onUpdated={onUpdated} />
               ))}
             </div>
           )}
@@ -273,13 +259,13 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
                     className="w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500"
                   />
                   <div className="flex items-center gap-2">
-                    <input ref={fileInputRef} type="file" accept=".pdf,.ppsx,.pptx" onChange={onFileSelect} className="hidden" />
+                    <input ref={fileInputRef} type="file" accept=".pdf,.ppsx,.pptx,.doc,.docx" onChange={onFileSelect} className="hidden" />
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500 text-slate-900 text-xs font-medium hover:bg-amber-400 transition-colors"
                     >
-                      <Upload className="w-3.5 h-3.5" /> Selecionar PDF/PPSX
+                      <Upload className="w-3.5 h-3.5" /> Selecionar arquivo
                     </button>
                     <button onClick={onCancelUpload} className="text-xs text-slate-500 hover:text-slate-300">
                       <X className="w-4 h-4" />
@@ -291,7 +277,7 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
                   onClick={onUploadClick}
                   className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-amber-400 transition-colors py-1"
                 >
-                  <Upload className="w-3.5 h-3.5" /> Anexar documento (.pdf, .ppsx)
+                  <Upload className="w-3.5 h-3.5" /> Anexar documento (.pdf, .ppsx, .doc, .docx)
                 </button>
               )}
             </div>
