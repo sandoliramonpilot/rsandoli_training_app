@@ -81,6 +81,7 @@ export default function UploadModal({ aircraft, onClose, onDone }) {
         file_size: file.size,
         uploaded_by: uploadedBy,
         uploaded_at: uploadedAt,
+        approval_status: "pending_review",
       };
 
       if (editing) {
@@ -91,6 +92,11 @@ export default function UploadModal({ aircraft, onClose, onDone }) {
           { file_uri: editing.file_uri, revision_number: editing.revision_number, uploaded_by: editing.uploaded_by, uploaded_at: editing.uploaded_at },
         ];
         payload.versions = JSON.stringify(newVersions);
+        // Nova versão volta a aguardar aprovação
+        payload.reviewed_by = null;
+        payload.reviewed_at = null;
+        payload.review_decision = null;
+        payload.review_justification = null;
         await base44.entities.LibraryDocument.update(editing.id, payload);
       } else {
         await base44.entities.LibraryDocument.create(payload);

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import TechnicalValidationsPanel from "@/components/perfil/TechnicalValidationsPanel";
+import AcademyContentPanel from "@/components/perfil/AcademyContentPanel";
 import { UserCircle, Loader2, Eye, EyeOff, Camera, ShieldCheck } from "lucide-react";
 
 const PASSWORD_RULES = [
@@ -173,6 +174,9 @@ export default function MeuPerfil() {
 
       {/* Validações técnicas pendentes (admin) */}
       {isAdmin && <TechnicalValidationsPanel user={user} />}
+
+      {/* Conteúdo da Academy aguardando aprovação (admin) */}
+      {isAdmin && <AcademyContentPanel user={user} />}
 
       {/* Alterar senha */}
       <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-6">

@@ -73,6 +73,7 @@ export default function DownloadUrlModal({ aircraft, onClose, onDone }) {
         file_size: data.file_size,
         uploaded_by: uploadedBy,
         uploaded_at: uploadedAt,
+        approval_status: "pending_review",
       };
       await base44.entities.LibraryDocument.create(payload);
       onDone();

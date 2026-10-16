@@ -54,6 +54,38 @@
       ],
       "default": "active",
       "title": "Status"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "approved",
+        "approved_with_notes",
+        "rejected"
+      ],
+      "default": "pending_review",
+      "title": "Status de aprova\u00e7\u00e3o"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "title": "Revisado por"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data e hora da revis\u00e3o"
+    },
+    "review_decision": {
+      "type": "string",
+      "title": "Decis\u00e3o da revis\u00e3o"
+    },
+    "review_justification": {
+      "type": "string",
+      "title": "Justificativa / ressalvas"
+    },
+    "approval_log": {
+      "type": "string",
+      "title": "Log de aprova\u00e7\u00e3o (JSON)"
     }
   },
   "required": [

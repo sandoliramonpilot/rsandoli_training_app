@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
 import { AW119_TRAINING, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/aw119TrainingData";
 import BackToDashboard from "@/components/BackToDashboard";
+import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import {
   GraduationCap, Crown, Monitor, Plane, Settings, ChevronRight, ChevronDown,
   FileText, Upload, Loader2, X, AlertTriangle, ShieldAlert, BookOpen, Layers,
@@ -59,6 +60,7 @@ export default function AW119Training() {
         file_name: file.name,
         file_size: file.size,
         uploaded_by: user?.full_name || user?.email || "",
+        approval_status: "pending_review",
       });
       setUploadTitle("");
       setUploadChapter(null);
@@ -245,8 +247,11 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
                   className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-slate-700/30 border border-slate-700/40 hover:border-amber-500/40 transition-colors text-sm"
                 >
                   <FileText className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span className="text-slate-300 truncate">{d.title}</span>
-                  <span className="text-xs text-slate-500 ml-auto uppercase">{d.file_type}</span>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-slate-300 truncate block">{d.title}</span>
+                    <AcademyApprovalBadge status={d.approval_status} size="xs" />
+                  </div>
+                  <span className="text-xs text-slate-500 ml-auto uppercase shrink-0">{d.file_type}</span>
                 </a>
               ))}
             </div>

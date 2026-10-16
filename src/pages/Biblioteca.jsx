@@ -6,6 +6,7 @@ import UploadModal from "@/components/library/UploadModal";
 import PdfViewer from "@/components/library/PdfViewer";
 import PptxViewer from "@/components/library/PptxViewer";
 import DownloadUrlModal from "@/components/library/DownloadUrlModal";
+import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 
 // Legacy categories que podem existir em documentos antigos
 const LEGACY_LABELS = {
@@ -252,6 +253,7 @@ export default function Biblioteca() {
                 {doc.revision_number && <p className="text-[11px] text-slate-500">Rev.: {doc.revision_number}</p>}
                 <div className="flex flex-wrap gap-1 mt-2">
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${statusTone} bg-slate-700/30`}>{status}</span>
+                  <AcademyApprovalBadge status={doc.approval_status} size="xs" />
                   {(doc.tags || "").split(",").slice(0, 2).map((t, i) => t.trim() && (
                     <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-400">{t.trim()}</span>
                   ))}
