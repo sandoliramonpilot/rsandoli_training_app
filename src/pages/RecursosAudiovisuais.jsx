@@ -8,12 +8,14 @@ const SUBMODULES = [
     id: "imagens_tecnicas",
     title: "IMAGENS TÉCNICAS",
     icon: ImageIcon,
+    mediaMode: "image",
     description: "Diagramas, fotografias e ilustrações técnicas dos sistemas do AW119Kx.",
   },
   {
     id: "videos_instrucionais",
     title: "VÍDEOS INSTRUCIONAIS",
     icon: Video,
+    mediaMode: "video",
     description: "Vídeos de treinamento, animações e materiais audiovisuais de instrução.",
   },
 ];
@@ -76,6 +78,7 @@ export default function RecursosAudiovisuais() {
         discipline="recursos_audiovisuais"
         chapter={sub.id}
         moduleId="treinamentos"
+        mediaMode={sub.mediaMode}
         title={sub.title}
         description={sub.description}
       />
