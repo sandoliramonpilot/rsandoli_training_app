@@ -20,6 +20,7 @@ import Treinamentos from '@/pages/Treinamentos';
 import AW119Training from '@/pages/AW119Training';
 import TreinamentosGerais from '@/pages/TreinamentosGerais';
 import EmConstrucao from '@/pages/EmConstrucao';
+import ProcedimentosEmergencia from '@/pages/ProcedimentosEmergencia';
 import ProcedimentosNormais from '@/pages/ProcedimentosNormais';
 import Limitacoes from '@/pages/Limitacoes';
 import Gestao from '@/pages/Gestao';
@@ -93,7 +94,7 @@ const AuthenticatedApp = () => {
         <Route path="/treinamentos-gerais" element={<TreinamentosGerais />} />
         <Route path="/limitacoes" element={<Limitacoes />} />
         <Route path="/procedimentos-normais" element={<ProcedimentosNormais />} />
-        <Route path="/procedimentos-emergencia" element={<EmConstrucao title="Procedimentos de Emergência" subtitle="Procedimentos anormais e de emergência (QRH)." />} />
+        <Route path="/procedimentos-emergencia" element={<ProcedimentosEmergencia />} />
         <Route path="/treinamento-recorrente" element={<EmConstrucao title="Treinamento Recorrente" subtitle="Programa de proficiência e reciclagem periódica." />} />
         <Route path="/recursos-visuais" element={<EmConstrucao title="Recursos Visuais" subtitle="Mídia, diagramas e materiais de apoio visual." />} />
         <Route path="/briefing-emergencia" element={<EmConstrucao title="Briefing de Emergência" subtitle="Briefings e procedimentos de emergência." />} />
