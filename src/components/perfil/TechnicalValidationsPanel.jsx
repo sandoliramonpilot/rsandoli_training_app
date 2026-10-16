@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
+import TechnicalValidationReviewModal from "./TechnicalValidationReviewModal";
 import {
   ShieldCheck, CheckCircle2, Loader2, X, ExternalLink, FileText,
-  BadgeCheck, Award, FileBadge, Stamp, Plane,
+  BadgeCheck, Award, FileBadge, Plane, Pencil,
 } from "lucide-react";
 
 const ENTITY_ICONS = {
@@ -21,7 +22,8 @@ export default function TechnicalValidationsPanel({ user }) {
   const [busy, setBusy] = useState(false);
   const [approvingId, setApprovingId] = useState(null);
   const [toast, setToast] = useState("");
-  const [showList, setShowList] = useState(false);
+  const [showList, setShowList] = useState(true);
+  const [reviewItem, setReviewItem] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -85,6 +87,9 @@ export default function TechnicalValidationsPanel({ user }) {
     if (pilotId) navigate(`/pilots?pilot_id=${pilotId}`);
   };
 
+  const openReview = (item) => setReviewItem(item);
+  const closeReview = () => setReviewItem(null);
+
   const total = items?.length || 0;
 
   return (
@@ -126,70 +131,64 @@ export default function TechnicalValidationsPanel({ user }) {
           <p className="text-sm text-slate-500">Tudo em dia — nenhuma validação técnica pendente.</p>
         </div>
       ) : (
-        <>
-          <button
-            onClick={() => setShowList((s) => !s)}
-            className="mt-4 text-xs text-amber-400 hover:text-amber-300"
-          >
-            {showList ? "Ocultar lista" : "Ver lista individual"}
-          </button>
-
-          {showList && (
-            <div className="mt-3 space-y-2 max-h-96 overflow-y-auto pr-1">
-              {items.map((item) => {
-                const Icon = ENTITY_ICONS[item.entity_key] || FileText;
-                const isBusy = approvingId === `${item.entity_key}_${item.id}`;
-                return (
-                  <div key={`${item.entity_key}_${item.id}`} className="rounded-xl border border-slate-700/60 bg-[#12141A] p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Icon className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                          <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">{item.entity_label}</span>
-                        </div>
-                        <p className="text-sm font-medium text-slate-100 mt-1 truncate">{item.label}</p>
-                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-slate-500">
-                          {item.pilot_name && <span>{item.pilot_name}</span>}
-                          {item.number && <span>Nº {item.number}</span>}
-                          {item.expiry_date && <span>Validade: {new Date(item.expiry_date).toLocaleDateString("pt-BR")}</span>}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {item.document_uri && (
-                          <button
-                            onClick={() => openDocument(item.document_uri)}
-                            title="Abrir documento"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-amber-500/10"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {item.pilot_id && (
-                          <button
-                            onClick={() => goToPilot(item.pilot_id)}
-                            title="Abrir perfil do piloto"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-sky-300 hover:bg-sky-500/10"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => approveOne(item)}
-                          disabled={isBusy}
-                          title="Aprovar"
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 disabled:opacity-50"
-                        >
-                          {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                          Aprovar
-                        </button>
-                      </div>
+        <div className="mt-4 space-y-2 max-h-[28rem] overflow-y-auto pr-1">
+          {items.map((item) => {
+            const Icon = ENTITY_ICONS[item.entity_key] || FileText;
+            return (
+              <div key={`${item.entity_key}_${item.id}`} className="rounded-xl border border-slate-700/60 bg-[#12141A] p-3 hover:border-amber-500/30 transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <button onClick={() => openReview(item)} className="min-w-0 flex-1 text-left">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Icon className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">{item.entity_label}</span>
                     </div>
+                    <p className="text-sm font-medium text-slate-100 mt-1 truncate">{item.label}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-slate-500">
+                      {item.pilot_name && <span>{item.pilot_name}</span>}
+                      {item.number && <span>Nº {item.number}</span>}
+                      {item.expiry_date && <span>Validade: {new Date(item.expiry_date).toLocaleDateString("pt-BR")}</span>}
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {item.document_uri && (
+                      <button
+                        onClick={() => openDocument(item.document_uri)}
+                        title="Abrir documento"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-amber-500/10"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {item.pilot_id && (
+                      <button
+                        onClick={() => goToPilot(item.pilot_id)}
+                        title="Abrir perfil do piloto"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-sky-300 hover:bg-sky-500/10"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => openReview(item)}
+                      title="Revisar item"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Revisar
+                    </button>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {reviewItem && (
+        <TechnicalValidationReviewModal
+          item={reviewItem}
+          onClose={closeReview}
+          onDone={load}
+        />
       )}
     </div>
   );
