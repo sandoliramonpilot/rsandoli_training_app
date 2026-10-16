@@ -42,6 +42,17 @@ export default function Pilotos() {
   };
   useEffect(() => { load(); }, []);
 
+  // Deep-link: ?pilot_id=xxx auto-seleciona o piloto
+  useEffect(() => {
+    if (!pilots) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const pilotId = urlParams.get("pilot_id");
+    if (pilotId) {
+      const found = pilots.find((p) => p.id === pilotId);
+      if (found) setSelected(found);
+    }
+  }, [pilots]);
+
   const bases = useMemo(() => {
     if (!pilots) return [];
     return [...new Set(pilots.map((p) => p.base).filter(Boolean))].sort();

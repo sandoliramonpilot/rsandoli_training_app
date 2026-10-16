@@ -5,6 +5,7 @@ import { ACCESS_LEVEL_LABELS, ACCOUNT_STATUS_LABELS, getAccessLevel, getAccountS
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import TechnicalValidationsPanel from "@/components/perfil/TechnicalValidationsPanel";
 import { UserCircle, Loader2, Eye, EyeOff, Camera, ShieldCheck } from "lucide-react";
 
 const PASSWORD_RULES = [
@@ -48,6 +49,7 @@ export default function MeuPerfil() {
 
   const level = getAccessLevel(user);
   const status = getAccountStatus(user);
+  const isAdmin = level === "admin_geral" || level === "administrador";
 
   const handlePhoto = async (e) => {
     const file = e.target.files?.[0];
@@ -168,6 +170,9 @@ export default function MeuPerfil() {
           </Button>
         </form>
       </div>
+
+      {/* Validações técnicas pendentes (admin) */}
+      {isAdmin && <TechnicalValidationsPanel user={user} />}
 
       {/* Alterar senha */}
       <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-6">
