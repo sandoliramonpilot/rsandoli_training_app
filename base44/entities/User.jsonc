@@ -7,6 +7,11 @@
       "title": "N\u00edvel de acesso",
       "description": "admin_geral | administrador | gestor_supervisor | operacional | consulta"
     },
+    "aircraft_profiles": {
+      "type": "string",
+      "title": "Perfis de aeronave autorizados",
+      "description": "JSON array: [\"AW119\"], [\"H125\"], ou [\"AW119\",\"H125\"]. Vazio/ausente = AW119 (legado)."
+    },
     "account_status": {
       "type": "string",
       "title": "Situa\u00e7\u00e3o da conta",

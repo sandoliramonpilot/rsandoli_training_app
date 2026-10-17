@@ -2,6 +2,14 @@
   "name": "AccessAuditLog",
   "type": "object",
   "properties": {
+    "aircraftProfile": {
+      "type": "string",
+      "enum": [
+        "AW119",
+        "H125"
+      ],
+      "title": "Perfil da aeronave ativo na a\u00e7\u00e3o"
+    },
     "actor_user_id": {
       "type": "string",
       "title": "Usu\u00e1rio que executou a a\u00e7\u00e3o"

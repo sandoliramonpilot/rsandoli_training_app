@@ -2,6 +2,16 @@
   "name": "Oat",
   "type": "object",
   "properties": {
+    "aircraftProfile": {
+      "type": "string",
+      "enum": [
+        "AW119",
+        "H125",
+        "shared"
+      ],
+      "default": "AW119",
+      "title": "Perfil da aeronave"
+    },
     "full_name": {
       "type": "string",
       "title": "Nome completo"

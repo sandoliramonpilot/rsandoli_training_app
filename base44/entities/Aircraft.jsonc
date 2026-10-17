@@ -2,6 +2,16 @@
   "name": "Aircraft",
   "type": "object",
   "properties": {
+    "aircraftProfile": {
+      "type": "string",
+      "enum": [
+        "AW119",
+        "H125",
+        "shared"
+      ],
+      "default": "AW119",
+      "title": "Perfil da aeronave"
+    },
     "registration": {
       "type": "string",
       "title": "Matr\u00edcula",
