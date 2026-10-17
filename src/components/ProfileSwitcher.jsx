@@ -3,8 +3,8 @@ import { useProfile } from "@/lib/ProfileContext";
 import { Plane, ChevronDown } from "lucide-react";
 
 const PROFILE_META = {
-  AW119: { label: "AW119 Koala", short: "AW119" },
-  H125: { label: "H125 Écureuil", short: "H125" },
+  AW119: { label: "AW119 Leonardo Helicopters", short: "AW119" },
+  H125: { label: "H125 Eurocopter", short: "H125" },
 };
 
 export default function ProfileSwitcher() {
