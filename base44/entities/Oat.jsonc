@@ -256,6 +256,11 @@
       "title": "N\u00edvel de permiss\u00e3o do cadastro",
       "description": "full | restricted",
       "default": "restricted"
+    },
+    "description": {
+      "type": "string",
+      "title": "Descri\u00e7\u00e3o",
+      "maxLength": 1000
     }
   },
   "required": [

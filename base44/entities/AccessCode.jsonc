@@ -43,6 +43,11 @@
     "created_at": {
       "type": "string",
       "title": "Data de gera\u00e7\u00e3o"
+    },
+    "description": {
+      "type": "string",
+      "title": "Descri\u00e7\u00e3o",
+      "maxLength": 1000
     }
   },
   "required": [

@@ -35,6 +35,11 @@
       "type": "string",
       "title": "Vers\u00e3o dos termos",
       "default": "v1"
+    },
+    "description": {
+      "type": "string",
+      "title": "Descri\u00e7\u00e3o",
+      "maxLength": 1000
     }
   },
   "required": [
