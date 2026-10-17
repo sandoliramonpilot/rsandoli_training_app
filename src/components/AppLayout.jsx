@@ -255,11 +255,17 @@ function SidebarContent({ location, onNavigate }) {
         )}
       </div>
 
-      <div className="px-6 py-4 border-t border-slate-800 text-[11px] text-slate-600">
+      <div className="px-6 py-4 border-t border-slate-800 text-[11px] text-slate-600 space-y-2">
         <p className="flex items-center gap-2">
           <GraduationCap className="w-3.5 h-3.5" />
           RSANDOLI PILOTS Helicopter Training
         </p>
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          <a href="/sobre" className="hover:text-amber-400 transition-colors">Sobre</a>
+          <a href="/contato" className="hover:text-amber-400 transition-colors">Contato</a>
+          <a href="/privacidade" className="hover:text-amber-400 transition-colors">Privacidade</a>
+          <a href="/termos" className="hover:text-amber-400 transition-colors">Termos</a>
+        </div>
       </div>
 
       <GlobalSearch onClose={() => setSearchOpen(false)} open={searchOpen} />

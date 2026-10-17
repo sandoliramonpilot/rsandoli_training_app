@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import TermsModal from "@/components/TermsModal";
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -43,16 +43,24 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import OAuthConsent from '@/pages/OAuthConsent';
 import InstallPrompt from '@/components/InstallPrompt';
+import Sobre from '@/pages/Sobre';
+import Contato from '@/pages/Contato';
+import Privacidade from '@/pages/Privacidade';
+import Termos from '@/pages/Termos';
 // Add page imports here
 
+const PUBLIC_TRUST_PATHS = ["/sobre", "/contato", "/privacidade", "/termos"];
+
 const AuthenticatedApp = () => {
+  const location = useLocation();
+  const isPublicTrustPage = PUBLIC_TRUST_PATHS.includes(location.pathname);
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const [termsAccepted, setTermsAccepted] = useState(
     () => localStorage.getItem("terms_accepted") === "true"
   );
 
   // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  if (!isPublicTrustPage && (isLoadingPublicSettings || isLoadingAuth)) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
@@ -64,7 +72,7 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
+    } else if (authError.type === 'auth_required' && !isPublicTrustPage) {
       // Redirect to login automatically
       navigateToLogin();
       return null;
@@ -72,13 +80,19 @@ const AuthenticatedApp = () => {
   }
 
   // Após autenticação confirmada, exige aceite dos termos antes de liberar o app
-  if (!termsAccepted) {
+  if (!termsAccepted && !isPublicTrustPage) {
     return <TermsModal onAccept={() => setTermsAccepted(true)} />;
   }
 
   // Render the main app
   return (
     <Routes>
+      {/* Public trust pages — no auth required */}
+      <Route path="/sobre" element={<Sobre />} />
+      <Route path="/contato" element={<Contato />} />
+      <Route path="/privacidade" element={<Privacidade />} />
+      <Route path="/termos" element={<Termos />} />
+
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
