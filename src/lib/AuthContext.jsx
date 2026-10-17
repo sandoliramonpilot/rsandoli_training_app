@@ -105,6 +105,8 @@ export const AuthProvider = ({ children }) => {
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
+    // Limpa o aceite dos termos para exigir nova concordância no próximo login
+    localStorage.removeItem("terms_accepted");
     
     if (shouldRedirect) {
       // Use the SDK's logout method which handles token cleanup and redirect
