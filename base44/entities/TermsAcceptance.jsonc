@@ -46,13 +46,31 @@
     "accepted_at"
   ],
   "rls": {
+    "create": {
+      "data.user_id": {
+        "$in": [
+          "__rls_deny__"
+        ]
+      }
+    },
     "read": {
       "user_condition": {
         "role": "admin"
       }
     },
-    "create": {},
-    "update": false,
-    "delete": false
+    "update": {
+      "data.user_id": {
+        "$in": [
+          "__rls_deny__"
+        ]
+      }
+    },
+    "delete": {
+      "data.user_id": {
+        "$in": [
+          "__rls_deny__"
+        ]
+      }
+    }
   }
 }
