@@ -231,3 +231,8 @@ export function firstAuthorizedPath(user) {
   }
   return "/";
 }
+
+/** Verifica se o usuário possui pelo menos um módulo autorizado. */
+export function hasAnyAuthorizedModule(user) {
+  return PERMISSION_MODULES.some((mod) => can(user, mod.id, "visualizar"));
+}
