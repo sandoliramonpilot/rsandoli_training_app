@@ -844,6 +844,7 @@ function TabSolicitacoes({ oat, isManager, me }) {
     e.preventDefault();
     const by = me ? me.email || me.id : "desconhecido";
     await base44.entities.OatChangeRequest.create({
+      aircraftProfile: oat.aircraftProfile || "AW119",
       oat_id: oat.id, oat_name: oat.full_name, requested_by: by,
       change_type: form.change_type, changes: JSON.stringify({ description: form.changes }),
       reason: form.reason, status: "pending",

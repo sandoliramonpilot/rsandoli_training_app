@@ -202,7 +202,7 @@ function SummaryCard({ icon: Icon, label, value, tone }) {
 }
 
 function CompletionForm({ pilots, courses, onClose, onSaved }) {
-  const { profileValue } = useProfile();
+  const { profileFilter, profileValue } = useProfile();
   const [pilotId, setPilotId] = useState("");
   const [courseId, setCourseId] = useState("");
   const [score, setScore] = useState("");
@@ -219,7 +219,7 @@ function CompletionForm({ pilots, courses, onClose, onSaved }) {
       const course = courses.find((c) => c.id === courseId);
       // Avoid duplicate
       const existing = await base44.entities.TrainingCompletion.filter({
-        pilot_id: pilotId, training_document_id: courseId,
+        ...profileFilter, pilot_id: pilotId, training_document_id: courseId,
       }).catch(() => []);
       if (existing.length > 0) {
         await base44.entities.TrainingCompletion.update(existing[0].id, {

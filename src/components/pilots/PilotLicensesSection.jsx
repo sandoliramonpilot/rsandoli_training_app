@@ -8,6 +8,7 @@ import {
   licenseSituationAuto, daysUntil,
 } from "@/lib/pilotUtils";
 import PilotLicenseForm from "./PilotLicenseForm";
+import { useProfile } from "@/lib/ProfileContext";
 import {
   Plus, Pencil, Trash2, Send, CheckCircle2, X, FileText, ShieldCheck,
   Loader2, AlertTriangle, XCircle,
@@ -31,11 +32,12 @@ export default function PilotLicensesSection({ pilot, isManager, onRefresh }) {
       (pilot.email && me.email && String(pilot.email).toLowerCase() === String(me.email).toLowerCase()))
   );
   const canEdit = isManager || isSelf;
+  const { profileFilter } = useProfile();
 
   const load = useCallback(async () => {
-    const list = await base44.entities.PilotLicense.filter({ pilot_id: pilot.id }).catch(() => []);
+    const list = await base44.entities.PilotLicense.filter({ ...profileFilter, pilot_id: pilot.id }).catch(() => []);
     setLicenses(list);
-  }, [pilot.id]);
+  }, [pilot.id, profileFilter]);
 
   useEffect(() => { load(); }, [load]);
 

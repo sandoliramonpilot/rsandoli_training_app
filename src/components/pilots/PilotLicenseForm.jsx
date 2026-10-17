@@ -4,11 +4,13 @@ import {
   PILOT_LICENSE_TYPES, PILOT_LICENSE_SITUATIONS, PILOT_LICENSE_VALIDITY_SOURCES,
 } from "@/lib/pilotUtils";
 import { X, Check, Loader2, Upload, FileText, Trash2, AlertTriangle } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 const inputCls = "w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50";
 
 export default function PilotLicenseForm({ pilot, license, existingLicenses, onClose, onSaved }) {
   const isEdit = !!license;
+  const { profileValue } = useProfile();
   const isOther = (license?.license_type || "") === "other";
   const [f, setF] = useState({
     license_type: license?.license_type || "",
@@ -89,6 +91,7 @@ export default function PilotLicenseForm({ pilot, license, existingLicenses, onC
     try {
       const typeObj = PILOT_LICENSE_TYPES.find((t) => t.id === f.license_type);
       const payload = {
+        aircraftProfile: profileValue,
         pilot_id: pilot.id,
         pilot_name: pilot.full_name,
         license_type: f.license_type,

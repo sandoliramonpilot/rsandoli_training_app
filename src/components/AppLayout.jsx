@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw,   FileBarChart, CalendarDays, TrendingUp, Megaphone, HeartPulse } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
+import ProfileSwitcher from "@/components/ProfileSwitcher";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { can, canManageUsers, getAccessLevel } from "@/lib/accessControl";
@@ -140,6 +141,8 @@ function SidebarContent({ location, onNavigate }) {
       >
         <Search className="w-4 h-4" /> Busca universal…
       </button>
+
+      <ProfileSwitcher />
 
       <nav className="flex-1 px-3 py-5 space-y-5 overflow-y-auto">
         {visibleSections.map((section) => (

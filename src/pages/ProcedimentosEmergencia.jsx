@@ -5,6 +5,7 @@ import { can } from "@/lib/accessControl";
 import { PROC_EMERGENCIA, DIDATIC_NOTICE, PENDING_CONTENT, SOURCE_PDF_URL } from "@/lib/procedimentosEmergenciaData";
 import BackToDashboard from "@/components/BackToDashboard";
 import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
+import { useProfile } from "@/lib/ProfileContext";
 import {
   Siren, Flame, Zap, Fuel, Monitor, AlertTriangle, Wind, Cog, Gauge,
   ChevronRight, ChevronDown, FileText, Upload, Loader2, X, BookOpen, Layers,
@@ -15,6 +16,7 @@ const MODULE_ICONS = { Flame, Zap, Fuel, Monitor, AlertTriangle, Wind, Cog, Sire
 
 export default function ProcedimentosEmergencia() {
   const { user } = useAuth();
+  const { profileFilter, profileValue } = useProfile();
   const [activeModule, setActiveModule] = useState(PROC_EMERGENCIA.modules[0].id);
   const [expandedChapters, setExpandedChapters] = useState(new Set());
   const [trainingDocs, setTrainingDocs] = useState([]);
@@ -26,10 +28,10 @@ export default function ProcedimentosEmergencia() {
   const mod = PROC_EMERGENCIA.modules.find((m) => m.id === activeModule) || PROC_EMERGENCIA.modules[0];
 
   useEffect(() => {
-    base44.entities.TrainingDocument.filter({ discipline: "proc_emergencia", status: "active" })
+    base44.entities.TrainingDocument.filter({ ...profileFilter, discipline: "proc_emergencia", status: "active" })
       .then(setTrainingDocs)
       .catch(() => setTrainingDocs([]));
-  }, []);
+  }, [profileFilter]);
 
   const toggleChapter = (id) => {
     setExpandedChapters((prev) => {
@@ -62,10 +64,11 @@ export default function ProcedimentosEmergencia() {
         file_size: file.size,
         uploaded_by: user?.full_name || user?.email || "",
         approval_status: "pending_review",
+        aircraftProfile: profileValue,
       });
       setUploadTitle("");
       setUploadChapter(null);
-      const docs = await base44.entities.TrainingDocument.filter({ discipline: "proc_emergencia", status: "active" }).catch(() => []);
+      const docs = await base44.entities.TrainingDocument.filter({ ...profileFilter, discipline: "proc_emergencia", status: "active" }).catch(() => []);
       setTrainingDocs(docs);
     } catch (err) {
       alert("Erro ao enviar arquivo: " + (err.message || "tente novamente."));

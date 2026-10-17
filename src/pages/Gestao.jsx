@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { getAccessLevel } from "@/lib/accessControl";
 import BackToDashboard from "@/components/BackToDashboard";
+import { useProfile } from "@/lib/ProfileContext";
 import {
   BarChart3, History, FileText, Users, GraduationCap, Award,
   TrendingUp, Clock, AlertCircle, Loader2, Download,
@@ -62,6 +63,7 @@ export default function Gestao() {
 }
 
 function RelatoriosTab() {
+  const { profileFilter } = useProfile();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
 
@@ -69,11 +71,11 @@ function RelatoriosTab() {
     (async () => {
       try {
         const [pilots, aircraft, flights, checklists, docs] = await Promise.all([
-          base44.entities.Pilot.list().catch(() => []),
-          base44.entities.Aircraft.list().catch(() => []),
-          base44.entities.FlightLog.list().catch(() => []),
-          base44.entities.ChecklistRecord.list().catch(() => []),
-          base44.entities.TrainingDocument.filter({ status: "active" }).catch(() => []),
+          base44.entities.Pilot.filter(profileFilter).catch(() => []),
+          base44.entities.Aircraft.filter(profileFilter).catch(() => []),
+          base44.entities.FlightLog.filter(profileFilter).catch(() => []),
+          base44.entities.ChecklistRecord.filter(profileFilter).catch(() => []),
+          base44.entities.TrainingDocument.filter({ ...profileFilter, status: "active" }).catch(() => []),
         ]);
         setStats({
           pilots: pilots.length,
@@ -88,7 +90,7 @@ function RelatoriosTab() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [profileFilter]);
 
   if (loading) {
     return (

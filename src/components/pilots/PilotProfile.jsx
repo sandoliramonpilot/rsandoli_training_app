@@ -848,6 +848,7 @@ function TabSolicitacoes({ pilot, isManager, me }) {
     e.preventDefault();
     const by = me ? me.email || me.id : "desconhecido";
     await base44.entities.PilotChangeRequest.create({
+      aircraftProfile: pilot.aircraftProfile || "AW119",
       pilot_id: pilot.id, pilot_name: pilot.full_name, requested_by: by,
       changes: JSON.stringify({ description: form.changes }), reason: form.reason, status: "pending",
     });

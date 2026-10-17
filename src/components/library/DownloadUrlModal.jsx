@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { LIBRARY_CATEGORIES, DOC_STATUS } from "@/lib/libraryData";
 import { Loader2, X, Link2, Download } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 const inputCls = "w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50";
 
@@ -21,6 +22,7 @@ export default function DownloadUrlModal({ aircraft, onClose, onDone }) {
     status: "active",
     url: "",
   });
+  const { profileValue } = useProfile();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [phase, setPhase] = useState("");
@@ -55,6 +57,7 @@ export default function DownloadUrlModal({ aircraft, onClose, onDone }) {
       setPhase("Salvando na biblioteca…");
       const ac = aircraft.find((a) => a.id === form.aircraft_id);
       const payload = {
+        aircraftProfile: profileValue,
         title: form.title,
         category: form.category,
         description: form.description || null,
