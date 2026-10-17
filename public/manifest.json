@@ -1,7 +1,7 @@
 {
   "name": "RSANDOLI PILOTS Helicopter Training",
-  "short_name": "RSANDOLI PILOTS",
-  "description": "Plataforma de instrução teórica e treinamento operacional para helicópteros AW119Kx Koala.",
+  "short_name": "RSANDOLI Training",
+  "description": "Plataforma de instrução teórica e treinamento operacional para helicópteros.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
