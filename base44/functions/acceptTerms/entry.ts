@@ -10,15 +10,13 @@ export default async function (req) {
 
     const body = await req.json().catch(() => ({}));
 
-    // Obtém IP dos cabeçalhos da requisição
-    const ip =
-      req.headers.get("cf-connecting-ip") ||
-      (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() ||
-      req.headers.get("x-real-ip") ||
-      "";
+    // Usa apenas o cabeçalho IP definido pela plataforma de execução (Cloudflare).
+    // x-forwarded-for e x-real-ip são definíveis pelo cliente e não são confiáveis.
+    const ip = req.headers.get("cf-connecting-ip") || "";
 
     const userAgent = req.headers.get("user-agent") || "";
-    const deviceInfo = body.device_info || "";
+    // Limita o tamanho do device_info recebido do cliente para evitar abuso
+    const deviceInfo = String(body.device_info || "").slice(0, 200);
 
     // Cria o registro de aceite para auditoria
     await base44.asServiceRole.entities.TermsAcceptance.create({
@@ -28,7 +26,8 @@ export default async function (req) {
       ip_address: ip,
       device_info: deviceInfo,
       user_agent: userAgent,
-      session_id: body.session_id || crypto.randomUUID(),
+      // session_id gerado no servidor — não confia no valor enviado pelo cliente
+      session_id: crypto.randomUUID(),
       terms_version: "v1",
     });
 

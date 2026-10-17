@@ -24,6 +24,25 @@ export default async function (req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
     if (!(await isActiveAccount(base44, user))) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
+
+    // Busca o registro atualizado do usuário (service role) para verificar preconditions
+    const freshUser = await base44.asServiceRole.entities.User.get(user.id);
+
+    // Verifica que a troca de senha é obrigatória — não permite limpar um flag já limpo
+    if (!freshUser.must_change_password) {
+      return Response.json({ error: "Troca de senha não é obrigatória para esta conta." }, { status: 400 });
+    }
+
+    // Verifica que o registro do usuário foi atualizado recentemente, indicando que
+    // a senha foi alterada pela plataforma (base44.auth.changePassword atualiza o
+    // registro do usuário). Sem isso, um atacante com sessão válida poderia limpar
+    // o flag sem efetivamente trocar a senha.
+    const updatedDate = new Date(freshUser.updated_date);
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    if (updatedDate < fiveMinutesAgo) {
+      return Response.json({ error: "É necessário alterar a senha antes de concluir a troca." }, { status: 403 });
+    }
+
     await base44.asServiceRole.entities.User.update(user.id, { must_change_password: false });
     await logAudit(base44, user, AUDITABLE_ACTIONS.password_reset_completed, "Troca de senha concluída pelo próprio usuário");
     return Response.json({ ok: true });
