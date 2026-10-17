@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
 import BackToDashboard from "@/components/BackToDashboard";
 import { Plus, X, Plane, Trash2, Edit3, Wrench, CheckCircle2, AlertTriangle, Hourglass, XCircle } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 const STATUS = {
   available: { label: "Disponível", color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
@@ -31,6 +32,7 @@ const emptyForm = {
 
 export default function Aircraft() {
   const { user } = useAuth();
+  const { profileFilter, profileValue } = useProfile();
   const [aircraft, setAircraft] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -39,8 +41,8 @@ export default function Aircraft() {
   const canEdit = can(user, "aeronaves", "editar");
   const canCreate = can(user, "aeronaves", "criar");
 
-  const load = async () => setAircraft(await base44.entities.Aircraft.list().catch(() => []));
-  useEffect(() => { load(); }, []);
+  const load = async () => setAircraft(await base44.entities.Aircraft.filter(profileFilter).catch(() => []));
+  useEffect(() => { load(); }, [profileFilter]);
 
   const openNew = () => { setEditing(null); setForm(emptyForm); setShowForm(true); };
   const openEdit = (a) => {
@@ -71,7 +73,7 @@ export default function Aircraft() {
     };
     try {
       if (editing) await base44.entities.Aircraft.update(editing.id, payload);
-      else await base44.entities.Aircraft.create({ ...payload, approval_status: "pending" });
+      else await base44.entities.Aircraft.create({ ...payload, aircraftProfile: profileValue, approval_status: "pending" });
       setShowForm(false);
       await load();
     } catch (err) {

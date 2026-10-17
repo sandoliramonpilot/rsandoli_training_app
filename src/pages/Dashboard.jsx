@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { QRH_CATEGORIES } from "@/lib/qrhData";
 import AlertsPanel from "@/components/dashboard/AlertsPanel";
 import { Plane, BookOpen, Clock, TrendingUp, AlertTriangle, Plus, CheckCircle2, Wrench, Siren, Library, GraduationCap, ChevronRight, Award, ClipboardCheck, Users, HelpCircle } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 function fmtHours(min) {
   if (!min) return "0h";
@@ -23,6 +24,7 @@ const PHASE_LABELS = {
 };
 
 export default function Dashboard() {
+  const { profileFilter } = useProfile();
   const [flights, setFlights] = useState(null);
   const [aircraft, setAircraft] = useState(null);
   const [checklists, setChecklists] = useState(null);
@@ -32,11 +34,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-    base44.entities.FlightLog.list("-date", 200).catch(() => []),
-    base44.entities.Aircraft.list().catch(() => []),
-    base44.entities.ChecklistRecord.list("-date", 50).catch(() => []),
-    base44.entities.LibraryDocument.list("-created_date", 5).catch(() => []),
-    base44.entities.Pilot.list().catch(() => [])]
+    base44.entities.FlightLog.filter(profileFilter, { sort: "-date", limit: 200 }).then(r => r.items).catch(() => []),
+    base44.entities.Aircraft.filter(profileFilter).catch(() => []),
+    base44.entities.ChecklistRecord.filter(profileFilter, { sort: "-date", limit: 50 }).then(r => r.items).catch(() => []),
+    base44.entities.LibraryDocument.filter(profileFilter, { sort: "-created_date", limit: 5 }).then(r => r.items).catch(() => []),
+    base44.entities.Pilot.filter(profileFilter).catch(() => [])]
     ).then(([f, a, c, d, p]) => {
       setFlights(f);setAircraft(a);setChecklists(c);setDocs(d);setPilots(p);
     });
@@ -45,7 +47,7 @@ export default function Dashboard() {
       const avg = h.length ? Math.round(h.reduce((s, x) => s + x.pct, 0) / h.length) : 0;
       setSimStats({ count: h.length, avg });
     } catch {}
-  }, []);
+  }, [profileFilter]);
 
   const loading = !flights || !aircraft || !checklists;
 

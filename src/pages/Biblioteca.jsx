@@ -7,6 +7,7 @@ import PdfViewer from "@/components/library/PdfViewer";
 import PptxViewer from "@/components/library/PptxViewer";
 import DownloadUrlModal from "@/components/library/DownloadUrlModal";
 import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
+import { useProfile } from "@/lib/ProfileContext";
 
 // Legacy categories que podem existir em documentos antigos
 const LEGACY_LABELS = {
@@ -20,6 +21,7 @@ const LEGACY_LABELS = {
 const catLabel = (id) => LIBRARY_CATEGORIES.find((c) => c.id === id)?.name || LEGACY_LABELS[id] || id;
 
 export default function Biblioteca() {
+  const { profileFilter } = useProfile();
   const [docs, setDocs] = useState(null);
   const [aircraft, setAircraft] = useState([]);
   const [activeCat, setActiveCat] = useState("all");
@@ -55,15 +57,15 @@ export default function Biblioteca() {
 
   const load = async () => {
     const [d, a] = await Promise.all([
-      base44.entities.LibraryDocument.list("-created_date", 200).catch(() => []),
-      base44.entities.Aircraft.list().catch(() => []),
+      base44.entities.LibraryDocument.filter(profileFilter, { sort: "-created_date", limit: 200 }).then(r => r.items).catch(() => []),
+      base44.entities.Aircraft.filter(profileFilter).catch(() => []),
       base44.auth.me().catch(() => null),
     ]);
     setDocs(d);
     setAircraft(a);
     setUser(a);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [profileFilter]);
 
   const toggleFav = (id) => {
     setFavorites((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);

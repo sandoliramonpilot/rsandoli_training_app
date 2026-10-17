@@ -12,9 +12,11 @@ import {
   Plus, ChevronLeft, ChevronRight, CalendarDays, AlertTriangle,
   Plane, Users, Clock, Loader2, Pencil, Trash2, X, ListFilter,
 } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 export default function Escalas() {
   const { user } = useAuth();
+  const { profileFilter, profileValue } = useProfile();
   const [schedules, setSchedules] = useState(null);
   const [pilots, setPilots] = useState([]);
   const [aircraft, setAircraft] = useState([]);
@@ -28,13 +30,13 @@ export default function Escalas() {
   const canEdit = can(user, "escalas", "editar");
 
   useEffect(() => {
-    base44.entities.Schedule.list("-date", 500).then(setSchedules).catch(() => setSchedules([]));
-    base44.entities.Pilot.list().then(setPilots).catch(() => {});
-    base44.entities.Aircraft.list().then(setAircraft).catch(() => {});
-  }, []);
+    base44.entities.Schedule.filter(profileFilter, { sort: "-date", limit: 500 }).then(r => { setSchedules(r.items); }).catch(() => setSchedules([]));
+    base44.entities.Pilot.filter(profileFilter).then(setPilots).catch(() => {});
+    base44.entities.Aircraft.filter(profileFilter).then(setAircraft).catch(() => {});
+  }, [profileFilter]);
 
   const load = () => {
-    base44.entities.Schedule.list("-date", 500).then(setSchedules).catch(() => {});
+    base44.entities.Schedule.filter(profileFilter, { sort: "-date", limit: 500 }).then(r => setSchedules(r.items)).catch(() => {});
   };
 
   const year = viewDate.getFullYear();

@@ -7,6 +7,7 @@ import MediaThumb from "@/components/academy/MediaThumb";
 import DocumentListItem from "@/components/academy/DocumentListItem";
 import { DIDATIC_NOTICE } from "@/lib/aw119TrainingData";
 import { Upload, Loader2, X, ShieldAlert, Inbox } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "heic", "gif", "webp"];
 const VIDEO_EXTS = ["mp4", "mov", "avi", "mkv", "webm", "wmv"];
@@ -53,6 +54,7 @@ export default function AcademyUploadSection({
   mediaMode = "document",
 }) {
   const { user } = useAuth();
+  const { profileFilter, profileValue } = useProfile();
   const canEdit = can(user, moduleId || "treinamentos", "editar");
   const mode = MEDIA_MODES[mediaMode] || MEDIA_MODES.document;
   const [docs, setDocs] = useState([]);
@@ -65,12 +67,12 @@ export default function AcademyUploadSection({
 
   const loadDocs = async () => {
     const result = await base44.entities.TrainingDocument
-      .filter({ discipline, chapter: chapterKey, status: "active" })
+      .filter({ ...profileFilter, discipline, chapter: chapterKey, status: "active" })
       .catch(() => []);
     setDocs(result);
   };
 
-  useEffect(() => { loadDocs(); }, []);
+  useEffect(() => { loadDocs(); }, [profileFilter]);
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -88,6 +90,7 @@ export default function AcademyUploadSection({
         title: uploadTitle || file.name.replace(/\.[^/.]+$/, ""),
         discipline,
         chapter: chapterKey,
+        aircraftProfile: profileValue,
         file_type: mapFileType(ext),
         file_uri,
         file_name: file.name,

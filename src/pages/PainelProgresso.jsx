@@ -10,6 +10,7 @@ import {
 } from "@/lib/progressData";
 import ModuleCard from "@/components/progress/ModuleCard";
 import BackToDashboard from "@/components/BackToDashboard";
+import { useProfile } from "@/lib/ProfileContext";
 import {
   TrendingUp, Clock, BookOpen, Award, PlayCircle, Target, HelpCircle,
   BarChart3, AlertTriangle, FileWarning, RefreshCw, ClipboardList,
@@ -18,6 +19,7 @@ import {
 
 export default function PainelProgresso() {
   const { user } = useAuth();
+  const { profileFilter, profileValue } = useProfile();
   const [pilots, setPilots] = useState(null);
   const [records, setRecords] = useState(null);
   const [completions, setCompletions] = useState(null);
@@ -36,7 +38,7 @@ export default function PainelProgresso() {
 
   // Carrega pilotos (todos para admin; próprio para usuário comum)
   useEffect(() => {
-    base44.entities.Pilot.list().then((all) => {
+    base44.entities.Pilot.filter(profileFilter).then((all) => {
       setPilots(all);
       // Auto-seleciona o piloto do próprio usuário
       const myPilot = all.find((p) => p.user_id === user?.id || (p.email && user?.email && p.email.toLowerCase() === user.email.toLowerCase()));
@@ -51,8 +53,8 @@ export default function PainelProgresso() {
     if (!selectedPilot) { setRecords(null); setCompletions(null); return; }
     const targetUserId = selectedPilot.user_id || user?.id;
     Promise.all([
-      base44.entities.ProgressRecord.filter({ user_id: targetUserId }).catch(() => []),
-      base44.entities.TrainingCompletion.filter({ pilot_id: selectedPilot.id }).catch(() => []),
+      base44.entities.ProgressRecord.filter({ ...profileFilter, user_id: targetUserId }).catch(() => []),
+      base44.entities.TrainingCompletion.filter({ ...profileFilter, pilot_id: selectedPilot.id }).catch(() => []),
     ]).then(([recs, comps]) => {
       setRecords(recs);
       setCompletions(comps);
@@ -165,10 +167,10 @@ export default function PainelProgresso() {
       if (existing) {
         await base44.entities.ProgressRecord.update(existing.id, payload);
       } else {
-        await base44.entities.ProgressRecord.create(payload);
+        await base44.entities.ProgressRecord.create({ ...payload, aircraftProfile: profileValue });
       }
       // Recarrega registros
-      const recs = await base44.entities.ProgressRecord.filter({ user_id: targetUserId }).catch(() => []);
+      const recs = await base44.entities.ProgressRecord.filter({ ...profileFilter, user_id: targetUserId }).catch(() => []);
       setRecords(recs);
     } catch (e) {
       // silencioso

@@ -6,6 +6,7 @@ import {
   AlertTriangle, Plane, Users, ChevronRight, ShieldAlert,
   HeartPulse, Award, FileText, CalendarClock, XCircle,
 } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 const HORIZON_DAYS = 90;
 
@@ -28,12 +29,13 @@ const THRESHOLDS = [
 ];
 
 export default function AlertsPanel() {
+  const { profileFilter } = useProfile();
   const [alerts, setAlerts] = useState(null);
 
   useEffect(() => {
     Promise.all([
-      base44.entities.Pilot.list().catch(() => []),
-      base44.entities.LibraryDocument.list().catch(() => []),
+      base44.entities.Pilot.filter(profileFilter).catch(() => []),
+      base44.entities.LibraryDocument.filter(profileFilter).catch(() => []),
     ]).then(([pilots, docs]) => {
       const items = [];
 
@@ -76,7 +78,7 @@ export default function AlertsPanel() {
       items.sort((a, b) => a.days - b.days);
       setAlerts(items);
     });
-  }, []);
+  }, [profileFilter]);
 
   // Contagem por faixa — somente licenças e CMA
   const thresholdCounts = useMemo(() => {

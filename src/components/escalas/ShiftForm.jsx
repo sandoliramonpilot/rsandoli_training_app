@@ -8,11 +8,13 @@ import {
 import {
   X, Loader2, AlertTriangle, CalendarDays, Plane, Users, Clock,
 } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 const inputCls = "w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50";
 
 export default function ShiftForm({ shift, pilots, aircraft, schedules, defaultDate, onClose, onSaved }) {
   const { user } = useAuth();
+  const { profileValue } = useProfile();
   const isEdit = !!shift;
   const canEdit = can(user, "escalas", "editar");
   const [saving, setSaving] = useState(false);
@@ -81,7 +83,7 @@ export default function ShiftForm({ shift, pilots, aircraft, schedules, defaultD
       if (isEdit) {
         await base44.entities.Schedule.update(shift.id, payload);
       } else {
-        await base44.entities.Schedule.create(payload);
+        await base44.entities.Schedule.create({ ...payload, aircraftProfile: profileValue });
       }
       onSaved();
     } catch (err) {

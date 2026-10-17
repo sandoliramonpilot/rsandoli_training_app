@@ -7,12 +7,14 @@ import BackToDashboard from "@/components/BackToDashboard";
 import AcademyProgress from "@/components/academy/AcademyProgress";
 import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import DocumentListItem from "@/components/academy/DocumentListItem";
+import { useProfile } from "@/lib/ProfileContext";
 import { GraduationCap, Crown, Award, BarChart3, Cog, Joystick, Monitor, Gauge, Siren, Upload, FileText, Loader2, X, AlertTriangle } from "lucide-react";
 
 const ICONS = { sistemas: Cog, helipilot: Joystick, idu680: Monitor, limitacoes: Gauge, briefing_emergencia: Siren };
 
 export default function Treinamentos() {
   const { user } = useAuth();
+  const { profileFilter, profileValue } = useProfile();
   const [activeDiscipline, setActiveDiscipline] = useState("sistemas");
   const [trainingDocs, setTrainingDocs] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -26,7 +28,7 @@ export default function Treinamentos() {
   const overallProgress = 0;
 
   const loadDocs = async () => {
-    const docs = await base44.entities.TrainingDocument.filter({ discipline: "briefing_emergencia", status: "active" }).catch(() => []);
+    const docs = await base44.entities.TrainingDocument.filter({ ...profileFilter, discipline: "briefing_emergencia", status: "active" }).catch(() => []);
     setTrainingDocs(docs);
   };
   useEffect(() => { loadDocs(); }, []);
@@ -47,6 +49,7 @@ export default function Treinamentos() {
         title: uploadTitle || file.name.replace(/\.[^/.]+$/, ""),
         discipline: "briefing_emergencia",
         chapter: uploadChapter,
+        aircraftProfile: profileValue,
         file_type: ["pdf", "ppsx", "pptx"].includes(ext) ? ext : "other",
         file_uri,
         file_name: file.name,

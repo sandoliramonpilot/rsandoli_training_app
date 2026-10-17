@@ -8,10 +8,12 @@ import FinalizeModal from "@/components/checklist/FinalizeModal";
 import ChecklistHistoryList from "@/components/checklist/ChecklistHistoryList";
 import ChecklistHistoryDetail from "@/components/checklist/ChecklistHistoryDetail";
 import StartChecklistFlow from "@/components/checklist/StartChecklistFlow";
+import { useProfile } from "@/lib/ProfileContext";
 
 const DRAFT_KEY = "checklist_draft_v2";
 
 export default function Checklist() {
+  const { profileFilter, profileValue } = useProfile();
   const [view, setView] = useState("new"); // new | history
   const [aircraft, setAircraft] = useState([]);
   const [records, setRecords] = useState([]);
@@ -28,8 +30,8 @@ export default function Checklist() {
 
   useEffect(() => {
     Promise.all([
-      base44.entities.Aircraft.list().catch(() => []),
-      base44.entities.ChecklistRecord.list("-date", 100).catch(() => []),
+      base44.entities.Aircraft.filter(profileFilter).catch(() => []),
+      base44.entities.ChecklistRecord.filter(profileFilter, { sort: "-date", limit: 100 }).then(r => r.items).catch(() => []),
       base44.auth.me().catch(() => null),
     ]).then(([a, r, u]) => {
       setAircraft(a);
@@ -156,6 +158,7 @@ export default function Checklist() {
     try {
       await base44.entities.ChecklistRecord.create({
         ...setup,
+        aircraftProfile: profileValue,
         end_time: endTime,
         finalized_at: new Date().toISOString(),
         finalized_by: user?.full_name || user?.email || "",
@@ -170,7 +173,7 @@ export default function Checklist() {
       setCheckedByPhase({});
       setStartedAt(null);
       setShowFinalize(false);
-      const r = await base44.entities.ChecklistRecord.list("-date", 100).catch(() => []);
+      const r = await base44.entities.ChecklistRecord.filter(profileFilter, { sort: "-date", limit: 100 }).then(res => res.items).catch(() => []);
       setRecords(r);
       setView("history");
     } catch (err) {

@@ -10,9 +10,11 @@ import {
   Award, BookOpen, Users, TrendingUp, Loader2, CheckCircle2, Plus, X,
   ChevronDown, ChevronRight, GraduationCap, BarChart3,
 } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 export default function AcademyProgress() {
   const { user } = useAuth();
+  const { profileFilter, profileValue } = useProfile();
   const [pilots, setPilots] = useState(null);
   const [courses, setCourses] = useState(null);
   const [completions, setCompletions] = useState(null);
@@ -23,15 +25,15 @@ export default function AcademyProgress() {
 
   const load = async () => {
     const [p, c, comp] = await Promise.all([
-      base44.entities.Pilot.list().catch(() => []),
-      base44.entities.TrainingDocument.filter({ status: "active" }).catch(() => []),
-      base44.entities.TrainingCompletion.list().catch(() => []),
+      base44.entities.Pilot.filter(profileFilter).catch(() => []),
+      base44.entities.TrainingDocument.filter({ ...profileFilter, status: "active" }).catch(() => []),
+      base44.entities.TrainingCompletion.filter(profileFilter).catch(() => []),
     ]);
     setPilots(p);
     setCourses(c);
     setCompletions(comp);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [profileFilter]);
 
   const activePilots = useMemo(() => (pilots || []).filter((p) => p.status !== "inactive"), [pilots]);
 
@@ -200,6 +202,7 @@ function SummaryCard({ icon: Icon, label, value, tone }) {
 }
 
 function CompletionForm({ pilots, courses, onClose, onSaved }) {
+  const { profileValue } = useProfile();
   const [pilotId, setPilotId] = useState("");
   const [courseId, setCourseId] = useState("");
   const [score, setScore] = useState("");
@@ -225,6 +228,7 @@ function CompletionForm({ pilots, courses, onClose, onSaved }) {
         });
       } else {
         await base44.entities.TrainingCompletion.create({
+          aircraftProfile: profileValue,
           pilot_id: pilotId, pilot_name: pilot?.full_name || "",
           training_document_id: courseId, training_title: course?.title || "",
           discipline: course?.discipline || "",

@@ -4,11 +4,13 @@ import {
   AlertTriangle, Search, Loader2, FileBarChart, Link2, Copy,
   CheckCircle2, XCircle, Info,
 } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 // Mapeamento somente leitura — não cria vínculos, não altera nem migra registros.
 // Compara usuários, OATs e registros legados de Pilotos por nome/CPF/CANAC/e-mail
 // e apresenta possíveis correspondências e inconsistências ao administrador.
 export default function OatMapeamento({ onClose }) {
+  const { profileFilter } = useProfile();
   const [oats, setOats] = useState(null);
   const [pilots, setPilots] = useState(null);
   const [users, setUsers] = useState(null);
@@ -16,12 +18,12 @@ export default function OatMapeamento({ onClose }) {
   const [filter, setFilter] = useState("all"); // all | linked | unlinked | duplicate | inconsistent
 
   useEffect(() => {
-    base44.entities.Oat.list().then(setOats).catch(() => setOats([]));
-    base44.entities.Pilot.list().then(setPilots).catch(() => setPilots([]));
+    base44.entities.Oat.filter(profileFilter).then(setOats).catch(() => setOats([]));
+    base44.entities.Pilot.filter(profileFilter).then(setPilots).catch(() => setPilots([]));
     base44.functions.invoke("manageUsers", { action: "list" })
       .then((res) => setUsers(res.data?.users || []))
       .catch(() => setUsers([]));
-  }, []);
+  }, [profileFilter]);
 
   const analysis = useMemo(() => {
     if (!oats || !pilots || !users) return null;

@@ -6,6 +6,7 @@ import { AW119_TRAINING, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/aw119Trai
 import BackToDashboard from "@/components/BackToDashboard";
 import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import DocumentListItem from "@/components/academy/DocumentListItem";
+import { useProfile } from "@/lib/ProfileContext";
 import {
   GraduationCap, Crown, Monitor, Plane, Settings, ChevronRight, ChevronDown,
   FileText, Upload, Loader2, X, AlertTriangle, ShieldAlert, BookOpen, Layers,
@@ -15,6 +16,7 @@ const MODULE_ICONS = { Monitor, Plane, Settings };
 
 export default function AW119Training() {
   const { user } = useAuth();
+  const { profileFilter, profileValue } = useProfile();
   const [activeModule, setActiveModule] = useState(AW119_TRAINING.modules[0].id);
   const [expandedChapters, setExpandedChapters] = useState(new Set());
   const [trainingDocs, setTrainingDocs] = useState([]);
@@ -26,7 +28,7 @@ export default function AW119Training() {
   const mod = AW119_TRAINING.modules.find((m) => m.id === activeModule) || AW119_TRAINING.modules[0];
 
   const loadDocs = async () => {
-    const docs = await base44.entities.TrainingDocument.filter({ discipline: "aw119_training", status: "active" }).catch(() => []);
+    const docs = await base44.entities.TrainingDocument.filter({ ...profileFilter, discipline: "aw119_training", status: "active" }).catch(() => []);
     setTrainingDocs(docs);
   };
 
@@ -57,6 +59,7 @@ export default function AW119Training() {
         title: uploadTitle || file.name.replace(/\.[^/.]+$/, ""),
         discipline: "aw119_training",
         chapter: uploadChapter,
+        aircraftProfile: profileValue,
         file_type: ["pdf", "ppsx", "pptx"].includes(ext) ? ext : "other",
         file_uri,
         file_name: file.name,

@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
 import BackToDashboard from "@/components/BackToDashboard";
 import { Plus, X, Plane, Clock, Search, Trash2, Edit3 } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 const FLIGHT_TYPE_LABELS = {
   private: "Privado", instruction: "Instrução", charter: "Táxi aéreo",
@@ -62,6 +63,7 @@ function toInt(v) {
 
 export default function FlightLog() {
   const { user } = useAuth();
+  const { profileFilter, profileValue } = useProfile();
   const [flights, setFlights] = useState(null);
   const [aircraft, setAircraft] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -74,14 +76,14 @@ export default function FlightLog() {
 
   const load = async () => {
     const [f, a] = await Promise.all([
-      base44.entities.FlightLog.list("-date", 500).catch(() => []),
-      base44.entities.Aircraft.list().catch(() => []),
+      base44.entities.FlightLog.filter(profileFilter, { sort: "-date", limit: 500 }).then(r => r.items).catch(() => []),
+      base44.entities.Aircraft.filter(profileFilter).catch(() => []),
     ]);
     setFlights(f);
     setAircraft(a);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [profileFilter]);
 
   const filtered = useMemo(() => {
     if (!flights) return [];
@@ -257,7 +259,7 @@ export default function FlightLog() {
             setSaving(true);
             try {
               if (editing) await base44.entities.FlightLog.update(editing.id, payload);
-              else await base44.entities.FlightLog.create(payload);
+              else await base44.entities.FlightLog.create({ ...payload, aircraftProfile: profileValue });
               setShowForm(false);
               await load();
             } catch (err) {

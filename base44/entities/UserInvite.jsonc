@@ -18,6 +18,11 @@
       "type": "string",
       "title": "N\u00edvel de acesso pretendido"
     },
+    "aircraft_profiles": {
+      "type": "string",
+      "title": "Perfis de aeronave autorizados",
+      "description": "JSON array: [\"AW119\"], [\"H125\"], ou [\"AW119\",\"H125\"]"
+    },
     "registration": {
       "type": "string",
       "title": "Matr\u00edcula"

@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { X, CheckCircle2, Loader2 } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 import { OAT_CHANGE_TYPE_LABELS, OAT_CHANGE_STATUS_LABELS, safeParse } from "@/lib/oatUtils";
 
 export default function OatApprovalsPanel({ onClose, onDecision }) {
+  const { profileFilter } = useProfile();
   const [requests, setRequests] = useState(null);
   const [busy, setBusy] = useState(null);
   const [tab, setTab] = useState("pending");
 
   const load = () => {
-    base44.entities.OatChangeRequest.list("-created_date", 100)
-      .then((r) => setRequests(r)).catch(() => setRequests([]));
+    base44.entities.OatChangeRequest.filter(profileFilter, { sort: "-created_date", limit: 100 })
+      .then((r) => setRequests(r.items)).catch(() => setRequests([]));
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [profileFilter]);
 
   const decide = async (req, status) => {
     setBusy(req.id);

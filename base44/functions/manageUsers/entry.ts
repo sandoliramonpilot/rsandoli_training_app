@@ -86,6 +86,7 @@ export default async function (req) {
           if (!matched.unit && inv.unit) patch.unit = inv.unit;
           if (!matched.job_title && inv.job_title) patch.job_title = inv.job_title;
           if (inv.custom_permissions) patch.custom_permissions = inv.custom_permissions;
+          if (inv.aircraft_profiles) patch.aircraft_profiles = inv.aircraft_profiles;
           if (inv.admin_notes) patch.admin_notes = inv.admin_notes;
           patch.account_status = matched.account_status || "ativa";
           patch.role = inv.access_level === "admin_geral" || inv.access_level === "administrador" ? "admin" : "user";
@@ -112,6 +113,7 @@ export default async function (req) {
         created_date: u.created_date,
         created_by_user_id: u.created_by_user_id || null,
         custom_permissions: u.custom_permissions || null,
+        aircraft_profiles: u.aircraft_profiles || null,
         is_master: !!u.is_master,
         admin_notes: canManage ? (u.admin_notes || null) : null,
         invite_status: invites.find((i) => (i.email || "").toLowerCase() === (u.email || "").toLowerCase() && i.status === "accepted") ? "accepted" : null,
@@ -136,6 +138,7 @@ export default async function (req) {
           created_date: i.created_at,
           invited_by_name: i.invited_by_name || null,
           admin_notes: canManage ? (i.admin_notes || null) : null,
+          aircraft_profiles: i.aircraft_profiles || null,
         }));
 
       // Vínculo com pilotos — linka por user_id ou e-mail e inclui situação do cadastro
@@ -235,6 +238,9 @@ export default async function (req) {
       if (body.custom_permissions && typeof body.custom_permissions === "object") {
         invitePayload.custom_permissions = JSON.stringify(body.custom_permissions);
       }
+      if (body.aircraft_profiles) {
+        invitePayload.aircraft_profiles = JSON.stringify(body.aircraft_profiles);
+      }
       await base44.asServiceRole.entities.UserInvite.create(invitePayload);
 
       // Vínculo com piloto — procura cadastro existente por e-mail antes de criar (item 10).
@@ -255,6 +261,7 @@ export default async function (req) {
             role: "copilot",
             status: "active",
             approval_status: "pending",
+            aircraftProfile: Array.isArray(body.aircraft_profiles) && body.aircraft_profiles.length > 1 ? "shared" : (body.aircraft_profiles?.[0] || "AW119"),
           });
         } catch (pilotErr) {
           await logAudit(base44, user, { email, full_name: fullName }, "Criação de usuário", `Piloto não criado: ${pilotErr?.message || pilotErr}`);
@@ -392,6 +399,11 @@ export default async function (req) {
         if (actorLevel !== "admin_geral") return Response.json({ error: "Somente o Administrador Geral pode alterar permissões personalizadas." }, { status: 403 });
         patch.custom_permissions = body.custom_permissions ? JSON.stringify(body.custom_permissions) : null;
         changes.push("Permissões personalizadas alteradas");
+      }
+
+      if (body.aircraft_profiles !== undefined) {
+        patch.aircraft_profiles = body.aircraft_profiles ? JSON.stringify(body.aircraft_profiles) : null;
+        changes.push("Perfis de aeronave alterados");
       }
 
       if (body.profile && typeof body.profile === "object") {

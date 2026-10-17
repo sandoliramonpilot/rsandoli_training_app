@@ -18,8 +18,10 @@ import {
 } from "@/lib/oatUtils";
 import { getAccessLevel } from "@/lib/accessControl";
 import { RefreshCw } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 export default function Oat() {
+  const { profileFilter } = useProfile();
   const [oats, setOats] = useState(null);
   const [me, setMe] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -67,10 +69,10 @@ export default function Oat() {
   }, []);
 
   const load = async () => {
-    const o = await base44.entities.Oat.list().catch(() => []);
+    const o = await base44.entities.Oat.filter(profileFilter).catch(() => []);
     setOats(o);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [profileFilter]);
 
   const bases = useMemo(() => {
     if (!oats) return [];

@@ -11,6 +11,7 @@ import {
   X, ChevronLeft, ChevronRight, Check, Loader2, Search, Link2, UserPlus,
   AlertTriangle, Lock, FileText, Upload, Plus, Trash2, ShieldCheck,
 } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 const STEPS = [
   { id: "vinculo", label: "Vínculo", icon: Link2 },
@@ -30,6 +31,7 @@ const STEPS = [
 const inputCls = "w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50";
 
 export default function NewPilotForm({ me, onClose, onDone }) {
+  const { profileFilter, profileValue } = useProfile();
   const [step, setStep] = useState(0);
   const [data, setData] = useState({
     vinculoMode: "no_account", // link | no_account | request_account | migration
@@ -57,7 +59,7 @@ export default function NewPilotForm({ me, onClose, onDone }) {
   const [existingPilots, setExistingPilots] = useState([]);
 
   useEffect(() => {
-    base44.entities.Pilot.list().then(setExistingPilots).catch(() => {});
+    base44.entities.Pilot.filter(profileFilter).then(setExistingPilots).catch(() => {});
   }, []);
 
   // Duplicate checks
@@ -125,7 +127,7 @@ export default function NewPilotForm({ me, onClose, onDone }) {
       };
       // Remove undefined
       Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
-      await base44.entities.Pilot.create(payload);
+      await base44.entities.Pilot.create({ ...payload, aircraftProfile: profileValue });
       onDone();
     } catch (err) {
       setError(err?.response?.data?.error || err.message || "Erro ao criar piloto.");

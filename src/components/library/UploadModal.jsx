@@ -2,11 +2,13 @@ import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { LIBRARY_CATEGORIES, DOC_STATUS } from "@/lib/libraryData";
 import { Upload, Loader2, X } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
 const inputCls = "w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50";
 const MAX_SIZE = 25 * 1024 * 1024; // 25 MB
 
 export default function UploadModal({ aircraft, onClose, onDone }) {
+  const { profileFilter, profileValue } = useProfile();
   const [editing, setEditing] = useState(null); // documento existente sendo substituído
   const [existingDocs, setExistingDocs] = useState([]);
   const [form, setForm] = useState({
@@ -29,7 +31,7 @@ export default function UploadModal({ aircraft, onClose, onDone }) {
   const fileRef = useRef(null);
 
   const loadExisting = async () => {
-    const d = await base44.entities.LibraryDocument.list("-created_date", 200).catch(() => []);
+    const d = await base44.entities.LibraryDocument.filter(profileFilter, { sort: "-created_date", limit: 200 }).then(r => r.items).catch(() => []);
     setExistingDocs(d);
   };
   React.useEffect(() => { loadExisting(); }, []);
@@ -99,7 +101,7 @@ export default function UploadModal({ aircraft, onClose, onDone }) {
         payload.review_justification = null;
         await base44.entities.LibraryDocument.update(editing.id, payload);
       } else {
-        await base44.entities.LibraryDocument.create(payload);
+        await base44.entities.LibraryDocument.create({ ...payload, aircraftProfile: profileValue });
       }
       onDone();
       onClose();

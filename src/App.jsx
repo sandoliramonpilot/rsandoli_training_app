@@ -43,6 +43,7 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import OAuthConsent from '@/pages/OAuthConsent';
 import InstallPrompt from '@/components/InstallPrompt';
+import { ProfileProvider } from '@/lib/ProfileContext';
 import Sobre from '@/pages/Sobre';
 import Contato from '@/pages/Contato';
 import Privacidade from '@/pages/Privacidade';
@@ -140,7 +141,9 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
-          <AuthenticatedApp />
+          <ProfileProvider>
+            <AuthenticatedApp />
+          </ProfileProvider>
         </Router>
         <InstallPrompt />
         <Toaster />

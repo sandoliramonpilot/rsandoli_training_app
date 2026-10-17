@@ -14,8 +14,10 @@ import {
   safeParse, collectExpiries, nextCriticalExpiry, cmaStatus, daysUntil,
   EXPIRY_COLORS,
 } from "@/lib/pilotUtils";
+import { useProfile } from "@/lib/ProfileContext";
 
 export default function Pilotos() {
+  const { profileFilter } = useProfile();
   const [pilots, setPilots] = useState(null);
   const [me, setMe] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -37,10 +39,10 @@ export default function Pilotos() {
   }, []);
 
   const load = async () => {
-    const p = await base44.entities.Pilot.list().catch(() => []);
+    const p = await base44.entities.Pilot.filter(profileFilter).catch(() => []);
     setPilots(p);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [profileFilter]);
 
   // Deep-link: ?pilot_id=xxx auto-seleciona o piloto
   useEffect(() => {
@@ -380,9 +382,10 @@ function EmptyState() {
 
 // ---------- APPROVALS ----------
 function ApprovalsPanel({ requests, setRequests, onClose, onDecision }) {
+  const { profileFilter } = useProfile();
   useEffect(() => {
-    base44.entities.PilotChangeRequest.list("-created_date", 100).then((r) => setRequests(r)).catch(() => setRequests([]));
-  }, []);
+    base44.entities.PilotChangeRequest.filter(profileFilter, { sort: "-created_date", limit: 100 }).then((r) => setRequests(r.items)).catch(() => setRequests([]));
+  }, [profileFilter]);
 
   const decide = async (req, status) => {
     const me = await base44.auth.me().catch(() => null);
