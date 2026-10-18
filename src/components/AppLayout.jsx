@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw,   FileBarChart, CalendarDays, TrendingUp, Megaphone, HeartPulse, Download } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw,   FileBarChart, CalendarDays, TrendingUp, Megaphone, HeartPulse } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import ProfileSwitcher from "@/components/ProfileSwitcher";
 import { cn } from "@/lib/utils";
@@ -243,17 +243,6 @@ function SidebarContent({ location, onNavigate }) {
         >
           <UserCircle style={{ width: 18, height: 18 }} />
           Meu perfil
-        </Link>
-        <Link
-          to="/instalar-aplicativo"
-          onClick={onNavigate}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all",
-            isActive(location, "/instalar-aplicativo") ? "text-amber-300 bg-amber-500/10" : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
-          )}
-        >
-          <Download style={{ width: 18, height: 18 }} />
-          Instalar aplicativo
         </Link>
         <button
           onClick={() => logout(true)}
