@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { QRH_CATEGORIES } from "@/lib/qrhData";
 import AlertsPanel from "@/components/dashboard/AlertsPanel";
+import ExpiryHighlights from "@/components/dashboard/ExpiryHighlights";
 import { Plane, BookOpen, Clock, TrendingUp, AlertTriangle, Plus, CheckCircle2, Wrench, Siren, Library, GraduationCap, ChevronRight, Award, ClipboardCheck, Users, HelpCircle } from "lucide-react";
 import { useProfile } from "@/lib/ProfileContext";
 
@@ -85,6 +86,9 @@ export default function Dashboard() {
       </header>
 
       <AlertsPanel />
+
+      {/* Selos de aviso — pilotos e aeronaves com vencimentos próximos */}
+      <ExpiryHighlights />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
