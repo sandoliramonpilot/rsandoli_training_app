@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Eye, EyeOff, User as UserIcon, Lock, Plane, Check } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
 import InstallSection from "@/components/InstallSection";
+import AppearanceSettings from "@/components/perfil/AppearanceSettings";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { getAccountStatus, firstAuthorizedPath, hasAnyAuthorizedModule, can } from "@/lib/accessControl";
 import { setSelectedProfile } from "@/lib/aircraftProfile";
@@ -234,6 +235,10 @@ export default function Login() {
               Criar conta
             </Link>
           </p>
+        </div>
+
+        <div className="mt-5">
+          <AppearanceSettings />
         </div>
 
         {/* Seção de Instalação */}

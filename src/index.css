@@ -3,27 +3,28 @@
 @tailwind utilities;
 
 @layer base {
+  /* TEMA ESCURO (padrão) */
   :root {
-    --background: 226 18% 8.6%;
-    --foreground: 45 32% 92%;
-    --card: 223 20% 12.4%;
-    --card-foreground: 45 32% 92%;
-    --popover: 223 20% 12.4%;
-    --popover-foreground: 45 32% 92%;
-    --primary: 40 47% 60%;
-    --primary-foreground: 226 18% 8.6%;
-    --secondary: 223 15% 16%;
-    --secondary-foreground: 45 32% 92%;
-    --muted: 223 15% 16%;
-    --muted-foreground: 231 8% 63%;
-    --accent: 169 26% 48%;
-    --accent-foreground: 226 18% 8.6%;
-    --destructive: 10 48% 60%;
-    --destructive-foreground: 45 32% 92%;
-    --border: 223 15% 16%;
-    --input: 223 15% 16%;
-    --ring: 40 47% 60%;
-    --chart-1: 40 47% 60%;
+    --background: 212 37% 8%;
+    --foreground: 0 0% 100%;
+    --card: 211 36% 13.5%;
+    --card-foreground: 0 0% 100%;
+    --popover: 211 36% 13.5%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 39 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 211 33% 18%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 211 33% 18%;
+    --muted-foreground: 230 94% 82%;
+    --accent: 39 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 100% 68%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 211 33% 18%;
+    --input: 211 33% 18%;
+    --ring: 39 100% 50%;
+    --chart-1: 39 100% 50%;
     --chart-2: 169 26% 48%;
     --chart-3: 10 48% 60%;
     --chart-4: 45 30% 60%;
@@ -33,49 +34,59 @@
     --font-body: ui-sans-serif, system-ui, sans-serif;
     --font-display: ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --sidebar-background: 226 18% 8.6%;
-    --sidebar-foreground: 45 32% 92%;
-    --sidebar-primary: 40 47% 60%;
-    --sidebar-primary-foreground: 226 18% 8.6%;
-    --sidebar-accent: 223 20% 14%;
-    --sidebar-accent-foreground: 40 47% 60%;
-    --sidebar-border: 223 15% 16%;
-    --sidebar-ring: 40 47% 60%;
+    --sidebar-background: 212 37% 8%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 39 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 211 36% 13.5%;
+    --sidebar-accent-foreground: 39 100% 50%;
+    --sidebar-border: 211 33% 18%;
+    --sidebar-ring: 39 100% 50%;
+    /* Tokens semânticos adicionais */
+    --metric: 0 0% 100%;
+    --success: 120 100% 50%;
+    --success-bg: 120 100% 50%;
+    --link: 39 100% 50%;
   }
 
   .dark {
-    --background: 226 18% 8.6%;
-    --foreground: 45 32% 92%;
-    --card: 223 20% 12.4%;
-    --card-foreground: 45 32% 92%;
-    --popover: 223 20% 12.4%;
-    --popover-foreground: 45 32% 92%;
-    --primary: 40 47% 60%;
-    --primary-foreground: 226 18% 8.6%;
-    --secondary: 223 15% 16%;
-    --secondary-foreground: 45 32% 92%;
-    --muted: 223 15% 16%;
-    --muted-foreground: 231 8% 63%;
-    --accent: 169 26% 48%;
-    --accent-foreground: 226 18% 8.6%;
-    --destructive: 10 48% 60%;
-    --destructive-foreground: 45 32% 92%;
-    --border: 223 15% 16%;
-    --input: 223 15% 16%;
-    --ring: 40 47% 60%;
-    --chart-1: 40 47% 60%;
-    --chart-2: 169 26% 48%;
-    --chart-3: 10 48% 60%;
-    --chart-4: 45 30% 60%;
-    --chart-5: 226 18% 30%;
-    --sidebar-background: 226 18% 8.6%;
-    --sidebar-foreground: 45 32% 92%;
-    --sidebar-primary: 40 47% 60%;
-    --sidebar-primary-foreground: 226 18% 8.6%;
-    --sidebar-accent: 223 20% 14%;
-    --sidebar-accent-foreground: 40 47% 60%;
-    --sidebar-border: 223 15% 16%;
-    --sidebar-ring: 40 47% 60%;
+    color-scheme: dark;
+  }
+
+  /* TEMA CLARO / USO SOB O SOL */
+  [data-theme="light"] {
+    color-scheme: light;
+    --background: 0 0% 100%;
+    --foreground: 215 49% 8%;
+    --card: 210 17% 98%;
+    --card-foreground: 215 49% 8%;
+    --popover: 210 17% 98%;
+    --popover-foreground: 215 49% 8%;
+    --primary: 21 100% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 16% 93%;
+    --secondary-foreground: 215 49% 8%;
+    --muted: 210 16% 93%;
+    --muted-foreground: 210 10% 23%;
+    --accent: 217 82% 51%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 75% 38%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 14% 83%;
+    --input: 210 14% 83%;
+    --ring: 217 82% 51%;
+    --sidebar-background: 210 17% 98%;
+    --sidebar-foreground: 215 49% 8%;
+    --sidebar-primary: 21 100% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 16% 93%;
+    --sidebar-accent-foreground: 21 100% 35%;
+    --sidebar-border: 210 16% 93%;
+    --sidebar-ring: 217 82% 51%;
+    --metric: 212 76% 15%;
+    --success: 123 56% 24%;
+    --success-bg: 125 39% 94%;
+    --link: 217 82% 51%;
   }
 }
 
@@ -88,3 +99,97 @@
     @apply bg-background text-foreground font-body;
   }
 }
+
+/*
+ * Mapeamento do tema claro para classes utilitárias legadas (cores fixas).
+ * Mantém a estrutura dos componentes e troca apenas os valores pelo tema ativo.
+ */
+[data-theme="light"] .bg-\[\#12141A\],
+[data-theme="light"] .bg-\[\#0D141C\],
+[data-theme="light"] .bg-slate-950,
+[data-theme="light"] .bg-slate-900 { background-color: hsl(var(--background)); }
+
+[data-theme="light"] .bg-\[\#1A1D25\],
+[data-theme="light"] .bg-\[\#16222F\],
+[data-theme="light"] .bg-slate-800 { background-color: hsl(var(--card)); }
+
+[data-theme="light"] .bg-slate-800\/50,
+[data-theme="light"] .bg-slate-800\/60,
+[data-theme="light"] .hover\:bg-slate-800\/50:hover,
+[data-theme="light"] .hover\:bg-slate-800:hover { background-color: hsl(var(--secondary)); }
+
+[data-theme="light"] .text-white,
+[data-theme="light"] .text-slate-50,
+[data-theme="light"] .text-slate-100,
+[data-theme="light"] .text-slate-200 { color: hsl(var(--foreground)); }
+
+[data-theme="light"] .text-slate-300,
+[data-theme="light"] .text-slate-400,
+[data-theme="light"] .text-slate-500,
+[data-theme="light"] .text-slate-600,
+[data-theme="light"] .placeholder\:text-slate-600::placeholder,
+[data-theme="light"] .placeholder\:text-slate-500::placeholder { color: hsl(var(--muted-foreground)); }
+
+[data-theme="light"] .hover\:text-white:hover,
+[data-theme="light"] .hover\:text-slate-300:hover { color: hsl(var(--foreground)); }
+
+[data-theme="light"] .border-slate-700,
+[data-theme="light"] .border-slate-700\/60,
+[data-theme="light"] .border-slate-700\/50,
+[data-theme="light"] .border-slate-800,
+[data-theme="light"] .border-slate-600 { border-color: hsl(var(--border)); }
+
+[data-theme="light"] .border-t.border-slate-700\/60,
+[data-theme="light"] .divide-slate-700\/60 > :not([hidden]) ~ :not([hidden]) { border-color: hsl(var(--border)); }
+
+/* Cor de destaque (âmbar) → laranja de alto contraste */
+[data-theme="light"] .text-amber-200,
+[data-theme="light"] .text-amber-300,
+[data-theme="light"] .text-amber-400,
+[data-theme="light"] .text-amber-500,
+[data-theme="light"] .hover\:text-amber-300:hover { color: hsl(21 100% 35%); }
+[data-theme="light"] .bg-amber-500,
+[data-theme="light"] .bg-amber-400 { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+[data-theme="light"] .hover\:bg-amber-400:hover { background-color: hsl(21 100% 38%); }
+[data-theme="light"] .text-slate-900,
+[data-theme="light"] .text-slate-950 { color: hsl(var(--primary-foreground)); }
+[data-theme="light"] .border-amber-500,
+[data-theme="light"] .border-amber-500\/30,
+[data-theme="light"] .border-amber-500\/40 { border-color: hsl(var(--primary)); }
+[data-theme="light"] .bg-amber-500\/10 { background-color: hsl(21 100% 45% / 0.1); }
+[data-theme="light"] .from-amber-300 {
+  --tw-gradient-from: hsl(21 100% 38%) var(--tw-gradient-from-position);
+  --tw-gradient-to: hsl(21 100% 38% / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+[data-theme="light"] .to-amber-500 { --tw-gradient-to: hsl(21 100% 30%) var(--tw-gradient-to-position); }
+
+/* Status: tons escuros e de alto contraste (sempre acompanhados de texto/ícone) */
+[data-theme="light"] .text-emerald-300,
+[data-theme="light"] .text-emerald-400,
+[data-theme="light"] .text-green-400 { color: hsl(var(--success)); }
+[data-theme="light"] .bg-emerald-500\/10,
+[data-theme="light"] .bg-emerald-500\/15 { background-color: hsl(var(--success-bg)); }
+[data-theme="light"] .border-emerald-500\/30,
+[data-theme="light"] .border-emerald-500\/40 { border-color: hsl(var(--success)); }
+[data-theme="light"] .text-rose-300,
+[data-theme="light"] .text-rose-400,
+[data-theme="light"] .text-red-400 { color: hsl(0 75% 33%); }
+[data-theme="light"] .bg-rose-500\/10,
+[data-theme="light"] .bg-rose-500\/15 { background-color: hsl(0 86% 96%); }
+[data-theme="light"] .border-rose-500\/30,
+[data-theme="light"] .border-rose-500\/40 { border-color: hsl(0 75% 38%); }
+[data-theme="light"] .text-yellow-300,
+[data-theme="light"] .text-yellow-400 { color: hsl(30 100% 25%); }
+[data-theme="light"] .text-sky-300,
+[data-theme="light"] .text-sky-400,
+[data-theme="light"] .text-blue-300,
+[data-theme="light"] .text-blue-400,
+[data-theme="light"] .text-cyan-300,
+[data-theme="light"] .text-cyan-400 { color: hsl(var(--link)); }
+[data-theme="light"] .text-violet-300,
+[data-theme="light"] .text-violet-400,
+[data-theme="light"] .text-purple-300,
+[data-theme="light"] .text-purple-400 { color: hsl(265 60% 38%); }
+[data-theme="light"] .text-orange-300,
+[data-theme="light"] .text-orange-400 { color: hsl(21 100% 33%); }

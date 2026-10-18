@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import TechnicalValidationsPanel from "@/components/perfil/TechnicalValidationsPanel";
 import AcademyContentPanel from "@/components/perfil/AcademyContentPanel";
+import AppearanceSettings from "@/components/perfil/AppearanceSettings";
 import { UserCircle, Loader2, Eye, EyeOff, Camera, ShieldCheck } from "lucide-react";
 
 const PASSWORD_RULES = [
@@ -176,6 +177,8 @@ export default function MeuPerfil() {
 
       {/* Conteúdo da Academy aguardando aprovação (admin) */}
       {isAdmin && <AcademyContentPanel user={user} />}
+
+      <AppearanceSettings />
 
       {/* Alterar senha */}
       <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-6">

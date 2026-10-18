@@ -44,6 +44,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import OAuthConsent from '@/pages/OAuthConsent';
 import InstallPrompt from '@/components/InstallPrompt';
 import { ProfileProvider } from '@/lib/ProfileContext';
+import { ThemeProvider } from '@/lib/ThemeContext';
 import Sobre from '@/pages/Sobre';
 import Contato from '@/pages/Contato';
 import Privacidade from '@/pages/Privacidade';
@@ -141,9 +142,11 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
-          <ProfileProvider>
-            <AuthenticatedApp />
-          </ProfileProvider>
+          <ThemeProvider>
+            <ProfileProvider>
+              <AuthenticatedApp />
+            </ProfileProvider>
+          </ThemeProvider>
         </Router>
         <InstallPrompt />
         <Toaster />
