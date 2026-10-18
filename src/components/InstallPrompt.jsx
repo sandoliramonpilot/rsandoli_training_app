@@ -1,148 +1,86 @@
 import React, { useEffect, useState } from "react";
-import { Download, X, Share, Apple, Smartphone, Copy, Check } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Download, X, HelpCircle } from "lucide-react";
+import { usePWAInstall, isStandalone, isInstallDismissed, dismissInstall } from "@/lib/pwa";
 
-const STORAGE_KEY = "pwa_install_dismissed_at";
-const APP_URL = "https://rsandoli-training.base44.app";
-
-function isStandalone() {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.navigator.standalone === true
-  );
-}
-
-function isIOS() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios/i.test(navigator.userAgent);
-}
-
-function isMobileDevice() {
-  return /android|iphone|ipad|ipod|mobile|iemobile|opera mini/i.test(navigator.userAgent);
-}
-
+// Banner discreto de instalação — exibido apenas quando aplicável e não recusado recentemente.
 export default function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const { deferred, canInstallNatively, promptInstall, platform } = usePWAInstall();
   const [visible, setVisible] = useState(false);
-  const [platform, setPlatform] = useState("android");
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (isStandalone()) return;
-
-    // A instalação é relevante apenas em dispositivos móveis. No desktop o
-    // navegador também dispara "beforeinstallprompt", o que abria este cartão
-    // sobre a interface sem necessidade e atrapalhava a navegação.
-    if (!isMobileDevice()) return;
-
-    const dismissed = localStorage.getItem(STORAGE_KEY);
-    if (dismissed) return;
-
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setPlatform("android");
-      setVisible(true);
-    };
-
-    window.addEventListener("beforeinstallprompt", handler);
-
-    if (isIOS()) {
-      setPlatform("ios");
-      const t = setTimeout(() => setVisible(true), 1500);
-      return () => {
-        clearTimeout(t);
-        window.removeEventListener("beforeinstallprompt", handler);
-      };
-    }
-
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    if (isInstallDismissed()) return;
+    // Mostra quando o navegador sinaliza instalação nativa (Android/desktop) ou no iOS
+    const t = setTimeout(() => setVisible(true), 1200);
+    return () => clearTimeout(t);
   }, []);
 
-  const dismiss = () => {
+  const handleDismiss = () => {
     setVisible(false);
-    localStorage.setItem(STORAGE_KEY, Date.now().toString());
+    dismissInstall();
   };
 
-  const installAndroid = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const choice = await deferredPrompt.userChoice;
-    if (choice.outcome === "accepted") {
-      setVisible(false);
+  const handleInstall = async () => {
+    if (canInstallNatively) {
+      const choice = await promptInstall();
+      if (choice?.outcome === "accepted") setVisible(false);
+    } else {
+      // Sem instalação nativa (iOS) — encaminha para a página de instruções
+      window.location.href = "/instalar-aplicativo";
     }
-    setDeferredPrompt(null);
   };
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(APP_URL);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
-  };
-
-  if (!visible) return null;
+  if (!visible || isStandalone()) return null;
 
   return (
-    <div className="fixed bottom-4 inset-x-4 sm:bottom-6 sm:right-6 sm:left-auto sm:w-[380px] z-30 animate-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-white rounded-2xl shadow-2xl border overflow-hidden" style={{ borderColor: "#F2F2F2" }}>
-        <div className="flex items-center justify-between px-5 py-3 border-b" style={{ background: "#E3F2FD", borderColor: "#E3F2FD" }}>
+    <div className="fixed bottom-4 inset-x-4 sm:bottom-6 sm:right-6 sm:left-auto sm:w-[380px] z-40 animate-in slide-in-from-bottom-4 duration-300">
+      <div className="bg-card rounded-2xl shadow-2xl border border-border overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-secondary">
           <div className="flex items-center gap-2">
-            <Download className="w-4 h-4" style={{ color: "#007AFF" }} />
-            <span className="text-sm font-semibold" style={{ color: "#0056A3" }}>Instalar aplicativo</span>
+            <Download className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold text-foreground">Instale o RSandoli Training</span>
           </div>
-          <button onClick={dismiss} className="hover:opacity-70 transition-opacity" style={{ color: "#B0BEC5" }}>
+          <button
+            onClick={handleDismiss}
+            aria-label="Fechar"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
-          <p className="text-sm leading-relaxed" style={{ color: "#333333" }}>
-            Instale o <strong>RSandoli_Training</strong> na tela inicial
-            para acesso rápido como um app nativo — funciona offline e com as mesmas configurações da versão web.
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Adicione o aplicativo à tela inicial para acessar com mais rapidez e utilizar uma
+            experiência semelhante à de um aplicativo instalado.
           </p>
 
-          {platform === "android" && deferredPrompt ? (
+          <div className="flex gap-2">
             <button
-              onClick={installAndroid}
-              className="w-full h-11 rounded-lg text-white text-sm font-medium shadow-md transition-all hover:opacity-90 flex items-center justify-center gap-2"
-              style={{ background: "#34A853", borderRadius: "8px" }}
+              onClick={handleInstall}
+              className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shadow-md hover:opacity-90 transition-all flex items-center justify-center gap-2"
             >
               <Download className="w-4 h-4" />
-              Instalar agora
+              Instalar aplicativo
             </button>
-          ) : platform === "ios" ? (
-            <div className="flex items-start gap-3 p-3 rounded-lg border" style={{ background: "#F2F2F2", borderColor: "#F2F2F2" }}>
-              <Apple className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "#333333" }} />
-              <div className="text-xs leading-relaxed" style={{ color: "#333333" }}>
-                No Safari, toque em <Share className="inline w-3 h-3 -mt-0.5" style={{ color: "#007AFF" }} />{" "}
-                <strong>Compartilhar</strong> e selecione{" "}
-                <strong>"Adicionar à Tela de Início"</strong>.
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-start gap-3 p-3 rounded-lg border" style={{ background: "#F2F2F2", borderColor: "#F2F2F2" }}>
-              <Smartphone className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "#333333" }} />
-              <div className="text-xs leading-relaxed" style={{ color: "#333333" }}>
-                No Chrome/Edge, abra o menu <strong>⋮</strong> e toque em{" "}
-                <strong>"Instalar aplicativo"</strong>.
-              </div>
-            </div>
-          )}
+            <button
+              onClick={handleDismiss}
+              className="px-4 h-11 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
+            >
+              Agora não
+            </button>
+          </div>
 
-          <div className="pt-2 border-t" style={{ borderColor: "#F2F2F2" }}>
-            <p className="text-[11px] mb-2" style={{ color: "#B0BEC5" }}>Ou envie este link de acesso:</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 px-3 py-2 rounded-lg border text-xs truncate" style={{ background: "#F2F2F2", borderColor: "#F2F2F2", color: "#0056A3" }}>
-                {APP_URL}
-              </code>
-              <button
-                onClick={copyLink}
-                className="px-3 py-2 rounded-lg border transition-all hover:opacity-80 shrink-0"
-                style={{ borderColor: "#B0BEC5", color: "#0056A3" }}
-              >
-                {copied ? <Check className="w-3.5 h-3.5" style={{ color: "#34A853" }} /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-            </div>
+          <div className="pt-2 border-t border-border">
+            <Link
+              to="/instalar-aplicativo"
+              onClick={() => setVisible(false)}
+              className="text-xs text-primary hover:underline flex items-center gap-1.5"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              Como instalar
+            </Link>
           </div>
         </div>
       </div>

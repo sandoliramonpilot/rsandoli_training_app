@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import TechnicalValidationsPanel from "@/components/perfil/TechnicalValidationsPanel";
 import AcademyContentPanel from "@/components/perfil/AcademyContentPanel";
 import AppearanceSettings from "@/components/perfil/AppearanceSettings";
+import { clearDeviceData } from "@/lib/deviceCleanup";
 import { UserCircle, Loader2, Eye, EyeOff, Camera, ShieldCheck } from "lucide-react";
 
 const PASSWORD_RULES = [
@@ -19,7 +20,7 @@ const PASSWORD_RULES = [
 ];
 
 export default function MeuPerfil() {
-  const { user, checkUserAuth } = useAuth();
+  const { user, checkUserAuth, logout } = useAuth();
   const [phone, setPhone] = useState("");
   const [photo, setPhoto] = useState(null);
   const [photoUri, setPhotoUri] = useState("");
@@ -179,6 +180,28 @@ export default function MeuPerfil() {
       {isAdmin && <AcademyContentPanel user={user} />}
 
       <AppearanceSettings />
+
+      {/* Sair e remover dados deste dispositivo */}
+      <div className="bg-card rounded-2xl border border-destructive/30 p-6">
+        <h2 className="font-semibold text-foreground flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-destructive" /> Segurança do dispositivo</h2>
+        <p className="text-sm text-muted-foreground mt-1 mb-4">
+          Encerra a sessão e remove os dados privados deste dispositivo (caches, arquivos offline e rascunhos locais).
+          Registros já sincronizados com o servidor não são excluídos.
+        </p>
+        <Button
+          variant="destructive"
+          onClick={async () => {
+            if (!confirm("Tem certeza? Esta ação encerra a sessão e remove os dados deste dispositivo.")) return;
+            try {
+              await clearDeviceData();
+              await logout(true);
+              window.location.reload();
+            } catch {}
+          }}
+        >
+          Sair e remover dados deste dispositivo
+        </Button>
+      </div>
 
       {/* Alterar senha */}
       <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-6">

@@ -49,6 +49,9 @@ import Sobre from '@/pages/Sobre';
 import Contato from '@/pages/Contato';
 import Privacidade from '@/pages/Privacidade';
 import Termos from '@/pages/Termos';
+import InstalarAplicativo from '@/pages/InstalarAplicativo';
+import UpdateAvailable from '@/components/UpdateAvailable';
+import OfflineIndicator from '@/components/OfflineIndicator';
 // Add page imports here
 
 const PUBLIC_TRUST_PATHS = ["/sobre", "/contato", "/privacidade", "/termos"];
@@ -128,6 +131,7 @@ const AuthenticatedApp = () => {
         <Route path="/perfil" element={<MeuPerfil />} />
         <Route path="/painel-progresso" element={<PainelProgresso />} />
         <Route path="/marcos-projeto" element={<MarcosProjeto />} />
+        <Route path="/instalar-aplicativo" element={<InstalarAplicativo />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
@@ -149,6 +153,8 @@ function App() {
           </ThemeProvider>
         </Router>
         <InstallPrompt />
+        <UpdateAvailable />
+        <OfflineIndicator />
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>

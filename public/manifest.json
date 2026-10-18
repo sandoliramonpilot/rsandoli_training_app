@@ -1,33 +1,37 @@
 {
-  "name": "RSANDOLI PILOTS Helicopter Training",
-  "short_name": "RSANDOLI Training",
-  "description": "Plataforma de instrução teórica e treinamento operacional para helicópteros.",
+  "id": "/",
+  "name": "RSandoli Training",
+  "short_name": "RSandoli",
+  "description": "Plataforma de treinamento, padronização, gestão operacional e apoio à instrução de pilotos.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#12141A",
-  "theme_color": "#12141A",
-  "categories": ["education", "productivity", "navigation"],
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0D141C",
+  "theme_color": "#0D141C",
   "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["education", "productivity", "aviation"],
   "icons": [
-    {
-      "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/de9fbb8d8_generated_image.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/de9fbb8d8_generated_image.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/de9fbb8d8_generated_image.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/b46e77fa3_generated_image.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Painel", "url": "/", "short_name": "Painel" },
+    { "name": "Academy", "url": "/aw119-training", "short_name": "Academy" },
+    { "name": "Diário de Bordo", "url": "/flight-log", "short_name": "Diário" },
+    { "name": "Briefing de Emergência", "url": "/briefing-emergencia", "short_name": "Briefing" },
+    { "name": "Checklists", "url": "/checklist", "short_name": "Checklists" }
   ]
 }
