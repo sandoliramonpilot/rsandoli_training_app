@@ -40,26 +40,46 @@ export function canManageLevel(actorLevel, targetLevel) {
 
 export const ACTIVE_ACCOUNT_STATUSES = ["ativa", "convite_pendente"];
 
-// Fonte autoritativa de situação da conta: entidade AccountStatus (gravável apenas
-// por administradores via backend). O campo User.account_status permanece gravável
-// pelo próprio usuário via updateMe, então NÃO é confiável. Quando não há registro
-// (usuário legado sem backfill), cai para o fallback do User.
+// Situações que bloqueiam o acesso. Qualquer valor fora de ACTIVE_ACCOUNT_STATUSES
+// é tratado como sanção.
+export const INACTIVE_ACCOUNT_STATUSES = ["bloqueada", "suspensa", "desativada"];
+
+// Fonte autoritativa: entidade AccountStatus, gravável apenas por administradores via
+// backend (RLS: o usuário não pode criar, alterar nem excluir esses registros).
+//
+// O campo User.account_status é gravável pelo próprio usuário via updateMe, então ele
+// NUNCA é aceito para liberar acesso: forjar account_status não reativa uma conta
+// bloqueada. Sem registro autoritativo o campo é consultado apenas no sentido
+// restritivo — um valor de sanção (bloqueada / suspensa / desativada) mantém o acesso
+// bloqueado, e qualquer outro valor equivale à ausência de sanção.
+//
+// Toda sanção aplicada pelo app grava o registro autoritativo ANTES de alterar o
+// cadastro (ver setAccountStatusRecord, que falha em vez de gravar parcialmente), de
+// modo que um registro existente sempre prevalece sobre o campo do usuário.
 export async function isActiveAccount(base44, user) {
-  const fallback = user?.account_status || "ativa";
+  if (!user?.id) return false;
+  let recs;
   try {
-    const recs = await base44.asServiceRole.entities.AccountStatus.filter({ user_id: user.id });
-    if (recs && recs.length) {
-      const latest = recs
-        .slice()
-        .sort((a, b) => new Date(b.set_at || b.created_date || 0).getTime() - new Date(a.set_at || a.created_date || 0).getTime())[0];
-      return ACTIVE_ACCOUNT_STATUSES.includes(latest.status);
-    }
-  } catch {}
-  return ACTIVE_ACCOUNT_STATUSES.includes(fallback);
+    recs = await base44.asServiceRole.entities.AccountStatus.filter({ user_id: user.id });
+  } catch {
+    // Sem leitura da fonte autoritativa não há como comprovar a situação: nega.
+    return false;
+  }
+  if (recs && recs.length) {
+    const latest = recs
+      .slice()
+      .sort((a, b) => new Date(b.set_at || b.created_date || 0).getTime() - new Date(a.set_at || a.created_date || 0).getTime())[0];
+    return ACTIVE_ACCOUNT_STATUSES.includes(latest.status);
+  }
+  // Sem registro: só uma sanção declarada restringe; "ativa" declarado pelo usuário
+  // não libera nada que já não estivesse liberado.
+  return !INACTIVE_ACCOUNT_STATUSES.includes(String(user.account_status || ""));
 }
 
-// Cria ou atualiza o registro autoritativo de situação da conta (backend only,
-// via asServiceRole). Usado por manageUsers sempre que o status é alterado.
+// Cria ou atualiza o registro autoritativo de situação da conta (backend only, via
+// asServiceRole). Usado por manageUsers sempre que o status é alterado.
+// Retorna true somente quando o registro foi efetivamente gravado: sanções não podem
+// ficar registradas apenas no campo User.account_status, que é gravável pelo usuário.
 export async function setAccountStatusRecord(base44, userId, status, actor, reason) {
   try {
     const existing = await base44.asServiceRole.entities.AccountStatus.filter({ user_id: userId });
@@ -72,7 +92,10 @@ export async function setAccountStatusRecord(base44, userId, status, actor, reas
     } else {
       await base44.asServiceRole.entities.AccountStatus.create({ user_id: userId, status, set_by: actor || null, set_at: now, reason: reason || "" });
     }
-  } catch {}
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export const AUDITABLE_ACTIONS = {

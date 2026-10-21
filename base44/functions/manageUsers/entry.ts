@@ -369,13 +369,24 @@ export default async function (req) {
             }
           }
         }
+        // Hierarquia: não é possível alterar a situação de usuário de nível igual ou
+        // superior ao do chamador (mesma regra aplicada em create, access_level,
+        // convites e reset_password). O Administrador Geral segue com as regras próprias.
+        if (actorLevel !== "admin_geral" && !canManageLevel(actorLevel, targetLevel)) {
+          return Response.json({ error: "Você não pode alterar a situação de um usuário de nível igual ou superior ao seu." }, { status: 403 });
+        }
         const sensitiveStatus = body.account_status === "desativada" || (targetLevel === "admin_geral" && body.account_status !== "ativa");
         if (sensitiveStatus) {
           const codeOk = await verifyAccessCode(base44, user, body.code);
           if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
         }
+        // O registro autoritativo é gravado antes da alteração cadastral: se falhar,
+        // a sanção não é aplicada (nenhuma situação existe apenas no campo do usuário).
+        const statusRecorded = await setAccountStatusRecord(base44, target.id, body.account_status, user.full_name || user.email, body.reason || "");
+        if (!statusRecorded) {
+          return Response.json({ error: "Não foi possível registrar a situação da conta. Tente novamente." }, { status: 500 });
+        }
         patch.account_status = body.account_status;
-        await setAccountStatusRecord(base44, target.id, body.account_status, user.full_name || user.email, body.reason || "");
         changes.push(`Situação: ${target.account_status || "ativa"} → ${body.account_status}`);
       }
 
