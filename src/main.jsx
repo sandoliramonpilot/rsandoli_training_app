@@ -7,10 +7,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
 )
 
-// Registra o Service Worker para suporte PWA (cache básico e instalação)
+// Registra o Service Worker do PWA.
+// A atualização não é aplicada automaticamente: o aviso "Atualização
+// disponível" decide quando trocar de versão, para não interromper trabalho
+// em andamento.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
-      .catch((err) => console.warn('SW registration failed:', err));
+    navigator.serviceWorker
+      .register('/service-worker.js', { scope: '/' })
+      .catch((err) => console.warn('Falha ao registrar o service worker:', err));
   });
 }

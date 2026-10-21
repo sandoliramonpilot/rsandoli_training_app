@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -49,6 +49,8 @@ import Sobre from '@/pages/Sobre';
 import Contato from '@/pages/Contato';
 import Privacidade from '@/pages/Privacidade';
 import Termos from '@/pages/Termos';
+import Configuracoes from '@/pages/Configuracoes';
+import UpdatePrompt from '@/components/UpdatePrompt';
 // Add page imports here
 
 const PUBLIC_TRUST_PATHS = ["/sobre", "/contato", "/privacidade", "/termos"];
@@ -60,6 +62,13 @@ const AuthenticatedApp = () => {
   const [termsAccepted, setTermsAccepted] = useState(
     () => localStorage.getItem("terms_accepted") === "true"
   );
+
+  // A tela de abertura permanece visível somente durante o carregamento real.
+  useEffect(() => {
+    if (!isLoadingPublicSettings && !isLoadingAuth) {
+      document.getElementById("app-splash")?.remove();
+    }
+  }, [isLoadingPublicSettings, isLoadingAuth]);
 
   // Show loading spinner while checking app public settings or auth
   if (!isPublicTrustPage && (isLoadingPublicSettings || isLoadingAuth)) {
@@ -101,15 +110,15 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
       <Route element={<AppLayout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/flight-log" element={<FlightLog />} />
+        <Route path="/" element={<RequireModule moduleId="dashboard"><Dashboard /></RequireModule>} />
+        <Route path="/flight-log" element={<RequireModule moduleId="diario_bordo"><FlightLog /></RequireModule>} />
         <Route path="/aircraft" element={<Aircraft />} />
-        <Route path="/checklist" element={<Checklist />} />
+        <Route path="/checklist" element={<RequireModule moduleId="checklists"><Checklist /></RequireModule>} />
         <Route path="/qrh" element={<QRH />} />
         <Route path="/qrh-efis" element={<QRHEfis />} />
         <Route path="/biblioteca" element={<Biblioteca />} />
         <Route path="/treinamentos" element={<Treinamentos />} />
-        <Route path="/aw119-training" element={<AW119Training />} />
+        <Route path="/aw119-training" element={<RequireModule moduleId="aw119_training"><AW119Training /></RequireModule>} />
         <Route path="/treinamentos-gerais" element={<TreinamentosGerais />} />
         <Route path="/limitacoes" element={<Limitacoes />} />
         <Route path="/procedimentos-normais" element={<ProcedimentosNormais />} />
@@ -117,7 +126,7 @@ const AuthenticatedApp = () => {
         <Route path="/treinamento-recorrente" element={<TreinamentoRecorrente />} />
         <Route path="/recursos-visuais" element={<RecursosAudiovisuais />} />
         <Route path="/recursos-audiovisuais" element={<RecursosAudiovisuais />} />
-        <Route path="/briefing-emergencia" element={<BriefingEmergencia />} />
+        <Route path="/briefing-emergencia" element={<RequireModule moduleId="briefing_emergencia"><BriefingEmergencia /></RequireModule>} />
         <Route path="/gestao" element={<RequireModule moduleId="gestao"><Gestao /></RequireModule>} />
         <Route path="/pilotos" element={<Pilotos />} />
         <Route path="/oat" element={<Oat />} />
@@ -128,6 +137,7 @@ const AuthenticatedApp = () => {
         <Route path="/perfil" element={<MeuPerfil />} />
         <Route path="/painel-progresso" element={<PainelProgresso />} />
         <Route path="/marcos-projeto" element={<MarcosProjeto />} />
+        <Route path="/configuracoes" element={<Configuracoes />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
@@ -149,6 +159,7 @@ function App() {
           </ThemeProvider>
         </Router>
         <InstallPrompt />
+        <UpdatePrompt />
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>

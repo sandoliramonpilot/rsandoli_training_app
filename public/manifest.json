@@ -1,33 +1,68 @@
 {
-  "name": "RSANDOLI PILOTS Helicopter Training",
-  "short_name": "RSANDOLI Training",
-  "description": "Plataforma de instrução teórica e treinamento operacional para helicópteros.",
+  "id": "/",
+  "name": "RSandoli Training",
+  "short_name": "RSandoli",
+  "description": "Plataforma de treinamento, padronização, gestão operacional e apoio à instrução de pilotos.",
+  "lang": "pt-BR",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#12141A",
-  "theme_color": "#12141A",
-  "categories": ["education", "productivity", "navigation"],
-  "lang": "pt-BR",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0D141C",
+  "theme_color": "#0D141C",
+  "categories": ["education", "productivity", "aviation"],
+  "prefer_related_applications": false,
   "icons": [
+    { "src": "/icons/icon-48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-72.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
     {
-      "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/de9fbb8d8_generated_image.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
+      "name": "Painel",
+      "short_name": "Painel",
+      "description": "Abrir o painel principal",
+      "url": "/",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
-      "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/de9fbb8d8_generated_image.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "name": "Academy",
+      "short_name": "Academy",
+      "description": "Abrir o treinamento AW119 Training",
+      "url": "/aw119-training",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
-      "src": "https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/de9fbb8d8_generated_image.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "name": "Diário de Bordo",
+      "short_name": "Diário",
+      "description": "Registrar e consultar voos",
+      "url": "/flight-log",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Briefing de Emergência",
+      "short_name": "Briefing",
+      "description": "Briefing operacional de emergência",
+      "url": "/briefing-emergencia",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Checklists",
+      "short_name": "Checklists",
+      "description": "Executar checklists operacionais",
+      "url": "/checklist",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
     }
   ]
 }

@@ -21,6 +21,11 @@ function applyTheme(resolved) {
   root.setAttribute("data-theme", resolved);
   root.classList.toggle("dark", resolved === "dark");
   root.style.colorScheme = resolved;
+  // Cor da barra de status / interface externa do aplicativo instalado
+  // acompanha o tema escolhido (Escuro, Claro/Sol ou Automático).
+  const bg = resolved === "light" ? "#FFFFFF" : "#0D141C";
+  root.style.backgroundColor = bg;
+  document.getElementById("meta-theme-color")?.setAttribute("content", bg);
 }
 
 export function ThemeProvider({ children }) {

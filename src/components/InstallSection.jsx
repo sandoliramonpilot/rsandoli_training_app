@@ -1,119 +1,56 @@
-import React, { useEffect, useState } from "react";
-import { Bot, Apple, Link2, Share, Copy, Check, Download } from "lucide-react";
+import React from "react";
+import { Download, CheckCircle2 } from "lucide-react";
+import { useInstall } from "@/lib/pwa";
+import InstallGuideDialog from "@/components/pwa/InstallGuideDialog";
 
-const APP_URL = "https://rsandoli-training.base44.app";
-const STORAGE_KEY = "pwa_install_dismissed_at";
-
-function isStandalone() {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.navigator.standalone === true
-  );
-}
-
-function isIOS() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios/i.test(navigator.userAgent);
-}
-
+// Opção de instalação para a tela de login e áreas equivalentes.
+// Só aparece quando a instalação é possível e o app não está instalado.
 export default function InstallSection() {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [shared, setShared] = useState(false);
+  const { canInstall, installed, platform, promptInstall } = useInstall();
 
-  useEffect(() => {
-    if (isStandalone()) return;
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+  if (installed) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+        <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden="true" />
+        Aplicativo instalado neste dispositivo
+      </div>
+    );
+  }
 
-  if (isStandalone()) return null;
+  const available = canInstall || (platform.id === "ios" && platform.safari);
+  if (!available) return null;
 
-  const installAndroid = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
-  };
-
-  const showIOS = () => {
-    alert("No iPhone/iPad: Abra no Safari, toque em Compartilhar e selecione 'Adicionar à Tela de Início'.");
-  };
-
-  const openApp = async () => {
-    // Tenta o Web Share API (WhatsApp, e-mail, SMS nativos no mobile)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "RSandoli_Training",
-          text: "Acesse o app RSandoli_Training:",
-          url: APP_URL,
-        });
-        setShared(true);
-        setTimeout(() => setShared(false), 2000);
-        return;
-      } catch {}
-    }
-    // Fallback: copia o link
-    try {
-      await navigator.clipboard.writeText(APP_URL);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
+  const install = async () => {
+    if (canInstall) await promptInstall();
   };
 
   return (
-    <div className="mt-6">
-      {/* Título */}
-      <p
-        className="text-center font-semibold mb-3"
-        style={{ color: "#333333", fontFamily: "Inter, Roboto, system-ui, sans-serif" }}
-      >
-        Instale nosso App
+    <div className="rounded-xl border border-border bg-card px-4 py-4 text-center">
+      <p className="text-sm font-semibold text-foreground">Instalar aplicativo</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Adicione o RSandoli Training à tela inicial deste dispositivo.
       </p>
-
-      {/* Botões lado a lado */}
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={installAndroid}
-          disabled={!deferredPrompt}
-          className="flex items-center justify-center gap-2 h-11 rounded-lg text-white text-sm font-medium shadow-md transition-all hover:opacity-90 disabled:opacity-50"
-          style={{ background: "#34A853", borderRadius: "8px" }}
-        >
-          {deferredPrompt ? <Download className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-          Instalar no Android
-        </button>
-        <button
-          onClick={showIOS}
-          className="flex items-center justify-center gap-2 h-11 rounded-lg text-white text-sm font-medium shadow-md transition-all hover:opacity-90"
-          style={{ background: "#007AFF", borderRadius: "8px" }}
-        >
-          <Apple className="w-4 h-4" />
-          Instalar no iOS
-        </button>
-      </div>
-
-      {/* Texto explicativo iOS */}
-      <p className="text-xs text-center mt-3 px-2 leading-relaxed" style={{ color: "#B0BEC5" }}>
-        No iPhone/iPad: Abra no Safari e toque em "Adicionar à Tela de Início"
-      </p>
-
-      {/* Link Abrir App */}
-      <button
-        onClick={openApp}
-        className="w-full mt-3 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-medium transition-all hover:opacity-80"
-        style={{ background: "#F2F2F2", color: "#0056A3", borderRadius: "8px" }}
-      >
-        {copied || shared ? (
-          <Check className="w-4 h-4" style={{ color: "#34A853" }} />
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+        {canInstall ? (
+          <button
+            type="button"
+            onClick={install}
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Instalar aplicativo
+          </button>
         ) : (
-          <Link2 className="w-4 h-4" />
+          <InstallGuideDialog
+            platformId={platform.id}
+            safariFallback={platform.safari}
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          />
         )}
-        {copied ? "Link copiado!" : shared ? "Compartilhado!" : "Abrir App"}
-      </button>
+        {canInstall && (
+          <InstallGuideDialog platformId={platform.id} safariFallback={platform.safari} />
+        )}
+      </div>
     </div>
   );
 }

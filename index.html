@@ -1,20 +1,135 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/8d21e7f79_Logo_APP.png" />
-    <link rel="apple-touch-icon" href="https://media.base44.com/images/public/6abbcee2e405be8f7f7ba4ef/8d21e7f79_Logo_APP.png" />
+    <title>RSandoli Training</title>
+    <meta name="description" content="Plataforma de treinamento, padronização, gestão operacional e apoio à instrução de pilotos." />
+    <meta name="application-name" content="RSandoli" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#12141A" />
+
+    <!-- Instalação e identidade -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0D141C" id="meta-theme-color" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="RSandoli Training" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="RSANDOLI PILOTS" />
-    <link rel="manifest" href="/manifest.json" />
-    <title>RSANDOLI PILOTS Helicopter Training</title>
+
+    <script>
+      // Aplica o tema antes da primeira pintura para evitar cintilação e manter
+      // a cor da barra de status coerente com a preferência do usuário.
+      (function () {
+        try {
+          var pref = localStorage.getItem("theme_pref") || "auto";
+          var light =
+            pref === "light" ||
+            (pref === "auto" && window.matchMedia("(prefers-color-scheme: light)").matches);
+          var theme = light ? "light" : "dark";
+          var bg = light ? "#FFFFFF" : "#0D141C";
+          var root = document.documentElement;
+          root.setAttribute("data-theme", theme);
+          root.classList.toggle("dark", theme === "dark");
+          root.style.colorScheme = theme;
+          root.style.backgroundColor = bg;
+          var meta = document.getElementById("meta-theme-color");
+          if (meta) meta.setAttribute("content", bg);
+        } catch (e) {}
+      })();
+    </script>
+
+    <style>
+      /* Tela de abertura — exibida apenas durante o carregamento real do app. */
+      #app-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0d141c;
+        color: #ffffff;
+        padding: calc(1.5rem + env(safe-area-inset-top)) 1.5rem calc(1.5rem + env(safe-area-inset-bottom));
+        text-align: center;
+      }
+      [data-theme="light"] #app-splash {
+        background: #ffffff;
+        color: #0b131f;
+      }
+      #app-splash .app-splash-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        max-width: 22rem;
+      }
+      #app-splash .app-splash-logo {
+        width: 112px;
+        height: 112px;
+        border-radius: 24px;
+        object-fit: cover;
+        margin-bottom: 0.75rem;
+      }
+      #app-splash .app-splash-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      #app-splash .app-splash-sub {
+        margin: 0;
+        font-size: 0.75rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #a5b4fc;
+      }
+      [data-theme="light"] #app-splash .app-splash-sub {
+        color: #4a5361;
+      }
+      #app-splash .app-splash-bar {
+        margin-top: 1.25rem;
+        width: 7rem;
+        height: 3px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255, 165, 0, 0.25);
+      }
+      #app-splash .app-splash-bar span {
+        display: block;
+        width: 40%;
+        height: 100%;
+        border-radius: 999px;
+        background: #ffa500;
+        animation: app-splash-slide 1.1s ease-in-out infinite;
+      }
+      @keyframes app-splash-slide {
+        0% { transform: translateX(-110%); }
+        100% { transform: translateX(280%); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #app-splash .app-splash-bar span { animation: none; width: 100%; opacity: 0.6; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div id="app-splash" role="status" aria-live="polite">
+      <div class="app-splash-inner">
+        <img class="app-splash-logo" src="/icons/icon-192.png" alt="RSandoli Training" width="112" height="112" />
+        <p class="app-splash-title">RSandoli Training</p>
+        <p class="app-splash-sub">A119 Koala | H125</p>
+        <div class="app-splash-bar" aria-hidden="true"><span></span></div>
+      </div>
+    </div>
+    <script>
+      // Rede de segurança: nunca deixar a tela de abertura presa se o app falhar em iniciar.
+      setTimeout(function () {
+        var el = document.getElementById("app-splash");
+        if (el) el.remove();
+      }, 25000);
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

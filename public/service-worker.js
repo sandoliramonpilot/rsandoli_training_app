@@ -1,70 +1,130 @@
-// Service Worker — Rsandoli_Training PWA
-// Cache básico com estratégia network-first para navegação e cache-first para assets estáticos.
+// Service Worker — RSandoli Training (PWA)
+//
+// Objetivos:
+//  - manter o app shell disponível sem conexão (estrutura, não dados do servidor);
+//  - nunca armazenar credenciais, tokens ou respostas autenticadas;
+//  - entregar versões novas sem prender o usuário a um cache antigo;
+//  - deixar o usuário decidir quando aplicar a atualização.
 
-const CACHE_NAME = "Rsandoli_Training_v1";
-const PRECACHE_URLS = ["/", "/index.html", "/manifest.json"];
+const VERSION = "v3";
+const SHELL_CACHE = `rsandoli-shell-${VERSION}`;
+const ASSET_CACHE = `rsandoli-assets-${VERSION}`;
+const KNOWN_CACHES = [SHELL_CACHE, ASSET_CACHE];
+// Caches privados gerenciados pelo aplicativo (limpos no logout/remoção de dados).
+const APP_MANAGED_CACHES = ["rsandoli-offline-content"];
+const PRECACHE = ["/", "/index.html", "/manifest.json"];
 
-// ---------- Install: pré-cacheia o app shell básico ----------
+// ---------- Install ----------
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
-  );
-  self.skipWaiting();
-});
-
-// ---------- Activate: limpa caches antigos ----------
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) =>
+    caches.open(SHELL_CACHE).then((cache) =>
+      // Best-effort: uma falha de rede não deve impedir a instalação do SW.
       Promise.all(
-        cacheNames.map((name) => {
-          if (name !== CACHE_NAME) return caches.delete(name);
-        })
+        PRECACHE.map((url) =>
+          cache.add(new Request(url, { cache: "reload" })).catch(() => null)
+        )
       )
     )
   );
-  self.clients.claim();
+  // Sem skipWaiting automático: a atualização é aplicada quando o app sinalizar.
 });
 
-// ---------- Fetch: estratégia por tipo de requisição ----------
+// ---------- Activate ----------
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      const names = await caches.keys();
+      await Promise.all(
+        names.map((name) => {
+          if (KNOWN_CACHES.includes(name)) return null;
+          // Caches privados do app não são removidos aqui: a limpeza acontece
+          // no logout ou em "Sair e remover dados deste dispositivo".
+          if (APP_MANAGED_CACHES.some((p) => name.startsWith(p))) return null;
+          return caches.delete(name);
+        })
+      );
+      await self.clients.claim();
+    })()
+  );
+});
+
+// ---------- Mensagens do aplicativo ----------
+self.addEventListener("message", (event) => {
+  const data = event.data || {};
+  if (data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+    return;
+  }
+  if (data.type === "GET_VERSION" && event.ports && event.ports[0]) {
+    event.ports[0].postMessage({ version: VERSION });
+  }
+});
+
+// ---------- Fetch ----------
+function isCacheableAsset(request, url) {
+  if (request.method !== "GET") return false;
+  if (!url.pathname.startsWith("/assets/") && !url.pathname.startsWith("/icons/")) return false;
+  if (url.search) return false;
+  return true;
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-
-  // Apenas GET; ignora outras operações (mutações de API, etc.)
-  if (request.method !== "GET") return;
-
   const url = new URL(request.url);
 
-  // Ignora requisições cross-origin (APIs externas, SDK Base44, etc.)
+  // Somente leitura, apenas same-origin e nunca requisições autenticadas.
+  if (request.method !== "GET") return;
   if (url.origin !== self.location.origin) return;
+  if (request.headers.has("authorization")) return;
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/functions/")) return;
 
-  // Network-first para navegação (HTML) — garante atualizações frescas, fallback offline
+  // Navegação: rede primeiro (conteúdo sempre fresco), cache como reserva offline.
   if (request.mode === "navigate" || request.destination === "document") {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() =>
-          caches.match(request).then((r) => r || caches.match("/index.html"))
-        )
+      (async () => {
+        try {
+          const fresh = await fetch(request);
+          if (fresh && fresh.ok) {
+            const cache = await caches.open(SHELL_CACHE);
+            cache.put("/index.html", fresh.clone()).catch(() => {});
+          }
+          return fresh;
+        } catch {
+          const cache = await caches.open(SHELL_CACHE);
+          return (
+            (await cache.match(request)) ||
+            (await cache.match("/index.html")) ||
+            (await cache.match("/")) ||
+            new Response("Sem conexão.", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } })
+          );
+        }
+      })()
     );
     return;
   }
 
-  // Cache-first para assets estáticos (JS, CSS, fontes, imagens)
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((response) => {
-        if (response && response.status === 200 && response.type === "basic") {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+  // Assets com hash: cache primeiro com revalidação em segundo plano.
+  if (isCacheableAsset(request, url)) {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(ASSET_CACHE);
+        const cached = await cache.match(request);
+        if (cached) {
+          event.waitUntil(
+            fetch(request)
+              .then((res) => { if (res && res.ok) cache.put(request, res.clone()); })
+              .catch(() => {})
+          );
+          return cached;
         }
-        return response;
-      }).catch(() => cached);
-    })
-  );
+        try {
+          const res = await fetch(request);
+          if (res && res.ok && res.type === "basic") cache.put(request, res.clone()).catch(() => {});
+          return res;
+        } catch {
+          return new Response("", { status: 504 });
+        }
+      })()
+    );
+  }
 });

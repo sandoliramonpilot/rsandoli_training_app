@@ -117,6 +117,10 @@
       "default": false,
       "title": "Favorito"
     },
+    "client_key": {
+      "type": "string",
+      "title": "Chave de idempot\u00eancia do dispositivo"
+    },
     "description": {
       "type": "string",
       "title": "Descri\u00e7\u00e3o",

@@ -9,6 +9,8 @@ import ChecklistHistoryList from "@/components/checklist/ChecklistHistoryList";
 import ChecklistHistoryDetail from "@/components/checklist/ChecklistHistoryDetail";
 import StartChecklistFlow from "@/components/checklist/StartChecklistFlow";
 import { useProfile } from "@/lib/ProfileContext";
+import { enqueueOperation, newClientKey } from "@/lib/offlineStore";
+import { isNetworkError } from "@/lib/useOnlineStatus";
 
 const DRAFT_KEY = "checklist_draft_v2";
 
@@ -27,6 +29,7 @@ export default function Checklist() {
   const [showFinalize, setShowFinalize] = useState(false);
   const [viewingRecord, setViewingRecord] = useState(null);
   const [startedAt, setStartedAt] = useState(null);
+  const [offlineNotice, setOfflineNotice] = useState("");
 
   useEffect(() => {
     Promise.all([
@@ -155,29 +158,57 @@ export default function Checklist() {
     });
     const durationMinutes = startedAt ? Math.round((Date.now() - startedAt) / 60000) : 0;
     const endTime = new Date().toTimeString().slice(0, 5);
-    try {
-      await base44.entities.ChecklistRecord.create({
-        ...setup,
-        aircraftProfile: profileValue,
-        end_time: endTime,
-        finalized_at: new Date().toISOString(),
-        finalized_by: user?.full_name || user?.email || "",
-        executed_by: user?.full_name || user?.email || "",
-        phases_progress: JSON.stringify(phasesProgress),
-        justification: "",
-        status: "ok",
-        duration_minutes: durationMinutes,
-      });
+    // Chave de idempotência: garante que o mesmo checklist não seja registrado
+    // duas vezes se o envio for repetido após a reconexão.
+    const clientKey = newClientKey();
+    const payload = {
+      ...setup,
+      aircraftProfile: profileValue,
+      end_time: endTime,
+      finalized_at: new Date().toISOString(),
+      finalized_by: user?.full_name || user?.email || "",
+      executed_by: user?.full_name || user?.email || "",
+      phases_progress: JSON.stringify(phasesProgress),
+      justification: "",
+      status: "ok",
+      duration_minutes: durationMinutes,
+      client_key: clientKey,
+    };
+
+    const resetAfterSave = async () => {
       localStorage.removeItem(DRAFT_KEY);
       setSetup(null);
       setCheckedByPhase({});
       setStartedAt(null);
       setShowFinalize(false);
-      const r = await base44.entities.ChecklistRecord.filter(profileFilter, { sort: "-date", limit: 100 }).then(res => res.items).catch(() => []);
-      setRecords(r);
+      const r = await base44.entities.ChecklistRecord.filter(profileFilter, { sort: "-date", limit: 100 }).then(res => res.items).catch(() => null);
+      if (r) setRecords(r);
       setView("history");
+    };
+
+    try {
+      await base44.entities.ChecklistRecord.create(payload);
+      await resetAfterSave();
+      setOfflineNotice("");
     } catch (err) {
-      alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao finalizar checklist.");
+      if (isNetworkError(err)) {
+        // Sem conexão: o checklist fica guardado no dispositivo e é enviado
+        // automaticamente quando a conexão retornar.
+        try {
+          await enqueueOperation({ entity: "ChecklistRecord", payload, clientKey });
+          await resetAfterSave();
+          setOfflineNotice(
+            "Checklist guardado neste dispositivo. Será enviado automaticamente quando a conexão retornar."
+          );
+        } catch (queueErr) {
+          alert(
+            "Não foi possível guardar o checklist neste dispositivo: " +
+              (queueErr?.message || "erro desconhecido")
+          );
+        }
+      } else {
+        alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao finalizar checklist.");
+      }
     }
   };
 
@@ -238,6 +269,22 @@ export default function Checklist() {
           </div>
         </div>
       </header>
+
+      {offlineNotice && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300"
+        >
+          <span>{offlineNotice}</span>
+          <button
+            type="button"
+            onClick={() => setOfflineNotice("")}
+            className="font-medium underline underline-offset-4"
+          >
+            Fechar
+          </button>
+        </div>
+      )}
 
       {view === "history" ? (
         <ChecklistHistoryList records={records} onView={setViewingRecord} onDuplicate={duplicateRecord} onToggleFavorite={toggleFavorite} />
