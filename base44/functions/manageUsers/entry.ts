@@ -8,6 +8,30 @@ function levelOf(u) {
   if (u?.access_level && ACCESS_LEVELS.includes(u.access_level)) return u.access_level;
   return u?.role === "admin" ? "administrador" : "operacional";
 }
+// ---------- Escopo de perfis (D1) ----------
+function parseProfiles(value) {
+  if (!value) return ["AW119"]; // legado: vazio = AW119
+  if (Array.isArray(value)) return value;
+  try {
+    const arr = JSON.parse(value);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+// null = admin_geral (vê tudo); caso contrário, lista de perfis do ator.
+// Busca o registro no backend para não depender do que auth.me() devolve.
+async function actorScope(base44, user) {
+  if (levelOf(user) === "admin_geral") return null;
+  const self = await base44.asServiceRole.entities.User.get(user.id).catch(() => null);
+  return parseProfiles((self || user).aircraft_profiles);
+}
+
+function inScope(scope, record) {
+  if (scope === null) return true;
+  return parseProfiles(record.aircraft_profiles).some((p) => scope.includes(p));
+}
 
 async function logAudit(base44, actor, target, action, details) {
   try {
@@ -67,34 +91,36 @@ export default async function (req) {
     const canManage = user.role === "admin" && (actorLevel === "admin_geral" || actorLevel === "administrador");
     if (!canManage) return Response.json({ error: "Forbidden" }, { status: 403 });
 
-    // ---------- LIST ----------
+        // ---------- LIST ----------
     if (action === "list") {
-      const users = await base44.asServiceRole.entities.User.list();
+      const scope = await actorScope(base44, user);
+      const allUsers = await base44.asServiceRole.entities.User.list();
       const invites = await base44.asServiceRole.entities.UserInvite.list().catch(() => []);
-
-      // Aplica metadados de convites já aceitos (convidado já existe como usuário).
-      const usersByEmail = new Map(users.map((u) => [(u.email || "").toLowerCase(), u]));
+      // C1: convite só é aplicado depois de aprovado pelo administrador geral,
+      // e somente a usuários dentro do escopo de quem está listando.
+      const usersByEmail = new Map(allUsers.map((u) => [(u.email || "").toLowerCase(), u]));
       for (const inv of invites) {
         if (inv.status !== "pending") continue;
+        if ((inv.approval_status || "approved") !== "approved") continue;
         const matched = usersByEmail.get((inv.email || "").toLowerCase());
-        if (matched) {
-          const patch = {};
-          if (inv.access_level) patch.access_level = inv.access_level;
-          if (inv.login) patch.login = inv.login;
-          if (!matched.registration && inv.registration) patch.registration = inv.registration;
-          if (!matched.phone && inv.phone) patch.phone = inv.phone;
-          if (!matched.unit && inv.unit) patch.unit = inv.unit;
-          if (!matched.job_title && inv.job_title) patch.job_title = inv.job_title;
-          if (inv.custom_permissions) patch.custom_permissions = inv.custom_permissions;
-          if (inv.aircraft_profiles) patch.aircraft_profiles = inv.aircraft_profiles;
-          if (inv.admin_notes) patch.admin_notes = inv.admin_notes;
-          patch.account_status = matched.account_status || "ativa";
-          patch.role = inv.access_level === "admin_geral" || inv.access_level === "administrador" ? "admin" : "user";
-          await base44.asServiceRole.entities.User.update(matched.id, patch).catch(() => {});
-          await base44.asServiceRole.entities.UserInvite.update(inv.id, { status: "accepted", accepted_at: new Date().toISOString() }).catch(() => {});
-        }
+        if (!matched || !inScope(scope, matched)) continue;
+        const patch = {};
+        if (inv.access_level) patch.access_level = inv.access_level;
+        if (inv.login) patch.login = inv.login;
+        if (!matched.registration && inv.registration) patch.registration = inv.registration;
+        if (!matched.phone && inv.phone) patch.phone = inv.phone;
+        if (!matched.unit && inv.unit) patch.unit = inv.unit;
+        if (!matched.job_title && inv.job_title) patch.job_title = inv.job_title;
+        if (inv.custom_permissions) patch.custom_permissions = inv.custom_permissions;
+        if (inv.aircraft_profiles) patch.aircraft_profiles = inv.aircraft_profiles;
+        if (inv.admin_notes) patch.admin_notes = inv.admin_notes;
+        patch.account_status = matched.account_status || "ativa";
+        patch.role = inv.access_level === "admin_geral" || inv.access_level === "administrador" ? "admin" : "user";
+        await base44.asServiceRole.entities.User.update(matched.id, patch).catch(() => {});
+        await base44.asServiceRole.entities.UserInvite.update(inv.id, { status: "accepted", accepted_at: new Date().toISOString() }).catch(() => {});
       }
-
+      // Recarrega após os convites aplicados e filtra pelo escopo do ator (C3).
+      const users = (await base44.asServiceRole.entities.User.list()).filter((u) => inScope(scope, u));
       const sanitized = users.map((u) => ({
         id: u.id,
         full_name: u.full_name,
@@ -118,10 +144,9 @@ export default async function (req) {
         admin_notes: canManage ? (u.admin_notes || null) : null,
         invite_status: invites.find((i) => (i.email || "").toLowerCase() === (u.email || "").toLowerCase() && i.status === "accepted") ? "accepted" : null,
       }));
-
-      // Inclui convites pendentes (convidado ainda não aceitou) como itens separados.
+      // Convites pendentes dentro do escopo do ator (C3).
       const pending = invites
-        .filter((i) => i.status === "pending")
+        .filter((i) => i.status === "pending" && inScope(scope, i))
         .map((i) => ({
           id: i.id,
           invite: true,
@@ -140,8 +165,7 @@ export default async function (req) {
           admin_notes: canManage ? (i.admin_notes || null) : null,
           aircraft_profiles: i.aircraft_profiles || null,
         }));
-
-      // Vínculo com pilotos — linka por user_id ou e-mail e inclui situação do cadastro
+      // Vínculo com pilotos (sem alteração de lógica)
       const pilots = await base44.asServiceRole.entities.Pilot.list().catch(() => []);
       const pilotsByUserId = new Map(pilots.filter((p) => p.user_id).map((p) => [p.user_id, p]));
       const pilotsByEmail = new Map(
@@ -158,9 +182,7 @@ export default async function (req) {
           : "sem_vinculo";
         u.pilot_canac = pilot?.anac_code || pilot?.registration || null;
       }
-
-      // Backfill do registro autoritativo de situação (AccountStatus) para usuários
-      // legados sem registro. Cria apenas os ausentes; não sobrescreve existentes.
+      // Backfill de AccountStatus para usuários legados (sem alteração de lógica)
       const allStatuses = await base44.asServiceRole.entities.AccountStatus.list().catch(() => []);
       const statusByUser = new Set((allStatuses || []).map((s) => s.user_id));
       for (const u of sanitized) {
@@ -174,7 +196,6 @@ export default async function (req) {
           }).catch(() => {});
         }
       }
-
       return Response.json({ users: [...pending, ...sanitized], actorLevel });
     }
 
