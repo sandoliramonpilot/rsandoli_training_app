@@ -94,6 +94,10 @@ export default async function (req) {
         // ---------- LIST ----------
     if (action === "list") {
       const scope = await actorScope(base44, user);
+            // C2: somente o Administrador Geral define permissões personalizadas.
+      if (body.custom_permissions != null && actorLevel !== "admin_geral") {
+        return Response.json({ error: "Somente o Administrador Geral pode definir permissões personalizadas." }, { status: 403 });
+      }
       const allUsers = await base44.asServiceRole.entities.User.list();
       const invites = await base44.asServiceRole.entities.UserInvite.list().catch(() => []);
       // C1: convite só é aplicado depois de aprovado pelo administrador geral,
