@@ -98,6 +98,14 @@ export default async function (req) {
       if (body.custom_permissions != null && actorLevel !== "admin_geral") {
         return Response.json({ error: "Somente o Administrador Geral pode definir permissões personalizadas." }, { status: 403 });
       }
+            // C3: o convidado só pode receber perfis de aeronave que o convidador gerencia.
+      if (body.aircraft_profiles) {
+        const requested = parseProfiles(body.aircraft_profiles);
+        const scope = await actorScope(base44, user);
+        if (scope !== null && !requested.every((p) => scope.includes(p))) {
+          return Response.json({ error: "Você só pode convidar usuários para os perfis de aeronave que gerencia." }, { status: 403 });
+        }
+      }
       const allUsers = await base44.asServiceRole.entities.User.list();
       const invites = await base44.asServiceRole.entities.UserInvite.list().catch(() => []);
       // C1: convite só é aplicado depois de aprovado pelo administrador geral,
@@ -322,8 +330,10 @@ export default async function (req) {
       const canac = String(body.canac || "").trim();
       const registration = String(body.registration || "").trim();
       const pilots = await base44.asServiceRole.entities.Pilot.list().catch(() => []);
+      const scope = await actorScope(base44, user);
       const matches = pilots
         .filter((p) => {
+          if (scope !== null && !(scope.includes(p.aircraftProfile) || p.aircraftProfile === "shared")) return false;
           if (email && (p.email || "").toLowerCase() === email) return true;
           if (cpf && p.cpf === cpf) return true;
           if (canac && (p.anac_code === canac || p.registration === canac)) return true;
@@ -467,6 +477,9 @@ export default async function (req) {
 
     // ---------- MIGRATE USERS → PILOTS ----------
     if (action === "migrate") {
+      if (actorLevel !== "admin_geral") {
+      return Response.json({ error: "Somente o Administrador Geral pode executar a migração." }, { status: 403 });
+      }
       const users = await base44.asServiceRole.entities.User.list().catch(() => []);
       const pilots = await base44.asServiceRole.entities.Pilot.list().catch(() => []);
       const pilotsByEmail = new Map(
