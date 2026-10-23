@@ -23,7 +23,7 @@ export default function VerifyCodeModal({ operation, operationKey, onVerified, o
     setInfo("");
     setSending(true);
     try {
-      const res = await base44.functions.invoke("accessCode", { action: "send", purpose: "sensitive_op", operation });
+      const res = await base44.functions.invoke("accessCode", { action: "send", purpose: "sensitive_op", operation: operationKey || operation });
       setMasked(res.data.masked);
       setExpiresIn(res.data.expiresInMinutes || 5);
       setWait(60);
