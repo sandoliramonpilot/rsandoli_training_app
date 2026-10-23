@@ -136,6 +136,8 @@ export default function ApprovalsPanel({ onClose, onDecision }) {
                           <Detail label="Matrícula" value={inv.registration} />
                           <Detail label="Unidade" value={inv.unit} />
                           <Detail label="Função" value={inv.job_title} />
+                          <Detail label="Perfis de aeronave" value={profileListLabel(inv.aircraft_profiles)} />
+                          <Detail label="Permissões personalizadas" value={customPermsLabel(inv.custom_permissions)} />
                           <Detail label="Solicitado por" value={inv.invited_by_name} />
                           <Detail label="Data" value={inv.created_at ? new Date(inv.created_at).toLocaleString("pt-BR") : "—"} />
                         </div>
@@ -343,4 +345,25 @@ function Detail({ label, value }) {
       <span className="text-slate-300 text-right truncate">{value || "—"}</span>
     </div>
   );
+}
+
+/** Perfis de aeronave concedidos no convite, em rótulo legível. */
+function profileListLabel(value) {
+  let list = value;
+  if (typeof list === "string") {
+    try { list = JSON.parse(list); } catch { list = []; }
+  }
+  if (!Array.isArray(list) || list.length === 0) return "Padrão do nível";
+  return list.join(", ");
+}
+
+/** Indica se o convite concede permissões personalizadas. */
+function customPermsLabel(value) {
+  if (!value) return "Padrão do nível";
+  let perms = value;
+  if (typeof perms === "string") {
+    try { perms = JSON.parse(perms); } catch { perms = null; }
+  }
+  const modules = perms && typeof perms === "object" ? Object.keys(perms).length : 0;
+  return modules > 0 ? `Personalizadas (${modules} módulo(s))` : "Personalizadas";
 }

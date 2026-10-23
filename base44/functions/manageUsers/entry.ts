@@ -33,6 +33,18 @@ function inScope(scope, record) {
   return parseProfiles(record.aircraft_profiles).some((p) => scope.includes(p));
 }
 
+// Perfis de aeronave atribuíveis a usuários (mesmos valores do frontend).
+const AIRCRAFT_PROFILE_VALUES = ["AW119", "H125"];
+
+// C3: valida os perfis de aeronave solicitados contra os valores conhecidos e
+// contra o escopo do chamador. Retorna a mensagem de erro ou null.
+function validateProfiles(scope, requested) {
+  const list = parseProfiles(requested);
+  if (!list.length || list.some((p) => !AIRCRAFT_PROFILE_VALUES.includes(p))) return "Perfil de aeronave inválido.";
+  if (scope !== null && !list.every((p) => scope.includes(p))) return "Você só pode atribuir os perfis de aeronave que gerencia.";
+  return null;
+}
+
 async function logAudit(base44, actor, target, action, details) {
   try {
     await base44.asServiceRole.entities.AccessAuditLog.create({
@@ -94,18 +106,6 @@ export default async function (req) {
         // ---------- LIST ----------
     if (action === "list") {
       const scope = await actorScope(base44, user);
-            // C2: somente o Administrador Geral define permissões personalizadas.
-      if (body.custom_permissions != null && actorLevel !== "admin_geral") {
-        return Response.json({ error: "Somente o Administrador Geral pode definir permissões personalizadas." }, { status: 403 });
-      }
-            // C3: o convidado só pode receber perfis de aeronave que o convidador gerencia.
-      if (body.aircraft_profiles) {
-        const requested = parseProfiles(body.aircraft_profiles);
-        const scope = await actorScope(base44, user);
-        if (scope !== null && !requested.every((p) => scope.includes(p))) {
-          return Response.json({ error: "Você só pode convidar usuários para os perfis de aeronave que gerencia." }, { status: 403 });
-        }
-      }
       const allUsers = await base44.asServiceRole.entities.User.list();
       const invites = await base44.asServiceRole.entities.UserInvite.list().catch(() => []);
       // C1: convite só é aplicado depois de aprovado pelo administrador geral,
@@ -226,6 +226,17 @@ export default async function (req) {
       if (!canManageLevel(actorLevel, accessLevel)) {
         return Response.json({ error: "Você não pode conceder um nível de acesso igual ou superior ao seu." }, { status: 403 });
       }
+      // C2: somente o Administrador Geral define permissões personalizadas.
+      if (body.custom_permissions != null && actorLevel !== "admin_geral") {
+        return Response.json({ error: "Somente o Administrador Geral pode definir permissões personalizadas." }, { status: 403 });
+      }
+      // C3: o convidado só pode receber perfis de aeronave que o convidador gerencia.
+      let inviteProfiles = null;
+      if (body.aircraft_profiles) {
+        const profilesError = validateProfiles(await actorScope(base44, user), body.aircraft_profiles);
+        if (profilesError) return Response.json({ error: profilesError }, { status: 403 });
+        inviteProfiles = parseProfiles(body.aircraft_profiles);
+      }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return Response.json({ error: "Formato de e-mail inválido." }, { status: 400 });
       }
@@ -271,8 +282,8 @@ export default async function (req) {
       if (body.custom_permissions && typeof body.custom_permissions === "object") {
         invitePayload.custom_permissions = JSON.stringify(body.custom_permissions);
       }
-      if (body.aircraft_profiles) {
-        invitePayload.aircraft_profiles = JSON.stringify(body.aircraft_profiles);
+      if (inviteProfiles) {
+        invitePayload.aircraft_profiles = JSON.stringify(inviteProfiles);
       }
       await base44.asServiceRole.entities.UserInvite.create(invitePayload);
 
@@ -294,7 +305,7 @@ export default async function (req) {
             role: "copilot",
             status: "active",
             approval_status: "pending",
-            aircraftProfile: Array.isArray(body.aircraft_profiles) && body.aircraft_profiles.length > 1 ? "shared" : (body.aircraft_profiles?.[0] || "AW119"),
+            aircraftProfile: inviteProfiles && inviteProfiles.length > 1 ? "shared" : (inviteProfiles?.[0] || "AW119"),
           });
         } catch (pilotErr) {
           await logAudit(base44, user, { email, full_name: fullName }, "Criação de usuário", `Piloto não criado: ${pilotErr?.message || pilotErr}`);
@@ -448,11 +459,31 @@ export default async function (req) {
       }
 
       if (body.aircraft_profiles !== undefined) {
-        patch.aircraft_profiles = body.aircraft_profiles ? JSON.stringify(body.aircraft_profiles) : null;
+        // Ninguém altera os próprios perfis de aeronave, e quem não é Administrador
+        // Geral só atribui perfis que gerencia, a usuários que pode gerenciar.
+        if (target.id === user.id) {
+          return Response.json({ error: "Você não pode alterar os próprios perfis de aeronave." }, { status: 403 });
+        }
+        if (actorLevel !== "admin_geral" && !canManageLevel(actorLevel, targetLevel)) {
+          return Response.json({ error: "Você não pode alterar os perfis de aeronave de um usuário de nível igual ou superior ao seu." }, { status: 403 });
+        }
+        let profilesValue = null;
+        if (body.aircraft_profiles) {
+          const profilesError = validateProfiles(await actorScope(base44, user), body.aircraft_profiles);
+          if (profilesError) return Response.json({ error: profilesError }, { status: 403 });
+          profilesValue = JSON.stringify(parseProfiles(body.aircraft_profiles));
+        }
+        patch.aircraft_profiles = profilesValue;
         changes.push("Perfis de aeronave alterados");
       }
 
       if (body.profile && typeof body.profile === "object") {
+        // Hierarquia: dados cadastrais de usuário de nível igual ou superior ao do
+        // chamador não são editáveis — mesma regra aplicada em situação, nível,
+        // convites e redefinição de senha.
+        if (actorLevel !== "admin_geral" && !canManageLevel(actorLevel, targetLevel)) {
+          return Response.json({ error: "Você não pode alterar os dados cadastrais de um usuário de nível igual ou superior ao seu." }, { status: 403 });
+        }
         const p = body.profile;
         if (p.login !== undefined) {
           const login = String(p.login).trim();
@@ -634,6 +665,9 @@ export default async function (req) {
           created_at: i.created_at,
           invited_by_name: i.invited_by_name || null,
           admin_notes: i.admin_notes || null,
+          // O aprovador precisa ver o que está sendo concedido (C2/C3).
+          aircraft_profiles: i.aircraft_profiles || null,
+          custom_permissions: i.custom_permissions || null,
         }));
       const pendingPilots = pilots
         .filter((p) => p.approval_status === "pending")

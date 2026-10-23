@@ -7,8 +7,10 @@ import { isActiveAccount } from "../../shared/accessSecurity.js";
 // resolved (best-effort, runtime-dependent) and every resolved address is
 // checked, so a public hostname that points at an internal IP is rejected.
 // When the resolver is unavailable the request is rejected (no unvalidated fetch).
-// For HTTP the validated IP is pinned for the fetch (with the original Host) to
-// close the DNS-rebinding TOCTOU; HTTPS fetches by hostname (TLS/SNI requires it).
+// The validated public address (IPv4 preferred, else IPv6) is pinned for the
+// fetch — the hostname is never resolved again after validation — keeping the
+// original Host and, for HTTPS, the SNI/servername. A host resolved by DNS with
+// no pinnable public address is rejected rather than fetched by hostname.
 
 function parseIpv4Literal(host) {
   const h = String(host).toLowerCase();
@@ -113,13 +115,14 @@ async function validateUrl(rawUrl) {
   if (h.includes(":")) return isPrivateIpv6(h) ? null : { parsed, pinIp: null };
   const addrs = await resolveHost(h);
   if (addrs === null) return null; // resolver unavailable -> reject
-  if (!addrs.length) return null;
-  const publicAddrs = addrs.filter((a) => (a.includes(":") ? !isPrivateIpv6(a) : !isPrivateIpv4(a)));
-  if (publicAddrs.length !== addrs.length) return null;
-  // Pin the validated public IPv4 for both HTTP and HTTPS. For HTTPS the pinned
-  // connection uses SNI/cert validation against the original hostname, closing
-  // the DNS-rebinding TOCTOU. IPv6-only hosts (no public v4) fall back to hostname.
-  const pinIp = publicAddrs.find((a) => !a.includes(":")) || null;
+  const publicAddrs = addrs.filter((a) => a && (a.includes(":") ? !isPrivateIpv6(a) : !isPrivateIpv4(a)));
+  // Qualquer resposta não-pública (ou vazia) invalida o host; assim sempre há ao
+  // menos um endereço público pinável, inclusive em hosts somente-IPv6.
+  if (!publicAddrs.length || publicAddrs.length !== addrs.length) return null;
+  // Fixa o endereço público validado (IPv4 preferencial, senão IPv6) para HTTP e
+  // HTTPS, de modo que o hostname não seja re-resolvido: a conexão fixada usa
+  // Host/SNI contra o hostname original, fechando o TOCTOU de DNS rebinding.
+  const pinIp = publicAddrs.find((a) => !a.includes(":")) || publicAddrs[0] || null;
   return { parsed, pinIp };
 }
 
@@ -137,18 +140,21 @@ async function loadNodeHttp() {
 // Faz a requisição ao IP validado (pinning) preservando SNI/Host do hostname.
 // HTTP: conecta ao IP com header Host = hostname. HTTPS: conecta ao IP com
 // servername = hostname (SNI + validação de cert contra o hostname), eliminando
-// a janela de DNS rebinding entre validação e fetch. Fallback por hostname só
-// quando não há IPv4 público pinável ou node:http/https indisponível.
+// a janela de DNS rebinding entre validação e fetch.
+// pinIp ausente significa host literal de IP (já validado e sem DNS, logo sem
+// rebinding possível), único caso em que a busca direta é segura.
 async function pinnedRequest(validated) {
   const { parsed, pinIp } = validated;
-  const fallback = async () => {
+  const directFetch = async () => {
     const res = await fetch(parsed.href, { signal: AbortSignal.timeout(60000), redirect: "manual" });
     const buf = new Uint8Array(await res.arrayBuffer());
     return { status: res.status, headers: Object.fromEntries(res.headers.entries()), bodyBuffer: buf };
   };
-  if (!pinIp) return fallback();
+  if (!pinIp) return directFetch();
   const mods = await loadNodeHttp();
-  if (!mods) return fallback();
+  // Sem node:http/https não há como fixar o endereço: recusar em vez de deixar o
+  // fetch re-resolver o hostname (reabrindo a janela de rebinding).
+  if (!mods) throw new Error("Não foi possível fixar o endereço validado do host.");
   const { Buffer } = await import("node:buffer");
   const isHttps = parsed.protocol === "https:";
   const mod = isHttps ? mods.https : mods.http;
