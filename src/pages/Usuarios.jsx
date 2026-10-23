@@ -587,7 +587,7 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
           admin_notes: form.admin_notes,
           access_level: form.access_level,
           must_change_password: form.must_change_password,
-          custom_permissions: form.access_level === "admin_geral" ? null : perms,
+          custom_permissions:(actorLevel === "admin_geral" && form.access_level !== "admin_geral" ? { custom_permissions: perms } : {}),
         });
         onSaved(`Usuário criado com sucesso. Convite enviado para ${form.email}.`);
       } catch (err) {
