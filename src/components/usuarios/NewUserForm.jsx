@@ -262,7 +262,7 @@ function Step2({ f, set, levelOptions, requireCodeAuto, perms, setPerms, actorLe
         {requireCodeAuto ? "Autenticação por código será obrigatória para este perfil administrativo." : "Autenticação por código é configurável para este perfil."}
       </div>
 
-      {actorLevel === "admin_geral" && f.access_level && f.access_level !== "admin_geral" && (
+      {isGeral === "admin_geral" && f.access_level && f.access_level !== "admin_geral" && (
         <div className="border border-slate-700/60 rounded-xl overflow-hidden">
           <button type="button" onClick={() => setShowPerms((o) => !o)} className="w-full flex items-center justify-between px-4 py-3 text-sm text-slate-300 hover:bg-white/5">
             <span className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-amber-400" /> Permissões personalizadas por módulo</span>
