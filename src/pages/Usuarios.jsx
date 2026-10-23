@@ -56,7 +56,7 @@ export default function Usuarios() {
   const [toast, setToast] = useState("");
   const [showAudit, setShowAudit] = useState(false);
   const [auditLogs, setAuditLogs] = useState([]);
-  const [pendingSensitive, setPendingSensitive] = useState(null); // { label, run }
+  const [pendingSensitive, setPendingSensitive] = useState(null); // { label, key, run }
   const [showApprovals, setShowApprovals] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -163,7 +163,7 @@ export default function Usuarios() {
       if (ok) setToast(isMaster ? `Perfil Master removido de ${u.full_name}.` : `${u.full_name} agora é Administrador Geral Master.`);
       return ok;
     };
-    setPendingSensitive({ label: isMaster ? "Remover perfil Master" : "Conceder perfil Master", run });
+    setPendingSensitive({ label: isMaster ? "Remover perfil Master" : "Conceder perfil Master", key: "set_master", run });
   };
 
   const setStatus = async (u, status) => {
@@ -175,7 +175,7 @@ export default function Usuarios() {
       return ok;
     };
     if (sensitive) {
-      setPendingSensitive({ label: status === "desativada" ? "Desativar usuário" : "Alterar situação de administrador", run });
+      setPendingSensitive({ label: status === "desativada" ? "Desativar usuário" : "Alterar situação de administrador", key: "change_account_status", run });
     } else {
       await run();
     }
@@ -313,6 +313,7 @@ export default function Usuarios() {
                   <UserRow key={u.id} u={u} me={me} actorLevel={actorLevel} onEdit={() => setModal({ mode: "edit", user: u })} onView={() => setModal({ mode: "view", user: u })} onStatus={setStatus} onAudit={openAudit} onCancelInvite={() => cancelInvite(u)} onResendInvite={() => resendInvite(u)} onToggleMaster={() => toggleMaster(u)} onReset={() => {
                     setPendingSensitive({
                       label: "Redefinir senha de usuário",
+                      key: "reset_password",
                       run: async (code) => {
                         const ok = await call({ action: "reset_password", user_id: u.id, code });
                         if (ok) setToast(`Redefinição de senha encaminhada para ${u.email}.`);
@@ -356,6 +357,7 @@ export default function Usuarios() {
       {pendingSensitive && (
         <VerifyCodeModal
           operation={pendingSensitive.label}
+          operationKey={pendingSensitive.key}
           onVerified={async (code) => {
             const ok = await pendingSensitive.run(code);
             if (!ok) return "Código inválido ou operação não concluída. Verifique o código e tente novamente.";
