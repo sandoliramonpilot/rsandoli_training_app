@@ -6,7 +6,7 @@ import { ShieldCheck, Loader2, X } from "lucide-react";
 
 /**
  * Modal de verificação por código de acesso para operações sensíveis.
- * onVerified(operation) é chamado após validação bem-sucedida.
+ * onVerified(operationkey || operation) é chamado após validação bem-sucedida.
  */
 export default function VerifyCodeModal({ operation, operationKey, onVerified, onClose }) {
   const [code, setCode] = useState("");
