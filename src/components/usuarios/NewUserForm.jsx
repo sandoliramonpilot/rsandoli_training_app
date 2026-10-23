@@ -116,7 +116,7 @@ export default function NewUserForm({ actorLevel, onClose, onSaved, onError }) {
         admin_notes: f.admin_notes.trim() || undefined,
         access_level: f.access_level,
         must_change_password: f.activation_method === "temp_password" ? true : f.must_change_password,
-        custom_permissions: f.access_level === "admin_geral" ? null : perms,
+        custom_permissions: (actorLevel === "admin_geral" && form.access_level !== "admin_geral" ? { custom_permissions: perms } : {}),
         photo_uri: f.photo_uri || undefined,
       });
       onSaved(res.data?.message || "Usuário criado com sucesso.");
