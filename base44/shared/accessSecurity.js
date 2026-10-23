@@ -20,6 +20,25 @@ export function generateTempPassword(length = 12) {
   return Array.from(bytes).map((b) => charset[b % charset.length]).join("");
 }
 
+// Níveis de acesso — espelha src/lib/accessControl.js
+export const ACCESS_LEVEL_VALUES = ["admin_geral", "administrador", "gestor_supervisor", "operacional", "consulta"];
+export const ADMIN_ACCESS_LEVELS = ["admin_geral", "administrador"];
+
+// Nível efetivo do usuário. O campo User.access_level é customizado e gravável pelo
+// próprio usuário (como account_status), então ele NUNCA autoriza sozinho: ver isAdminUser.
+export function levelOf(user) {
+  if (user?.access_level && ACCESS_LEVEL_VALUES.includes(user.access_level)) return user.access_level;
+  return user?.role === "admin" ? "administrador" : "operacional";
+}
+
+// Portão administrativo autoritativo: exige o papel de plataforma (User.role, definido
+// pelo backend e não sobrescrevível pelo próprio usuário via updateMe) SOMADO ao nível.
+// Um usuário comum que grave access_level = "admin_geral" no próprio cadastro continua
+// com role "user" e, portanto, não obtém nenhuma ação administrativa.
+export function isAdminUser(user) {
+  return user?.role === "admin" && ADMIN_ACCESS_LEVELS.includes(levelOf(user));
+}
+
 // Níveis de acesso e hierarquia — espelha src/lib/accessControl.js
 export const ACCESS_RANK = {
   admin_geral: 5,

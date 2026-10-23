@@ -1,12 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
-import { isActiveAccount } from "../../shared/accessSecurity.js";
-
-const ACCESS_LEVELS = ["admin_geral", "administrador", "gestor_supervisor", "operacional", "consulta"];
-
-function levelOf(u) {
-  if (u?.access_level && ACCESS_LEVELS.includes(u.access_level)) return u.access_level;
-  return u?.role === "admin" ? "administrador" : "operacional";
-}
+import { isAdminUser, isActiveAccount } from "../../shared/accessSecurity.js";
 
 // Campos editáveis por entidade (para ação update_one)
 const EDITABLE_FIELDS = {
@@ -45,8 +38,9 @@ export default async function (req) {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
     if (!(await isActiveAccount(base44, user))) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
 
-    const actorLevel = levelOf(user);
-    if (actorLevel !== "admin_geral" && actorLevel !== "administrador") {
+    // Somente administradores de fato: o papel de plataforma (role) é exigido junto
+    // com o nível, porque access_level é gravável pelo próprio usuário.
+    if (!isAdminUser(user)) {
       return Response.json({ error: "Apenas administradores podem gerenciar validações técnicas." }, { status: 403 });
     }
 
