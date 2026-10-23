@@ -711,6 +711,7 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
         {pendingCode && (
           <VerifyCodeModal
             operation={form.account_status === "desativada" ? "Desativar usuário" : "Alterar situação de administrador"}
+            operationKey="change_account_status"
             onVerified={async (code) => {
               setPendingCode(false);
               await runUpdate(code);
