@@ -163,7 +163,7 @@ export default function Usuarios() {
       if (ok) setToast(isMaster ? `Perfil Master removido de ${u.full_name}.` : `${u.full_name} agora é Administrador Geral Master.`);
       return ok;
     };
-    setPendingSensitive({ label: isMaster ? "Remover perfil Master" : "Conceder perfil Master", key: "set_master", run });
+        setPendingSensitive({ label: isMaster ? "Remover perfil Master" : "Conceder perfil Master", key: "set_master", run });
   };
 
   const setStatus = async (u, status) => {
