@@ -428,10 +428,9 @@ export default async function (req) {
         }
         // O registro autoritativo é gravado antes da alteração cadastral: se falhar,
         // a sanção não é aplicada (nenhuma situação existe apenas no campo do usuário).
-        try {
-          await setAccountStatusRecord(base44, target.id, body.account_status, user.full_name || user.email, body.reason || "");
-         } catch {
-          return Response.json({ error: "Não foi possível registrar a situação da conta. Nenhuma alteração foi aplicada." }, { status: 500 });
+        const statusRecorded = await setAccountStatusRecord(base44, target.id, body.account_status, user.full_name || user.email, body.reason || "");
+        if (!statusRecorded) {
+          return Response.json({ error: "Não foi possível registrar a situação da conta. Tente novamente." }, { status: 500 });
         }
         patch.account_status = body.account_status;
         changes.push(`Situação: ${target.account_status || "ativa"} → ${body.account_status}`);

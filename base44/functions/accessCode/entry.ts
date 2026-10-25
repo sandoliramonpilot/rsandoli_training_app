@@ -97,14 +97,8 @@ export default async function (req) {
       if (!/^\d{6}$/.test(code)) {
         return Response.json({ error: "Código inválido. Verifique o código informado e tente novamente." }, { status: 400 });
       }
-      const operation = body.operation || null;
       const open = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose, used: false });
-      const latest = open
-        .filter((c) => purpose !== "sensitive_op" || c.operation === operation)
-          if (!(await isActiveAccount(base44, user))) {
-      return Response.json({ error: "Conta não está ativa." }, { status: 403 });
-    }
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+      const latest = open.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
       if (!latest) {
         return Response.json({ error: "Nenhum código ativo. Solicite um novo código." }, { status: 400 });
       }

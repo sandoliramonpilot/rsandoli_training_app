@@ -56,7 +56,7 @@ export default function Usuarios() {
   const [toast, setToast] = useState("");
   const [showAudit, setShowAudit] = useState(false);
   const [auditLogs, setAuditLogs] = useState([]);
-  const [pendingSensitive, setPendingSensitive] = useState(null); // { label, key, run }
+  const [pendingSensitive, setPendingSensitive] = useState(null); // { label, run }
   const [showApprovals, setShowApprovals] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -163,7 +163,7 @@ export default function Usuarios() {
       if (ok) setToast(isMaster ? `Perfil Master removido de ${u.full_name}.` : `${u.full_name} agora é Administrador Geral Master.`);
       return ok;
     };
-        setPendingSensitive({ label: isMaster ? "Remover perfil Master" : "Conceder perfil Master", key: "set_master", run });
+    setPendingSensitive({ label: isMaster ? "Remover perfil Master" : "Conceder perfil Master", run });
   };
 
   const setStatus = async (u, status) => {
@@ -175,7 +175,7 @@ export default function Usuarios() {
       return ok;
     };
     if (sensitive) {
-      setPendingSensitive({ label: status === "desativada" ? "Desativar usuário" : "Alterar situação de administrador", key: "change_account_status", run });
+      setPendingSensitive({ label: status === "desativada" ? "Desativar usuário" : "Alterar situação de administrador", run });
     } else {
       await run();
     }
@@ -313,7 +313,6 @@ export default function Usuarios() {
                   <UserRow key={u.id} u={u} me={me} actorLevel={actorLevel} onEdit={() => setModal({ mode: "edit", user: u })} onView={() => setModal({ mode: "view", user: u })} onStatus={setStatus} onAudit={openAudit} onCancelInvite={() => cancelInvite(u)} onResendInvite={() => resendInvite(u)} onToggleMaster={() => toggleMaster(u)} onReset={() => {
                     setPendingSensitive({
                       label: "Redefinir senha de usuário",
-                      key: "reset_password",
                       run: async (code) => {
                         const ok = await call({ action: "reset_password", user_id: u.id, code });
                         if (ok) setToast(`Redefinição de senha encaminhada para ${u.email}.`);
@@ -357,7 +356,6 @@ export default function Usuarios() {
       {pendingSensitive && (
         <VerifyCodeModal
           operation={pendingSensitive.label}
-          operationKey={pendingSensitive.key}
           onVerified={async (code) => {
             const ok = await pendingSensitive.run(code);
             if (!ok) return "Código inválido ou operação não concluída. Verifique o código e tente novamente.";
@@ -540,14 +538,12 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
   const runUpdate = async (code) => {
     setSaving(true);
     try {
-      const levelChanged = form.access_level !== user.access_level;
-      const permsChanged = actorLevel === "admin_geral" && form.access_level !== "admin_geral";
       await base44.functions.invoke("manageUsers", {
         action: "update",
         user_id: user.id,
         account_status: form.account_status,
-        access_level: levelChanged ? form.access_level : undefined,
-        custom_permissions: permsChanged ? perms : undefined,
+        access_level: form.access_level !== user.access_level ? form.access_level : undefined,
+        custom_permissions: actorLevel === "admin_geral" && form.access_level !== "admin_geral" ? perms : undefined,
         code,
         profile: {
           full_name: form.full_name,
@@ -589,7 +585,7 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
           admin_notes: form.admin_notes,
           access_level: form.access_level,
           must_change_password: form.must_change_password,
-          custom_permissions:(actorLevel === "admin_geral" && form.access_level !== "admin_geral" ? { custom_permissions: perms } : {}),
+          custom_permissions: form.access_level === "admin_geral" ? null : perms,
         });
         onSaved(`Usuário criado com sucesso. Convite enviado para ${form.email}.`);
       } catch (err) {
@@ -715,7 +711,6 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
         {pendingCode && (
           <VerifyCodeModal
             operation={form.account_status === "desativada" ? "Desativar usuário" : "Alterar situação de administrador"}
-            operationKey="change_account_status"
             onVerified={async (code) => {
               setPendingCode(false);
               await runUpdate(code);
