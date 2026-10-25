@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+  const isGeral = me?.access_level === "admin_geral";
 import { base44 } from "@/api/base44Client";
 import {
   ACCESS_LEVELS, ACCESS_LEVEL_LABELS, ACCOUNT_STATUSES, ACCOUNT_STATUS_LABELS,
