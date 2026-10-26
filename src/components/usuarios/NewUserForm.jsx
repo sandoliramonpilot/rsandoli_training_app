@@ -116,7 +116,7 @@ export default function NewUserForm({ actorLevel, onClose, onSaved, onError }) {
         admin_notes: f.admin_notes.trim() || undefined,
         access_level: f.access_level,
         must_change_password: f.activation_method === "temp_password" ? true : f.must_change_password,
-        custom_permissions: f.access_level === "admin_geral" ? null : perms,
+        custom_permissions: const isGeral = me?.access_level === "admin_geral",
         photo_uri: f.photo_uri || undefined,
       });
       onSaved(res.data?.message || "Usuário criado com sucesso.");
@@ -219,7 +219,7 @@ function Step1({ f, set, uploadingPhoto, onPhoto }) {
 }
 
 // ---------- STEP 2: ACESSO ----------
-function Step2({ f, set, levelOptions, requireCodeAuto, perms, setPerms, actorLevel }) {
+function Step2({ f, set, levelOptions, requireCodeAuto, perms, setPerms, isGeral }) {
   const [showPerms, setShowPerms] = useState(false);
   const togglePerm = (mod, act) => {
     setPerms((p) => {
