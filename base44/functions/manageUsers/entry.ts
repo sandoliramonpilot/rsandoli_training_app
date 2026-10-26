@@ -615,7 +615,10 @@ export default async function (req) {
         is_master: master,
         custom_permissions: null, // acesso irrestrito
       });
-      await setAccountStatusRecord(base44, targetId, "ativa", user.full_name || user.email, "Perfil Master");
+      const recorded = await setAccountStatusRecord(base44, targetId, "ativa", user.full_name || user.email, "Perfil Master");
+      if (!recorded) {
+        return Response.json({ error: "Não foi possível registrar a situação da conta. Nenhuma alteração foi aplicada." }, { status: 500 });
+      }
       // Sincroniza o piloto vinculado ao e-mail, marcando is_master.
       const pilots = await base44.asServiceRole.entities.Pilot.filter({ email: target.email }).catch(() => []);
       for (const p of pilots) {
@@ -624,7 +627,6 @@ export default async function (req) {
       await logAudit(base44, user, target, "Admin Geral Master", `Perfil Master ${master ? "concedido" : "removido"} para ${target.full_name || target.email}`);
       return Response.json({ ok: true });
     }
-
     // ---------- RESET PASSWORD ----------
     if (action === "reset_password") {
       const target = await base44.asServiceRole.entities.User.get(body.user_id).catch(() => null);
