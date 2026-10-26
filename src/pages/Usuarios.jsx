@@ -540,23 +540,25 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
     try {
       const levelChanged = form.access_level !== user.access_level;
       const permsChanged = actorLevel === "admin_geral" && form.access_level !== "admin_geral";
-      await base44.functions.invoke("manageUsers", {
+      const profile = {
+        full_name: form.full_name,
+        login: form.login,
+        phone: form.phone,
+        registration: form.registration,
+        job_title: form.job_title,
+        unit: form.unit,
+        admin_notes: form.admin_notes,
+      };
+      const updateRequest = {
         action: "update",
         user_id: user.id,
         account_status: form.account_status,
         access_level: levelChanged ? form.access_level : undefined,
         custom_permissions: permsChanged ? perms : undefined,
         code,
-        profile: {
-          full_name: form.full_name,
-          login: form.login,
-          phone: form.phone,
-          registration: form.registration,
-          job_title: form.job_title,
-          unit: form.unit,
-          admin_notes: form.admin_notes,
-        },
-      });
+        profile,
+      };
+      await base44.functions.invoke("manageUsers", updateRequest);
       onSaved("Cadastro atualizado com sucesso.");
     } catch (err) {
       setError(err?.response?.data?.error || err.message || "Erro ao salvar.");
