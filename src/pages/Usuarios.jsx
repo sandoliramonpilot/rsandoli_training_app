@@ -547,8 +547,7 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
         access_level: levelChanged ? form.access_level : undefined,
         custom_permissions: permsChanged ? perms : undefined,
         code,
-        profile: { /* igual ao atual */ },
-      });
+        profile: {
           full_name: form.full_name,
           login: form.login,
           phone: form.phone,
