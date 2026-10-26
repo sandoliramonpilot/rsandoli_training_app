@@ -543,7 +543,7 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
         user_id: user.id,
         account_status: form.account_status,
         access_level: form.access_level !== user.access_level ? form.access_level : undefined,
-        custom_permissions: actorLevel === "admin_geral" && form.access_level !== "admin_geral" ? perms : undefined,
+        custom_permissions:(actorLevel === "admin_geral" && form.access_level !== "admin_geral" ? { custom_permissions: perms } : {}),
         code,
         profile: {
           full_name: form.full_name,
