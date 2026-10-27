@@ -95,7 +95,16 @@
   ],
   "rls": {
     "create": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.is_master": "Is master"
+          }
+        }
+      ]
     },
     "read": {
       "$or": [
@@ -104,16 +113,34 @@
         },
         {
           "user_condition": {
-            "role": "user"
+            "data.is_master": "Is master"
           }
         }
       ]
     },
     "update": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.is_master": "Is master"
+          }
+        }
+      ]
     },
     "delete": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.is_master": "Is master"
+          }
+        }
+      ]
     }
   }
 }
