@@ -51,6 +51,9 @@ export default async function (req) {
       if (!(await isActiveAccount(base44, user))) {
         return Response.json({ error: "Conta não está ativa." }, { status: 403 });
       }
+      if (purpose === "sensitive_op" && !SENSITIVE_OPERATIONS.includes(body.operation)) {
+        return Response.json({ error: "Operação sensível inválida." }, { status: 400 });
+      }
       const recent = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose, used: false });
       const latest = recent.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
       if (latest) {
