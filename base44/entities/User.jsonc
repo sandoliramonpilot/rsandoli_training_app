@@ -56,11 +56,11 @@
     },
     "last_login_at": {
       "type": "string",
-      "title": "\u00daltimo acesso"
+      "title": "\u00faltimo acesso"
     },
     "created_by_user_id": {
       "type": "string",
-      "title": "Criado por (usu\u00e1rio)"
+      "title": "Criado por usu\u00e1rio"
     },
     "mfa_enrolled": {
       "type": "boolean",
