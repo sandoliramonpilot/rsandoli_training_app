@@ -109,6 +109,10 @@ export default async function (req) {
 
     // ---------- VERIFY ----------
     if (action === "verify") {
+      const secret = getCodeSecret();
+      if (!secret) {
+        return Response.json({ error: "Serviço de código indisponível. Contate o administrador." }, { status: 500 });
+      }
       const code = String(body.code || "").trim();
       if (!/^\d{6}$/.test(code)) {
         return Response.json({ error: "Código inválido. Verifique o código informado e tente novamente." }, { status: 400 });
