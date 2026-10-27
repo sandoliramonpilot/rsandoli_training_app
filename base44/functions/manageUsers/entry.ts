@@ -201,7 +201,7 @@ export default async function (req) {
         if (u.id && !statusByUser.has(u.id)) {
           await base44.asServiceRole.entities.AccountStatus.create({
             user_id: u.id,
-            status: u.account_status || "ativa",
+            status: "ativa",
             set_by: "Sistema (backfill)",
             set_at: new Date().toISOString(),
             reason: "",
