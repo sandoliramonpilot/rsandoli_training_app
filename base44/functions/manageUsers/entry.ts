@@ -79,7 +79,7 @@ async function verifyAccessCode(base44, user, code) {
       await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
       return false;
     }
-    const codeHash = await hashString(String(code) + user.id);
+    const codeHash = await hashCode(code + user.id, secret);
     if (codeHash !== latest.code_hash) {
       const attempts = (latest.attempts || 0) + 1;
       await base44.asServiceRole.entities.AccessCode.update(latest.id, { attempts, used: attempts >= MAX_CODE_ATTEMPTS });
