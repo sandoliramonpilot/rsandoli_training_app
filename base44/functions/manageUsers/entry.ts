@@ -64,6 +64,8 @@ async function logAudit(base44, actor, target, action, details) {
 // não dependam apenas da checagem feita no frontend.
 const MAX_CODE_ATTEMPTS = 5;
 async function verifyAccessCode(base44, user, code) {
+  const secret = getCodeSecret();
+  if (!secret) return { ok: false, error: "Serviço de código indisponível.", status: 500 };
   if (!code || !/^\d{6}$/.test(String(code))) return false;
   try {
     const open = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose: "sensitive_op", used: false });
