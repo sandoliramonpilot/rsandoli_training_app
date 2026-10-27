@@ -137,9 +137,9 @@ export default async function (req) {
         await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_invalid, "");
         return Response.json({ error: "Código inválido. Verifique o código informado e tente novamente." }, { status: 400 });
       }
-      await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
-      await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_validated, `Finalidade: ${purpose}`);
-      finally Response.json({ ok: true, operation: latest.operation || null });
+        await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
+        await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_validated, `Finalidade: ${purpose}`);
+        finally Response.json({ ok: true, operation: latest.operation || null });
     }
 
     return Response.json({ error: "Ação inválida." }, { status: 400 });
