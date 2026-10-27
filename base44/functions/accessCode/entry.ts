@@ -63,6 +63,12 @@ export default async function (req) {
           return Response.json({ error: `Aguarde ${Math.ceil(RESEND_INTERVAL_SECONDS - elapsed)}s para reenviar.`, waitSeconds: Math.ceil(RESEND_INTERVAL_SECONDS - elapsed) }, { status: 429 });
         }
       }
+      const dayAgo = Date.now() - 24 * 3600 * 1000;
+      const allCodes = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id });
+      const sentToday = allCodes.filter((c) => new Date(c.created_at).getTime() > dayAgo).length;
+      if (sentToday >= 10) {
+        return Response.json({ error: "Limite diário de códigos atingido. Fale com o administrador." }, { status: 429 });
+      }
       await invalidatePrevious(base44, user.id, purpose);
 
       const code = generateNumericCode(6);
