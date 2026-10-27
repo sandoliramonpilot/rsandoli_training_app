@@ -140,3 +140,11 @@ export const AUDITABLE_ACTIONS = {
   access_code_limit_reached: "Limite de tentativas de código atingido",
   login_with_code: "Login concluído com código",
 };
+// Operações que exigem código de acesso. Chaves técnicas, nunca rótulos em português.
+export const SENSITIVE_OPERATIONS = [
+  "change_account_status",
+  "change_access_level",
+  "change_permissions",
+  "set_master",
+  "reset_password",
+];
