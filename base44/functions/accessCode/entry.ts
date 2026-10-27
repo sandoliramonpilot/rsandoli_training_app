@@ -1,5 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
-import { AUDITABLE_ACTIONS, generateNumericCode, hashString, isActiveAccount, SENSITIVE_OPERATIONS } from "../../shared/accessSecurity.js";
+import { AUDITABLE_ACTIONS, generateNumericCode, isActiveAccount, SENSITIVE_OPERATIONS } from "../../shared/accessSecurity.js";
+import { AUDITABLE_ACTIONS, generateNumericCode, hashCode, getCodeSecret, isActiveAccount, SENSITIVE_OPERATIONS } from "../../shared/accessSecurity.js";
 
 const CODE_TTL_MINUTES = 5;
 const MAX_ATTEMPTS = 5;
