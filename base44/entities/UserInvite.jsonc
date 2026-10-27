@@ -95,24 +95,25 @@
   ],
   "rls": {
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "created_by_id": "{{user.id}}"
     },
     "read": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
     },
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "created_by_id": "{{user.id}}"
     }
   }
 }
