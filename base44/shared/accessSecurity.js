@@ -148,3 +148,24 @@ export const SENSITIVE_OPERATIONS = [
   "set_master",
   "reset_password",
 ];
+// Hash keyed (HMAC-SHA256) do código de acesso. O segredo do servidor impede
+// a reversão offline caso a tabela AccessCode vaze.
+const textEncoder = new TextEncoder();
+
+export function getCodeSecret() {
+  const secret = globalThis.Deno?.env?.get("ACCESS_CODE_SECRET");
+  return secret && secret.length >= 32 ? secret : null;
+}
+
+export async function hashCode(code, userId, secret) {
+  if (!secret) throw new Error("Segredo de código de acesso não configurado.");
+  const key = await crypto.subtle.importKey(
+    "raw",
+    textEncoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, textEncoder.encode(`${userId}:${code}`));
+  return Array.from(new Uint8Array(signature)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
