@@ -27,9 +27,11 @@ async function logAudit(base44, actor, target, action, details) {
   } catch {}
 }
 
-async function invalidatePrevious(base44, userId, purpose) {
+async function invalidatePrevious(base44, userId, purpose, operation) {
   const open = await base44.asServiceRole.entities.AccessCode.filter({ user_id: userId, purpose, used: false });
   for (const c of open) {
+    // Para operações sensíveis, invalida somente os códigos da mesma operação.
+    if (purpose === "sensitive_op" && c.operation !== operation) continue;
     await base44.asServiceRole.entities.AccessCode.update(c.id, { used: true });
   }
 }
