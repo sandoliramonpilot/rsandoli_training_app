@@ -101,23 +101,12 @@
         },
         {
           "user_condition": {
-            "data.is_master": "Is master"
+            "data.custom_permissions": "Custon permissions"
           }
         }
       ]
     },
-    "read": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "data.is_master": "Is master"
-          }
-        }
-      ]
-    },
+    "read": null,
     "update": {
       "$or": [
         {
@@ -125,7 +114,7 @@
         },
         {
           "user_condition": {
-            "data.is_master": "Is master"
+            "data.custom_permissions": "Custon permissions"
           }
         }
       ]
@@ -137,7 +126,7 @@
         },
         {
           "user_condition": {
-            "data.is_master": "Is master"
+            "data.custom_permissions": "Custon permissions"
           }
         }
       ]
