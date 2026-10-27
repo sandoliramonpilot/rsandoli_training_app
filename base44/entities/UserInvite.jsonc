@@ -101,12 +101,23 @@
         },
         {
           "user_condition": {
-            "data.aircraft_profiles": "Aircraft profiles"
+            "data.login": "Login"
           }
         }
       ]
     },
-    "read": null,
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "data.login": "Login"
+          }
+        }
+      ]
+    },
     "update": {
       "$or": [
         {
@@ -114,7 +125,7 @@
         },
         {
           "user_condition": {
-            "data.aircraft_profiles": "Aircraft profiles"
+            "data.login": "Login"
           }
         }
       ]
@@ -126,7 +137,7 @@
         },
         {
           "user_condition": {
-            "data.aircraft_profiles": "Aircraft profiles"
+            "data.login": "Login"
           }
         }
       ]
