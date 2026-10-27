@@ -119,6 +119,7 @@ export default async function (req) {
       const open = (await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose, used: false }))
         .filter((c) => purpose !== "sensitive_op" || c.operation === operation);
       const latest = open.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+      if (!latest) {
         return Response.json({ error: "Nenhum código ativo. Solicite um novo código." }, { status: 400 });
       }
       if (latest.attempts >= MAX_ATTEMPTS) {
@@ -137,9 +138,9 @@ export default async function (req) {
         await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_invalid, "");
         return Response.json({ error: "Código inválido. Verifique o código informado e tente novamente." }, { status: 400 });
       }
-        await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
-        await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_validated, `Finalidade: ${purpose}`);
-        catch Response.json({ ok: true, operation: latest.operation || null });
+      await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
+      await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_validated, `Finalidade: ${purpose}`);
+      return Response.json({ ok: true, operation: latest.operation || null });
     }
 
     return Response.json({ error: "Ação inválida." }, { status: 400 });
