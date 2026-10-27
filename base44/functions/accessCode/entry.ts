@@ -49,7 +49,10 @@ export default async function (req) {
 
     // ---------- SEND ----------
     if (action === "send") {
-      if (!(await isActiveAccount(base44, user))) {
+      const secret = getCodeSecret();
+      if (!secret) {
+        return Response.json({ error: "Serviço de código indisponível. Contate o administrador." }, { status: 500 });
+      }if (!(await isActiveAccount(base44, user))) {
         return Response.json({ error: "Conta não está ativa." }, { status: 403 });
       }
       if (purpose === "sensitive_op" && !SENSITIVE_OPERATIONS.includes(body.operation)) {
