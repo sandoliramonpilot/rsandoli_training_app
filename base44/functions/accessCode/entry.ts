@@ -76,7 +76,7 @@ export default async function (req) {
       await invalidatePrevious(base44, user.id, purpose, body.operation || null);
 
       const code = generateNumericCode(6);
-      const codeHash = await hashString(code + user.id);
+      const codeHash = await hashString(code, user.id, secret);
       const now = new Date();
       const expiresAt = new Date(now.getTime() + CODE_TTL_MINUTES * 60000);
       await base44.asServiceRole.entities.AccessCode.create({
