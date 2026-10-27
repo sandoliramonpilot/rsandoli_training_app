@@ -370,6 +370,9 @@ export default async function (req) {
       if (actorLevel !== "admin_geral" && !canManageLevel(actorLevel, invite.access_level)) {
         return Response.json({ error: "Você não pode gerenciar convites de nível igual ou superior ao seu." }, { status: 403 });
       }
+      if (!inScope(await actorScope(base44, user), invite)) {
+        return Response.json({ error: "Você não pode gerenciar um convite fora do seu escopo de perfis de aeronave." }, { status: 403 });
+      }
       await base44.asServiceRole.entities.UserInvite.update(body.invite_id, { status: "cancelled" });
       await logAudit(base44, user, { email: invite.email }, AUDITABLE_ACTIONS.user_edited, `Convite cancelado — ${invite.email}`);
       return Response.json({ ok: true });
@@ -382,6 +385,9 @@ export default async function (req) {
       if (invite.status !== "pending") return Response.json({ error: "Convite já processado." }, { status: 400 });
       if (actorLevel !== "admin_geral" && !canManageLevel(actorLevel, invite.access_level)) {
         return Response.json({ error: "Você não pode gerenciar convites de nível igual ou superior ao seu." }, { status: 403 });
+      }
+      if (!inScope(await actorScope(base44, user), invite)) {
+        return Response.json({ error: "Você não pode reenviar um convite fora do seu escopo de perfis de aeronave." }, { status: 403 });
       }
       const role = invite.access_level === "admin_geral" || invite.access_level === "administrador" ? "admin" : "user";
       await base44.users.inviteUser(invite.email, role).catch((e) => {});
@@ -396,6 +402,12 @@ export default async function (req) {
       const target = await base44.asServiceRole.entities.User.get(targetId);
       if (!target) return Response.json({ error: "Usuário não encontrado." }, { status: 404 });
       const targetLevel = levelOf(target);
+      // Escopo de perfis (C3): fora do Administrador Geral, o alvo precisa estar
+      // entre os perfis de aeronave que o chamador gerencia. Vale para situação,
+      // nível, dados cadastrais, notas administrativas e redefinição de senha.
+      if (!inScope(await actorScope(base44, user), target)) {
+        return Response.json({ error: "Você não pode gerenciar um usuário fora do seu escopo de perfis de aeronave." }, { status: 403 });
+      }
 
       const patch = {};
       const changes = [];
@@ -633,6 +645,9 @@ export default async function (req) {
       const targetLevel = levelOf(target);
       if (actorLevel !== "admin_geral" && !canManageLevel(actorLevel, targetLevel)) {
         return Response.json({ error: "Você não pode redefinir a senha de um usuário de nível igual ou superior." }, { status: 403 });
+      }
+      if (!inScope(await actorScope(base44, user), target)) {
+        return Response.json({ error: "Você não pode redefinir a senha de um usuário fora do seu escopo de perfis de aeronave." }, { status: 403 });
       }
       const codeOk = await verifyAccessCode(base44, user, body.code);
       if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
