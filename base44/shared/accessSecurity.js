@@ -151,9 +151,10 @@ export const SENSITIVE_OPERATIONS = [
 // Hash keyed (HMAC-SHA256) do código de acesso. O segredo do servidor impede
 // a reversão offline caso a tabela AccessCode vaze.
 const textEncoder = new TextEncoder();
+import { secrets } from "base44:runtime";
 
 export function getCodeSecret() {
-  const secret = globalThis.Deno?.env?.get("ACCESS_CODE_SECRET");
+  const secret = secrets.get("ACCESS_CODE_SECRET");
   return secret && secret.length >= 32 ? secret : null;
 }
 
