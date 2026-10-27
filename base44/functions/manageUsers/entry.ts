@@ -618,7 +618,7 @@ export default async function (req) {
       const target = await base44.asServiceRole.entities.User.get(targetId).catch(() => null);
       if (!target) return Response.json({ error: "Usuário não encontrado." }, { status: 404 });
       const master = !!body.master;
-      const recorded = await setAccountStatusRecord(base44, targetId, "ativa", user.full_name || user.email, "Perfil Master");
+      await setAccountStatusRecord(base44, targetId, "ativa", user.full_name || user.email, "Perfil Master");
       // Master é sempre Administrador Geral com acesso total.
       await base44.asServiceRole.entities.User.update(targetId, {
         access_level: "admin_geral",
