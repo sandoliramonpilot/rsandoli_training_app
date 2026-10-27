@@ -109,6 +109,9 @@ export default async function (req) {
       if (!/^\d{6}$/.test(code)) {
         return Response.json({ error: "Código inválido. Verifique o código informado e tente novamente." }, { status: 400 });
       }
+      if (!(await isActiveAccount(base44, user))) {
+        return Response.json({ error: "Conta não está ativa." }, { status: 403 });
+      }
       const open = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose, used: false });
       const latest = open.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
       if (!latest) {
