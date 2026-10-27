@@ -618,6 +618,7 @@ export default async function (req) {
       const target = await base44.asServiceRole.entities.User.get(targetId).catch(() => null);
       if (!target) return Response.json({ error: "Usuário não encontrado." }, { status: 404 });
       const master = !!body.master;
+      const recorded = await setAccountStatusRecord(base44, targetId, "ativa", user.full_name || user.email, "Perfil Master");
       // Master é sempre Administrador Geral com acesso total.
       await base44.asServiceRole.entities.User.update(targetId, {
         access_level: "admin_geral",
@@ -626,7 +627,6 @@ export default async function (req) {
         is_master: master,
         custom_permissions: null, // acesso irrestrito
       });
-      const recorded = await setAccountStatusRecord(base44, targetId, "ativa", user.full_name || user.email, "Perfil Master");
       if (!recorded) {
         return Response.json({ error: "Não foi possível registrar a situação da conta. Nenhuma alteração foi aplicada." }, { status: 500 });
       }
