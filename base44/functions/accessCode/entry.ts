@@ -140,7 +140,7 @@ export default async function (req) {
         await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_expired, "");
         return Response.json({ error: "O código expirou. Solicite um novo código para continuar." }, { status: 410 });
       }
-      const codeHash = await hashString(code + user.id);
+      const codeHash = await hashString(code, user.id, secret);
       if (codeHash !== latest.code_hash) {
         await base44.asServiceRole.entities.AccessCode.update(latest.id, { attempts: (latest.attempts || 0) + 1 });
         await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_invalid, "");
