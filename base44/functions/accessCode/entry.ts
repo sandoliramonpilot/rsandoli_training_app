@@ -112,9 +112,13 @@ export default async function (req) {
       if (!(await isActiveAccount(base44, user))) {
         return Response.json({ error: "Conta não está ativa." }, { status: 403 });
       }
-      const open = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose, used: false });
+      const operation = body.operation || null;
+      if (purpose === "sensitive_op" && !SENSITIVE_OPERATIONS.includes(operation)) {
+        return Response.json({ error: "Operação sensível inválida." }, { status: 400 });
+      }
+      const open = (await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose, used: false }))
+        .filter((c) => purpose !== "sensitive_op" || c.operation === operation);
       const latest = open.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-      if (!latest) {
         return Response.json({ error: "Nenhum código ativo. Solicite um novo código." }, { status: 400 });
       }
       if (latest.attempts >= MAX_ATTEMPTS) {
