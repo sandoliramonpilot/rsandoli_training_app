@@ -627,6 +627,7 @@ export default async function (req) {
         is_master: master,
         custom_permissions: null, // acesso irrestrito
       });
+      const recorded = await setAccountStatusRecord(base44, targetId, "ativa", user.full_name || user.email, "Perfil Master");
       if (!recorded) {
         return Response.json({ error: "Não foi possível registrar a situação da conta. Nenhuma alteração foi aplicada." }, { status: 500 });
       }
