@@ -101,7 +101,7 @@
         },
         {
           "user_condition": {
-            "data.custom_permissions": "Custon permissions"
+            "data.aircraft_profiles": "Aircraft profiles"
           }
         }
       ]
@@ -114,7 +114,7 @@
         },
         {
           "user_condition": {
-            "data.custom_permissions": "Custon permissions"
+            "data.aircraft_profiles": "Aircraft profiles"
           }
         }
       ]
@@ -126,7 +126,7 @@
         },
         {
           "user_condition": {
-            "data.custom_permissions": "Custon permissions"
+            "data.aircraft_profiles": "Aircraft profiles"
           }
         }
       ]
