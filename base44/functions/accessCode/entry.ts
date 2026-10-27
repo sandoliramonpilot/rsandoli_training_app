@@ -69,7 +69,7 @@ export default async function (req) {
       if (sentToday >= 10) {
         return Response.json({ error: "Limite diário de códigos atingido. Fale com o administrador." }, { status: 429 });
       }
-      await invalidatePrevious(base44, user.id, purpose);
+      await invalidatePrevious(base44, user.id, purpose, body.operation || null);
 
       const code = generateNumericCode(6);
       const codeHash = await hashString(code + user.id);
