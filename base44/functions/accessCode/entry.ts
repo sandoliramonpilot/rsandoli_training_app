@@ -54,7 +54,8 @@ export default async function (req) {
       if (purpose === "sensitive_op" && !SENSITIVE_OPERATIONS.includes(body.operation)) {
         return Response.json({ error: "Operação sensível inválida." }, { status: 400 });
       }
-      const recent = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose, used: false });
+      const recent = (await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose, used: false }))
+        .filter((c) => purpose !== "sensitive_op" || c.operation === (body.operation || null));
       const latest = recent.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
       if (latest) {
         const elapsed = (Date.now() - new Date(latest.created_at).getTime()) / 1000;
