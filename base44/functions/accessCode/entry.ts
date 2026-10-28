@@ -1,10 +1,10 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
-import { AUDITABLE_ACTIONS, generateNumericCode, isActiveAccount, SENSITIVE_OPERATIONS } from "../../shared/accessSecurity.js";
-import { AUDITABLE_ACTIONS, generateNumericCode, hashCode, getCodeSecret, isActiveAccount, SENSITIVE_OPERATIONS } from "../../shared/accessSecurity.js";
+import { AUDITABLE_ACTIONS, generateNumericCode, getCodeSecret, hashCode, isActiveAccount, SENSITIVE_OPERATIONS } from "../../shared/accessSecurity.js";
 
 const CODE_TTL_MINUTES = 5;
 const MAX_ATTEMPTS = 5;
 const RESEND_INTERVAL_SECONDS = 60;
+const DAILY_LIMIT = 10;
 
 function maskEmail(email) {
   if (!email) return "";
@@ -52,31 +52,37 @@ export default async function (req) {
       const secret = getCodeSecret();
       if (!secret) {
         return Response.json({ error: "Serviço de código indisponível. Contate o administrador." }, { status: 500 });
-      }if (!(await isActiveAccount(base44, user))) {
+      }
+      if (!(await isActiveAccount(base44, user))) {
         return Response.json({ error: "Conta não está ativa." }, { status: 403 });
       }
-      if (purpose === "sensitive_op" && !SENSITIVE_OPERATIONS.includes(body.operation)) {
+      const operation = body.operation || null;
+      if (purpose === "sensitive_op" && !SENSITIVE_OPERATIONS.includes(operation)) {
         return Response.json({ error: "Operação sensível inválida." }, { status: 400 });
       }
+
       const recent = (await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose, used: false }))
-        .filter((c) => purpose !== "sensitive_op" || c.operation === (body.operation || null));
+        .filter((c) => purpose !== "sensitive_op" || c.operation === operation);
       const latest = recent.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
       if (latest) {
         const elapsed = (Date.now() - new Date(latest.created_at).getTime()) / 1000;
         if (elapsed < RESEND_INTERVAL_SECONDS) {
-          return Response.json({ error: `Aguarde ${Math.ceil(RESEND_INTERVAL_SECONDS - elapsed)}s para reenviar.`, waitSeconds: Math.ceil(RESEND_INTERVAL_SECONDS - elapsed) }, { status: 429 });
+          const wait = Math.ceil(RESEND_INTERVAL_SECONDS - elapsed);
+          return Response.json({ error: `Aguarde ${wait}s para reenviar.`, waitSeconds: wait }, { status: 429 });
         }
       }
+
       const dayAgo = Date.now() - 24 * 3600 * 1000;
       const allCodes = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id });
       const sentToday = allCodes.filter((c) => new Date(c.created_at).getTime() > dayAgo).length;
-      if (sentToday >= 10) {
+      if (sentToday >= DAILY_LIMIT) {
         return Response.json({ error: "Limite diário de códigos atingido. Fale com o administrador." }, { status: 429 });
       }
-      await invalidatePrevious(base44, user.id, purpose, body.operation || null);
+
+      await invalidatePrevious(base44, user.id, purpose, operation);
 
       const code = generateNumericCode(6);
-      const codeHash = await hashString(code, user.id, secret);
+      const codeHash = await hashCode(code, user.id, secret);
       const now = new Date();
       const expiresAt = new Date(now.getTime() + CODE_TTL_MINUTES * 60000);
       await base44.asServiceRole.entities.AccessCode.create({
@@ -85,7 +91,7 @@ export default async function (req) {
         code_hash: codeHash,
         channel: "email",
         purpose,
-        operation: body.operation || null,
+        operation,
         expires_at: expiresAt.toISOString(),
         attempts: 0,
         used: false,
@@ -103,7 +109,9 @@ export default async function (req) {
         emailOk = false;
       }
       await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_sent, `Canal: ${maskEmail(user.email)}; Finalidade: ${purpose}${emailOk ? "" : "; FALHA NO ENVIO"}`);
-      if (!emailOk) return Response.json({ error: "Não foi possível enviar o código no momento. Tente novamente mais tarde." }, { status: 502 });
+      if (!emailOk) {
+        return Response.json({ error: "Não foi possível enviar o código no momento. Tente novamente mais tarde." }, { status: 502 });
+      }
       return Response.json({ ok: true, masked: maskEmail(user.email), expiresInMinutes: CODE_TTL_MINUTES });
     }
 
@@ -124,13 +132,14 @@ export default async function (req) {
       if (purpose === "sensitive_op" && !SENSITIVE_OPERATIONS.includes(operation)) {
         return Response.json({ error: "Operação sensível inválida." }, { status: 400 });
       }
+
       const open = (await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose, used: false }))
         .filter((c) => purpose !== "sensitive_op" || c.operation === operation);
       const latest = open.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
       if (!latest) {
         return Response.json({ error: "Nenhum código ativo. Solicite um novo código." }, { status: 400 });
       }
-      if (latest.attempts >= MAX_ATTEMPTS) {
+      if ((latest.attempts || 0) >= MAX_ATTEMPTS) {
         await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
         await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_limit_reached, "");
         return Response.json({ error: "Limite de tentativas atingido. Solicite um novo código." }, { status: 429 });
@@ -140,12 +149,14 @@ export default async function (req) {
         await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_expired, "");
         return Response.json({ error: "O código expirou. Solicite um novo código para continuar." }, { status: 410 });
       }
-      const codeHash = await hashString(code, user.id, secret);
+
+      const codeHash = await hashCode(code, user.id, secret);
       if (codeHash !== latest.code_hash) {
         await base44.asServiceRole.entities.AccessCode.update(latest.id, { attempts: (latest.attempts || 0) + 1 });
         await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_invalid, "");
         return Response.json({ error: "Código inválido. Verifique o código informado e tente novamente." }, { status: 400 });
       }
+
       await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
       await logAudit(base44, user, user, AUDITABLE_ACTIONS.access_code_validated, `Finalidade: ${purpose}`);
       return Response.json({ ok: true, operation: latest.operation || null });
