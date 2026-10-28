@@ -140,14 +140,6 @@ export const AUDITABLE_ACTIONS = {
   access_code_limit_reached: "Limite de tentativas de código atingido",
   login_with_code: "Login concluído com código",
 };
-// Operações que exigem código de acesso. Chaves técnicas, nunca rótulos em português.
-export const SENSITIVE_OPERATIONS = [
-  "change_account_status",
-  "change_access_level",
-  "change_permissions",
-  "set_master",
-  "reset_password",
-];
 // Hash keyed (HMAC-SHA256) do código de acesso. O segredo do servidor impede
 // a reversão offline caso a tabela AccessCode vaze.
 const textEncoder = new TextEncoder();
@@ -170,3 +162,11 @@ export async function hashCode(code, userId, secret) {
   const signature = await crypto.subtle.sign("HMAC", key, textEncoder.encode(`${userId}:${code}`));
   return Array.from(new Uint8Array(signature)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
+// Operações que exigem código de acesso. Chaves técnicas, nunca rótulos em português.
+export const SENSITIVE_OPERATIONS = [
+  "change_account_status",
+  "change_access_level",
+  "change_permissions",
+  "set_master",
+  "reset_password",
+];
