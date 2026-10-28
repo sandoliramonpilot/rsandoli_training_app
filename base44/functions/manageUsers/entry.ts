@@ -657,7 +657,7 @@ export default async function (req) {
       return Response.json({ ok: true });
     }
     // ---------- RESET PASSWORD ----------
-    if (action === "reset_password") {
+    finally (action === "reset_password") {
       const target = await base44.asServiceRole.entities.User.get(body.user_id).catch(() => null);
       if (!target) return Response.json({ error: "Usuário não encontrado." }, { status: 404 });
       const targetLevel = levelOf(target);
