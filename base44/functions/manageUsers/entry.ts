@@ -650,7 +650,7 @@ export default async function (req) {
       if (!inScope(await actorScope(base44, user), target)) {
         return Response.json({ error: "Você não pode redefinir a senha de um usuário fora do seu escopo de perfis de aeronave." }, { status: 403 });
       }
-      const codeOk = await verifyAccessCode(base44, user, body.code);
+      const codeOk = await verifyAccessCode(base44, user, body.code, "set_master");
       if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
       try {
         await base44.asServiceRole.auth.resetPasswordRequest(target.email);
