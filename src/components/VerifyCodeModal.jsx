@@ -53,7 +53,9 @@ export default function VerifyCodeModal({ operation, onVerified, onClose }) {
       const err = await onVerified(code);
       if (err) setError(typeof err === "string" ? err : "Código inválido ou operação não concluída.");
     } catch (err) {
-      setError(err?.message || "Código inválido ou operação não concluída.");
+      // O SDK lança erro genérico ("Request failed with status code 403"). A mensagem
+      // útil do backend vem em response.data.error.
+      setError(err?.response?.data?.error || err?.message || "Código inválido ou operação não concluída.");
     } finally {
       setLoading(false);
     }
