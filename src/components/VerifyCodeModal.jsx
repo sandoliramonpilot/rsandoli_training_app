@@ -8,6 +8,14 @@ import { ShieldCheck, Loader2, X } from "lucide-react";
  * Modal de verificação por código de acesso para operações sensíveis.
  * onVerified(operation) é chamado após validação bem-sucedida.
  */
+// Chaves devem ser idênticas a SENSITIVE_OPERATIONS em base44/shared/accessSecurity.js.
+const OPERATION_LABELS = {
+  change_account_status: "Alteração da situação da conta",
+  change_access_level: "Alteração de nível de acesso",
+  change_permissions: "Alteração de permissões",
+  set_master: "Concessão de perfil Master",
+  reset_password: "Redefinição de senha",
+};
 export default function VerifyCodeModal({ operation, onVerified, onClose }) {
   const [code, setCode] = useState("");
   const [masked, setMasked] = useState("");
