@@ -100,7 +100,7 @@ export default async function (req) {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
     const actorLevel = levelOf(user);
-    const canManage = user.role === "admin" && (actorLevel === "admin_geral" || actorLevel === "administrador");
+    const canManage = isAdminUser(user);
     if (!canManage) return Response.json({ error: "Forbidden" }, { status: 403 });
 
         // ---------- LIST ----------
@@ -193,6 +193,20 @@ export default async function (req) {
           ? (pilot.approval_status === "pending" ? "incompleto" : "completo")
           : "sem_vinculo";
         u.pilot_canac = pilot?.anac_code || pilot?.registration || null;
+      }
+      // Backfill de AccountStatus para usuários legados (sem alteração de lógica)
+      const allStatuses = await base44.asServiceRole.entities.AccountStatus.list().catch(() => []);
+      const statusByUser = new Set((allStatuses || []).map((s) => s.user_id));
+      for (const u of sanitized) {
+        if (u.id && !statusByUser.has(u.id)) {
+          await base44.asServiceRole.entities.AccountStatus.create({
+            user_id: u.id,
+            status: "ativa",
+            set_by: "Sistema (backfill)",
+            set_at: new Date().toISOString(),
+            reason: "",
+          }).catch(() => {});
+        }
       }
       return Response.json({ users: [...pending, ...sanitized], actorLevel });
     }
@@ -397,7 +411,30 @@ export default async function (req) {
 
       const patch = {};
       const changes = [];
-
+      // Step-up por categoria: uma categoria sensível por requisição, verificada ANTES de qualquer gravação.
+      const currentStatus = target.account_status || "ativa";
+      const sensitiveOps = [];
+      if (
+        body.account_status !== undefined &&
+        body.account_status !== currentStatus &&
+        (body.account_status === "desativada" || (targetLevel === "admin_geral" && body.account_status !== "ativa"))
+      ) {
+        sensitiveOps.push("change_account_status");
+      }
+      if (body.access_level !== undefined && body.access_level !== targetLevel) {
+        sensitiveOps.push("change_access_level");
+      }
+      if (body.custom_permissions !== undefined) {
+        const newPerms = body.custom_permissions ? JSON.stringify(body.custom_permissions) : null;
+        if (newPerms !== (target.custom_permissions || null)) sensitiveOps.push("change_permissions");
+      }
+      if (sensitiveOps.length > 1) {
+        return Response.json({ error: "Altere uma categoria sensível por vez (situação, nível ou permissões)." }, { status: 400 });
+      }
+      if (sensitiveOps.length === 1) {
+        const codeOk = await verifyAccessCode(base44, user, body.code, sensitiveOps[0]);
+        if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
+      }
       if (body.account_status !== undefined) {
         if (!ACCOUNT_STATUSES.includes(body.account_status)) return Response.json({ error: "Situação inválida." }, { status: 400 });
         if (target.id === user.id && body.account_status !== "ativa") {
@@ -418,11 +455,6 @@ export default async function (req) {
         // convites e reset_password). O Administrador Geral segue com as regras próprias.
         if (actorLevel !== "admin_geral" && !canManageLevel(actorLevel, targetLevel)) {
           return Response.json({ error: "Você não pode alterar a situação de um usuário de nível igual ou superior ao seu." }, { status: 403 });
-        }
-        const sensitiveStatus = body.account_status === "desativada" || (targetLevel === "admin_geral" && body.account_status !== "ativa");
-        if (sensitiveStatus) {
-          const codeOk = await verifyAccessCode(base44, user, body.code, "change_account_status");
-          if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
         }
         // O registro autoritativo é gravado antes da alteração cadastral: se falhar,
         // a sanção não é aplicada (nenhuma situação existe apenas no campo do usuário).
@@ -594,7 +626,7 @@ export default async function (req) {
     }
 
     // ---------- SET MASTER (Administrador Geral Master) ----------
-    if (action === "set_master") {
+        if (action === "set_master") {
       // Somente o Administrador Geral pode conceder perfil Master.
       if (actorLevel !== "admin_geral") return Response.json({ error: "Forbidden" }, { status: 403 });
       const targetId = body.user_id;
@@ -602,25 +634,26 @@ export default async function (req) {
       const target = await base44.asServiceRole.entities.User.get(targetId).catch(() => null);
       if (!target) return Response.json({ error: "Usuário não encontrado." }, { status: 404 });
       const master = !!body.master;
-      // Conceder Master não reativa conta: contas suspensas/bloqueadas precisam ser reativadas antes.
+      // Conceder Master não reativa conta: a conta precisa estar ativa antes.
       if (master && !(await isActiveAccount(base44, target))) {
         return Response.json({ error: "Reative a conta antes de conceder o perfil Master." }, { status: 403 });
       }
       const codeOk = await verifyAccessCode(base44, user, body.code, "set_master");
       if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
-      // Não grava account_status: a situação da conta continua sendo controlada só por AccountStatus.
+      // Não grava account_status: a situação continua controlada só por AccountStatus.
       await base44.asServiceRole.entities.User.update(targetId, {
         access_level: "admin_geral",
         role: "admin",
         is_master: master,
         custom_permissions: null,
       });
-      // Sincroniza o piloto vinculado ao e-mail, marcando is_master.
       const pilots = await base44.asServiceRole.entities.Pilot.filter({ email: target.email }).catch(() => []);
       for (const p of pilots) {
         await base44.asServiceRole.entities.Pilot.update(p.id, { is_master: master, permission: "full", approval_status: "approved" }).catch(() => {});
       }
       await logAudit(base44, user, target, "Admin Geral Master", `Perfil Master ${master ? "concedido" : "removido"} para ${target.full_name || target.email}`);
+      return Response.json({ ok: true });
+    }
       return Response.json({ ok: true });
     }
     // ---------- RESET PASSWORD ----------
