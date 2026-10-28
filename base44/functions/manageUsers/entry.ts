@@ -654,9 +654,8 @@ export default async function (req) {
       await logAudit(base44, user, target, "Admin Geral Master", `Perfil Master ${master ? "concedido" : "removido"} para ${target.full_name || target.email}`);
       return Response.json({ ok: true });
     }
-      return Response.json({ ok: true });
-    }
-// ---------- RESET PASSWORD ----------
+      
+    // ---------- RESET PASSWORD ----------
     if (action === "reset_password") {
       const target = await base44.asServiceRole.entities.User.get(body.user_id).catch(() => null);
       if (!target) return Response.json({ error: "Usuário não encontrado." }, { status: 404 });
