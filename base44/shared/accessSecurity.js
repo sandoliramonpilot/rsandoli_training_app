@@ -1,3 +1,4 @@
+import { secrets } from "base44:runtime";
 // Helpers de segurança compartilhados entre as funções de usuários e código de acesso.
 // Utiliza Web Crypto (SubtleCrypto) — disponível no runtime do Base44.
 
@@ -151,7 +152,6 @@ export const SENSITIVE_OPERATIONS = [
 // Hash keyed (HMAC-SHA256) do código de acesso. O segredo do servidor impede
 // a reversão offline caso a tabela AccessCode vaze.
 const textEncoder = new TextEncoder();
-import { secrets } from "base44:runtime";
 
 export function getCodeSecret() {
   const secret = secrets.get("ACCESS_CODE_SECRET");
