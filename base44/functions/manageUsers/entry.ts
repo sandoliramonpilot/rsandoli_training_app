@@ -611,7 +611,7 @@ export default async function (req) {
     if (action === "set_master") {
       // Somente o Administrador Geral pode conceder perfil Master.
       if (actorLevel !== "admin_geral") return Response.json({ error: "Forbidden" }, { status: 403 });
-      const codeOk = await verifyAccessCode(base44, user, body.code);
+      const codeOk = await verifyAccessCode(base44, user, body.code, "set_master");
       if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
       const targetId = body.user_id;
       if (!targetId) return Response.json({ error: "Usuário não informado." }, { status: 400 });
