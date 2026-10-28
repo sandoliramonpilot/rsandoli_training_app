@@ -435,7 +435,7 @@ export default async function (req) {
         }
         const sensitiveStatus = body.account_status === "desativada" || (targetLevel === "admin_geral" && body.account_status !== "ativa");
         if (sensitiveStatus) {
-          const codeOk = await verifyAccessCode(base44, user, body.code);
+          const codeOk = await verifyAccessCode(base44, user, body.code, "change_account_status");
           if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
         }
         // O registro autoritativo é gravado antes da alteração cadastral: se falhar,
