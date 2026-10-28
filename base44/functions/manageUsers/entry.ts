@@ -194,20 +194,6 @@ export default async function (req) {
           : "sem_vinculo";
         u.pilot_canac = pilot?.anac_code || pilot?.registration || null;
       }
-      // Backfill de AccountStatus para usuários legados (sem alteração de lógica)
-      const allStatuses = await base44.asServiceRole.entities.AccountStatus.list().catch(() => []);
-      const statusByUser = new Set((allStatuses || []).map((s) => s.user_id));
-      for (const u of sanitized) {
-        if (u.id && !statusByUser.has(u.id)) {
-          await base44.asServiceRole.entities.AccountStatus.create({
-            user_id: u.id,
-            status: "ativa",
-            set_by: "Sistema (backfill)",
-            set_at: new Date().toISOString(),
-            reason: "",
-          }).catch(() => {});
-        }
-      }
       return Response.json({ users: [...pending, ...sanitized], actorLevel });
     }
 
