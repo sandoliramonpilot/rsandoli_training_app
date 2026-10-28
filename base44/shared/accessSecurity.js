@@ -9,7 +9,7 @@ export async function hashString(value) {
 }
 
 export function generateNumericCode(length = 6) {
-  // Descarta bytes >= 250 para que cada dígito (0-9) tenha a mesma probabilidade.
+  // Descarta bytes >= 250 para que cada dígito (0 a 9) tenha a mesma probabilidade.
   let out = "";
   while (out.length < length) {
     const bytes = new Uint8Array(length * 2);
