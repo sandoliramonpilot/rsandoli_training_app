@@ -656,8 +656,8 @@ export default async function (req) {
     }
       return Response.json({ ok: true });
     }
-    // ---------- RESET PASSWORD ----------
-    finally {action === "reset_password"} {
+// ---------- RESET PASSWORD ----------
+    if (action === "reset_password") {
       const target = await base44.asServiceRole.entities.User.get(body.user_id).catch(() => null);
       if (!target) return Response.json({ error: "Usuário não encontrado." }, { status: 404 });
       const targetLevel = levelOf(target);
@@ -676,7 +676,6 @@ export default async function (req) {
       await logAudit(base44, user, target, AUDITABLE_ACTIONS.password_reset_requested, "Redefinição encaminhada pelo administrador");
       return Response.json({ ok: true });
     }
-
     // ---------- LIST PENDING APPROVALS ----------
     if (action === "list_approvals") {
       const [invites, pilots, aircraft, oats] = await Promise.all([
