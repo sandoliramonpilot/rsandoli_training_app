@@ -25,6 +25,7 @@ export default function VerifyCodeModal({ operation, onVerified, onClose }) {
   const [sending, setSending] = useState(true);
   const [wait, setWait] = useState(0);
   const [expiresIn, setExpiresIn] = useState(5);
+  const sentOnce = useRef(false);
 
   const send = async () => {
     setError("");
@@ -44,7 +45,11 @@ export default function VerifyCodeModal({ operation, onVerified, onClose }) {
     }
   };
 
-  useEffect(() => { send(); }, []);
+  useEffect(() => {
+    if (sentOnce.current) return; // evita dois envios no modo de desenvolvimento (StrictMode)
+    sentOnce.current = true;
+    send();
+  }, []);
 
   useEffect(() => {
     if (wait <= 0) return;
