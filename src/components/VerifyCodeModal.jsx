@@ -79,8 +79,7 @@ export default function VerifyCodeModal({ operation, onVerified, onClose }) {
             </div>
             <div>
               <h2 className="font-semibold text-slate-100">Verificação de acesso</h2>
-              <p className="text-xs text-slate-500">Operação sensível: {operation}</p>
-            </div>
+              <p className="text-xs text-slate-500">{OPERATION_LABELS[operation] || "Operação sensível"}</p>            </div>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-200"><X className="w-5 h-5" /></button>
         </div>
