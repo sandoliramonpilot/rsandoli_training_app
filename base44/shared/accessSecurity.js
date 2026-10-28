@@ -9,9 +9,16 @@ export async function hashString(value) {
 }
 
 export function generateNumericCode(length = 6) {
-  const bytes = new Uint8Array(length);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes).map((b) => (b % 10).toString()).join("");
+  // Descarta bytes >= 250 para que cada dígito (0-9) tenha a mesma probabilidade.
+  let out = "";
+  while (out.length < length) {
+    const bytes = new Uint8Array(length * 2);
+    crypto.getRandomValues(bytes);
+    for (const b of bytes) {
+      if (b < 250 && out.length < length) out += (b % 10).toString();
+    }
+  }
+  return out;
 }
 
 export function generateTempPassword(length = 12) {
