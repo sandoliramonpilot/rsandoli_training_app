@@ -1,4 +1,3 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
 import { AUDITABLE_ACTIONS, canManageLevel, generateTempPassword, getCodeSecret, hashCode, isActiveAccount, rankOf, SENSITIVE_OPERATIONS, setAccountStatusRecord } from "../../shared/accessSecurity.js";
 const ACCOUNT_STATUSES = ["convite_pendente", "ativa", "bloqueada", "suspensa", "desativada"];
 const ACCESS_LEVELS = ["admin_geral", "administrador", "gestor_supervisor", "operacional", "consulta"];
@@ -58,14 +57,14 @@ async function logAudit(base44, actor, target, action, details) {
   } catch {}
 }
 
-// Verificação step-up no backend: valida o código de acesso (purpose "sensitive_op")
-// do próprio chamador para UMA operação específica, consumindo-o em caso de sucesso.
+// Verificação step-up no backend: valida o código (purpose "sensitive_op") do próprio
+// chamador para UMA operação específica, consumindo-o em caso de sucesso.
 const MAX_CODE_ATTEMPTS = 5;
 async function verifyAccessCode(base44, user, code, operation) {
   if (!SENSITIVE_OPERATIONS.includes(operation)) return false;
   if (!code || !/^\d{6}$/.test(String(code))) return false;
   const secret = getCodeSecret();
-  if (!secret) return false; // fail closed: sem segredo, nenhuma operação sensível passa
+  if (!secret) return false; // falha fechada: sem segredo, nenhuma operação sensível passa
   try {
     const open = (await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose: "sensitive_op", used: false }))
       .filter((c) => c.operation === operation);
