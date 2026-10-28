@@ -139,6 +139,7 @@ export const AUDITABLE_ACTIONS = {
   access_code_expired: "Código expirado",
   access_code_limit_reached: "Limite de tentativas de código atingido",
   login_with_code: "Login concluído com código",
+};
 // Operações que exigem código de acesso. Chaves técnicas, nunca rótulos em português.
 export const SENSITIVE_OPERATIONS = [
   "change_account_status",
@@ -147,7 +148,6 @@ export const SENSITIVE_OPERATIONS = [
   "set_master",
   "reset_password",
 ];
-};
 // Hash keyed (HMAC-SHA256) do código de acesso. O segredo do servidor impede
 // a reversão offline caso a tabela AccessCode vaze.
 const textEncoder = new TextEncoder();
