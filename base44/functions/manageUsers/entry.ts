@@ -362,7 +362,7 @@ export default async function (req) {
       return Response.json({ matches });
     }
 
-// ---------- CANCEL INVITE ----------
+    // ---------- CANCEL INVITE ----------
     if (action === "cancel_invite") {
       const invite = await base44.asServiceRole.entities.UserInvite.get(body.invite_id).catch(() => null);
       if (!invite) return Response.json({ error: "Convite não encontrado." }, { status: 404 });
