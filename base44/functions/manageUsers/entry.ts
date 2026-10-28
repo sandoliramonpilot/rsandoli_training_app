@@ -58,15 +58,16 @@ async function logAudit(base44, actor, target, action, details) {
 }
 
 // Verificação step-up no backend: valida o código de acesso (purpose "sensitive_op")
-// do próprio chamador, consumindo-o em caso de sucesso. Garante que operações sensíveis
-// não dependam apenas da checagem feita no frontend.
+// do próprio chamador para UMA operação específica, consumindo-o em caso de sucesso.
 const MAX_CODE_ATTEMPTS = 5;
-async function verifyAccessCode(base44, user, code) {
-  const secret = getCodeSecret();
-  if (!secret) return { ok: false, error: "Serviço de código indisponível.", status: 500 };
+async function verifyAccessCode(base44, user, code, operation) {
+  if (!SENSITIVE_OPERATIONS.includes(operation)) return false;
   if (!code || !/^\d{6}$/.test(String(code))) return false;
+  const secret = getCodeSecret();
+  if (!secret) return false; // fail closed: sem segredo, nenhuma operação sensível passa
   try {
-    const open = await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose: "sensitive_op", used: false });
+    const open = (await base44.asServiceRole.entities.AccessCode.filter({ user_id: user.id, purpose: "sensitive_op", used: false }))
+      .filter((c) => c.operation === operation);
     const latest = open.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
     if (!latest) return false;
     if (new Date(latest.expires_at).getTime() < Date.now()) {
@@ -77,7 +78,7 @@ async function verifyAccessCode(base44, user, code) {
       await base44.asServiceRole.entities.AccessCode.update(latest.id, { used: true });
       return false;
     }
-    const codeHash = await hashCode(code + user.id, secret);
+    const codeHash = await hashCode(String(code), user.id, secret);
     if (codeHash !== latest.code_hash) {
       const attempts = (latest.attempts || 0) + 1;
       await base44.asServiceRole.entities.AccessCode.update(latest.id, { attempts, used: attempts >= MAX_CODE_ATTEMPTS });
@@ -89,7 +90,6 @@ async function verifyAccessCode(base44, user, code) {
     return false;
   }
 }
-
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
