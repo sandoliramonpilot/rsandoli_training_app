@@ -597,26 +597,24 @@ export default async function (req) {
     if (action === "set_master") {
       // Somente o Administrador Geral pode conceder perfil Master.
       if (actorLevel !== "admin_geral") return Response.json({ error: "Forbidden" }, { status: 403 });
-      const codeOk = await verifyAccessCode(base44, user, body.code, "set_master");
-      if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
       const targetId = body.user_id;
       if (!targetId) return Response.json({ error: "Usuário não informado." }, { status: 400 });
       const target = await base44.asServiceRole.entities.User.get(targetId).catch(() => null);
       if (!target) return Response.json({ error: "Usuário não encontrado." }, { status: 404 });
       const master = !!body.master;
-      await setAccountStatusRecord(base44, targetId, "ativa", user.full_name || user.email, "Perfil Master");
-      // Master é sempre Administrador Geral com acesso total.
+      // Conceder Master não reativa conta: contas suspensas/bloqueadas precisam ser reativadas antes.
+      if (master && !(await isActiveAccount(base44, target))) {
+        return Response.json({ error: "Reative a conta antes de conceder o perfil Master." }, { status: 403 });
+      }
+      const codeOk = await verifyAccessCode(base44, user, body.code, "set_master");
+      if (!codeOk) return Response.json({ error: "Código de verificação inválido, expirado ou já utilizado. Solicite um novo código e tente novamente." }, { status: 403 });
+      // Não grava account_status: a situação da conta continua sendo controlada só por AccountStatus.
       await base44.asServiceRole.entities.User.update(targetId, {
         access_level: "admin_geral",
         role: "admin",
-        account_status: "ativa",
         is_master: master,
-        custom_permissions: null, // acesso irrestrito
+        custom_permissions: null,
       });
-      const recorded = await setAccountStatusRecord(base44, targetId, "ativa", user.full_name || user.email, "Perfil Master");
-      if (!recorded) {
-        return Response.json({ error: "Não foi possível registrar a situação da conta. Nenhuma alteração foi aplicada." }, { status: 500 });
-      }
       // Sincroniza o piloto vinculado ao e-mail, marcando is_master.
       const pilots = await base44.asServiceRole.entities.Pilot.filter({ email: target.email }).catch(() => []);
       for (const p of pilots) {
