@@ -501,7 +501,7 @@ function IconBtn({ title, onClick, danger, children }) {
 }
 
 // ---------------------- FORM MODAL ----------------------
-function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError })
+function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }) {
   const isView = mode === "view";
   const isCreate = mode === "create";
   const [saving, setSaving] = useState(false);
@@ -633,6 +633,7 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
       return;
     }
     await runUpdate(undefined);
+  };
 
   const levelOptions = ACCESS_LEVELS.filter((l) => {
     if (actorLevel === "admin_geral") return true;
