@@ -136,6 +136,18 @@ export default function Usuarios() {
     }
   };
 
+  // Usada nas operações sensíveis: retorna null em sucesso ou a mensagem do backend,
+  // para o modal de código exibir o motivo real da recusa.
+  const callSensitive = async (payload) => {
+    try {
+      await base44.functions.invoke("manageUsers", payload);
+      await load();
+      return null;
+    } catch (e) {
+      return e?.response?.data?.error || e.message || "Erro ao executar ação.";
+    }
+  };
+
   const cancelInvite = async (u) => {
     const ok = await call({ action: "cancel_invite", invite_id: u.id });
     if (ok) setToast(`Convite de ${u.email} cancelado.`);
@@ -203,9 +215,9 @@ export default function Usuarios() {
     <div className="space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Administração</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">Usuários e Acessos</h1>
-          <p className="text-slate-400 mt-2 text-sm">Cadastro, permissões e situação das contas do aplicativo.</p>
+          <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Administracao</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">Usuarios e Acessos</h1>
+          <p className="text-slate-400 mt-2 text-sm">Cadastro, permissoes e situacao das contas do aplicativo.</p>
         </div>
         <div className="flex items-center gap-2">
           {actorLevel === "admin_geral" && (
@@ -215,7 +227,7 @@ export default function Usuarios() {
           )}
           {actorLevel === "admin_geral" && (
             <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-amber-300 relative" onClick={() => setShowApprovals(true)}>
-              <Hourglass className="w-4 h-4 mr-2" /> Aprovações
+              <Hourglass className="w-4 h-4 mr-2" /> Aprovacoes
               {pendingCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-500 text-slate-900 text-[10px] font-bold flex items-center justify-center">
                   {pendingCount}
@@ -229,7 +241,7 @@ export default function Usuarios() {
             </Button>
           )}
           <Button className="bg-amber-500 hover:bg-amber-400 text-slate-900" onClick={() => setModal({ mode: "create" })}>
-            <Plus className="w-4 h-4 mr-2" /> Novo usuário
+            <Plus className="w-4 h-4 mr-2" /> Novo usuario
           </Button>
         </div>
       </header>
@@ -264,11 +276,11 @@ export default function Usuarios() {
           />
         </div>
         <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-slate-300 text-sm">
-          <option value="all">Nível: Todos</option>
+          <option value="all">Nivel: Todos</option>
           {ACCESS_LEVELS.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-slate-300 text-sm">
-          <option value="all">Situação: Todas</option>
+          <option value="all">Situacao: Todas</option>
           {ACCOUNT_STATUSES.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
         <select value={unitFilter} onChange={(e) => setUnitFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-slate-300 text-sm">
@@ -276,21 +288,21 @@ export default function Usuarios() {
           {unitOptions.map((u) => <option key={u} value={u}>{u}</option>)}
         </select>
         <select value={jobFilter} onChange={(e) => setJobFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-slate-300 text-sm">
-          <option value="all">Função: Todas</option>
+          <option value="all">Funcao: Todas</option>
           {jobOptions.map((j) => <option key={j} value={j}>{j}</option>)}
         </select>
         <select value={pilotFilter} onChange={(e) => setPilotFilter(e.target.value)} className="px-3 py-2 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-slate-300 text-sm">
           <option value="all">Piloto: Todos</option>
           <option value="completo">Cadastro completo</option>
           <option value="incompleto">Cadastro incompleto</option>
-          <option value="sem_vinculo">Sem vínculo</option>
+          <option value="sem_vinculo">Sem vinculo</option>
         </select>
       </div>
 
       {filtered.length === 0 ? (
         <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 px-6 py-16 text-center">
           <Users className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">Nenhum usuário encontrado.</p>
+          <p className="text-sm text-slate-500">Nenhum usuario encontrado.</p>
         </div>
       ) : (
         <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 overflow-hidden">
@@ -298,26 +310,26 @@ export default function Usuarios() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wider text-slate-500 border-b border-slate-700/60">
-                  <th className="px-4 py-3 font-medium">Usuário</th>
-                  <th className="px-4 py-3 font-medium hidden lg:table-cell">Matrícula / Cargo</th>
-                  <th className="px-4 py-3 font-medium">Nível de acesso</th>
-                  <th className="px-4 py-3 font-medium">Situação</th>
+                  <th className="px-4 py-3 font-medium">Usuario</th>
+                  <th className="px-4 py-3 font-medium hidden lg:table-cell">Matricula / Cargo</th>
+                  <th className="px-4 py-3 font-medium">Nivel de acesso</th>
+                  <th className="px-4 py-3 font-medium">Situacao</th>
                   <th className="px-4 py-3 font-medium hidden lg:table-cell">Piloto</th>
-                  <th className="px-4 py-3 font-medium hidden md:table-cell">Último acesso</th>
+                  <th className="px-4 py-3 font-medium hidden md:table-cell">Ultimo acesso</th>
                   <th className="px-4 py-3 font-medium hidden xl:table-cell">Criado em</th>
-                  <th className="px-4 py-3 font-medium text-right">Ações</th>
+                  <th className="px-4 py-3 font-medium text-right">Acoes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/40">
                 {filtered.map((u) => (
                   <UserRow key={u.id} u={u} me={me} actorLevel={actorLevel} onEdit={() => setModal({ mode: "edit", user: u })} onView={() => setModal({ mode: "view", user: u })} onStatus={setStatus} onAudit={openAudit} onCancelInvite={() => cancelInvite(u)} onResendInvite={() => resendInvite(u)} onToggleMaster={() => toggleMaster(u)} onReset={() => {
                     setPendingSensitive({
-                      label: "Redefinir senha de usuário",
+                      operation: "reset_password",
                       run: async (code) => {
-                        const ok = await call({ action: "reset_password", user_id: u.id, code });
-                        if (ok) setToast(`Redefinição de senha encaminhada para ${u.email}.`);
-                        return ok;
-                      },
+                        const err = await callSensitive({ action: "reset_password", user_id: u.id, code });
+                        if (!err) setToast(`Redefinição de senha encaminhada para ${u.email}.`);
+                        return err;
+                     },
                     });
                   }} />
                 ))}
@@ -355,10 +367,10 @@ export default function Usuarios() {
       )}
       {pendingSensitive && (
         <VerifyCodeModal
-          operation={pendingSensitive.label}
+          operation={pendingSensitive.operation}
           onVerified={async (code) => {
-            const ok = await pendingSensitive.run(code);
-            if (!ok) return "Código inválido ou operação não concluída. Verifique o código e tente novamente.";
+            const err = await pendingSensitive.run(code);
+            if (err) return err; // mantém o modal aberto com a mensagem do backend
             setPendingSensitive(null);
             return null;
           }}
@@ -410,7 +422,7 @@ function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onCance
       <td className="px-4 py-3">
         {isInvite ? (
           u.approval_status === "pending" ? (
-            <span className="text-xs px-2.5 py-1 rounded-full border text-orange-300 bg-orange-500/10 border-orange-500/30">Aguardando aprovação</span>
+            <span className="text-xs px-2.5 py-1 rounded-full border text-orange-300 bg-orange-500/10 border-orange-500/30">Aguardando aprovacao</span>
           ) : (
             <span className="text-xs px-2.5 py-1 rounded-full border text-amber-300 bg-amber-500/10 border-amber-500/30">Convite pendente</span>
           )
@@ -420,13 +432,13 @@ function UserRow({ u, me, actorLevel, onEdit, onView, onStatus, onAudit, onCance
       </td>
       <td className="px-4 py-3 hidden lg:table-cell">
         {isInvite ? (
-          <span className="text-xs text-slate-600">—</span>
+          <span className="text-xs text-slate-600"></span>
         ) : u.pilot_status === "completo" ? (
           <span className="text-xs px-2 py-0.5 rounded-full border border-emerald-500/30 text-emerald-300 bg-emerald-500/10">Completo</span>
         ) : u.pilot_status === "incompleto" ? (
           <span className="text-xs px-2 py-0.5 rounded-full border border-sky-500/30 text-sky-300 bg-sky-500/10">Incompleto</span>
         ) : (
-          <span className="text-xs px-2 py-0.5 rounded-full border border-slate-600/40 text-slate-500 bg-slate-700/20">Sem vínculo</span>
+          <span className="text-xs px-2 py-0.5 rounded-full border border-slate-600/40 text-slate-500 bg-slate-700/20">Sem vinculo</span>
         )}
       </td>
       <td className="px-4 py-3 hidden md:table-cell text-slate-400 text-xs">
@@ -489,12 +501,13 @@ function IconBtn({ title, onClick, danger, children }) {
 }
 
 // ---------------------- FORM MODAL ----------------------
-function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }) {
+function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError })
   const isView = mode === "view";
   const isCreate = mode === "create";
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [pendingCode, setPendingCode] = useState(false);
+  const [pendingOp, setPendingOp] = useState(null);
+  const [permsDirty, setPermsDirty] = useState(false);
   const [showPerms, setShowPerms] = useState(false);
   const [perms, setPerms] = useState({});
   const [form, setForm] = useState({
@@ -528,6 +541,7 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const togglePerm = (mod, act) => {
+    setPermsDirty(true);
     setPerms((p) => {
       const cur = new Set(p[mod] || []);
       if (cur.has(act)) cur.delete(act); else cur.add(act);
@@ -535,11 +549,10 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
     });
   };
 
+  // Retorna null em sucesso ou a mensagem de erro do backend.
   const runUpdate = async (code) => {
     setSaving(true);
     try {
-      const levelChanged = form.access_level !== user.access_level;
-      const permsChanged = actorLevel === "admin_geral" && form.access_level !== "admin_geral";
       const profile = {
         full_name: form.full_name,
         login: form.login,
@@ -549,19 +562,21 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
         unit: form.unit,
         admin_notes: form.admin_notes,
       };
-      const updateRequest = {
+      await base44.functions.invoke("manageUsers", {
         action: "update",
         user_id: user.id,
-        account_status: form.account_status,
-        access_level: levelChanged ? form.access_level : undefined,
-        custom_permissions: permsChanged ? perms : undefined,
+        account_status: form.account_status !== (user.account_status || "ativa") ? form.account_status : undefined,
+        access_level: form.access_level !== user.access_level ? form.access_level : undefined,
+        custom_permissions: permsDirty && actorLevel === "admin_geral" ? perms : undefined,
         code,
         profile,
-      };
-      await base44.functions.invoke("manageUsers", updateRequest);
+      });
       onSaved("Cadastro atualizado com sucesso.");
+      return null;
     } catch (err) {
-      setError(err?.response?.data?.error || err.message || "Erro ao salvar.");
+      const msg = err?.response?.data?.error || err.message || "Erro ao salvar.";
+      setError(msg);
+      return msg;
     } finally {
       setSaving(false);
     }
@@ -599,15 +614,25 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
       }
       return;
     }
-    // Edição: mudanças sensíveis de situação exigem código de verificação no backend.
+    // Edição: cada categoria sensível exige código próprio, uma por vez.
     const targetLevel = user?.access_level || "operacional";
-    const sensitive = form.account_status === "desativada" || (targetLevel === "admin_geral" && form.account_status !== "ativa");
-    if (sensitive) {
-      setPendingCode(true);
+    const statusChanged = form.account_status !== (user?.account_status || "ativa");
+    const levelChanged = form.access_level !== user?.access_level;
+    const ops = [];
+    if (statusChanged && (form.account_status === "desativada" || (targetLevel === "admin_geral" && form.account_status !== "ativa"))) {
+      ops.push("change_account_status");
+    }
+    if (levelChanged) ops.push("change_access_level");
+      if (permsDirty && actorLevel === "admin_geral") ops.push("change_permissions");
+      if (ops.length > 1) {
+        setError("Altere uma categoria sensível por vez (situação, nível ou permissões) e salve novamente.");
+        return;
+    }
+    if (ops.length === 1) {
+      setPendingOp(ops[0]);
       return;
     }
     await runUpdate(undefined);
-  };
 
   const levelOptions = ACCESS_LEVELS.filter((l) => {
     if (actorLevel === "admin_geral") return true;
@@ -634,7 +659,7 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
             <Field label="Unidade / setor"><Input disabled={isView} value={form.unit} onChange={(e) => set("unit", e.target.value)} className="bg-[#12141A] border-slate-700/60" /></Field>
             <Field label="Nível de acesso *">
               <select disabled={isView || user?.id === me?.id} value={form.access_level} onChange={(e) => set("access_level", e.target.value)} className="w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-slate-200 text-sm">
-                <option value="">Selecionar…</option>
+                <option value="">Selecionar</option>
                 {levelOptions.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
             </Field>
@@ -654,11 +679,11 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-300">
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={form.send_invite} onChange={(e) => set("send_invite", e.target.checked)} className="accent-amber-500" />
-                Enviar convite de acesso por e-mail (o usuário define a própria senha)
+                Enviar convite de acesso por e-mail (o usuario define a propria senha)
               </label>
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={form.must_change_password} onChange={(e) => set("must_change_password", e.target.checked)} className="accent-amber-500" />
-                Exigir alteração da senha no primeiro acesso
+                Exigir alteracao da senha no primeiro acesso
               </label>
             </div>
           )}
@@ -674,7 +699,7 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-slate-500 border-b border-slate-700/60">
-                        <th className="text-left py-2 pr-2 font-medium">Módulo</th>
+                        <th className="text-left py-2 pr-2 font-medium">Modulo</th>
                         {PERMISSION_ACTIONS.slice(0, 9).map((a) => <th key={a.id} className="py-2 px-1 font-medium text-center">{a.name}</th>)}
                       </tr>
                     </thead>
@@ -770,7 +795,7 @@ function AuditModal({ user, global, logs: userLogs, onClose }) {
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
                     {l.actor_name && <>Por: {l.actor_name}</>}
-                    {l.target_name && <> · Afetado: {l.target_name}</>}
+                    {l.target_name && <> Afetado: {l.target_name}</>}
                   </p>
                   {l.details && <p className="text-xs text-slate-400 mt-1">{l.details}</p>}
                 </li>
