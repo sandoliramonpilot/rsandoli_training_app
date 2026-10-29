@@ -737,15 +737,16 @@ function UserFormModal({ mode, user, actorLevel, me, onClose, onSaved, onError }
             </div>
           )}
         </form>
-        {pendingCode && (
+        {pendingOp && (
           <VerifyCodeModal
-            operation={form.account_status === "desativada" ? "Desativar usuário" : "Alterar situação de administrador"}
+            operation={pendingOp}
             onVerified={async (code) => {
-              setPendingCode(false);
-              await runUpdate(code);
+              const err = await runUpdate(code);
+              if (err) return err; // mantem o modal aberto
+              setPendingOp(null);
               return null;
             }}
-            onClose={() => setPendingCode(false)}
+             onClose={() => setPendingOp(null)}
           />
         )}
       </div>
