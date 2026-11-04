@@ -77,7 +77,7 @@ export default function AircraftTraining() {
       const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
       await base44.entities.TrainingDocument.create({
         title: uploadTitle || file.name.replace(/\.[^/.]+$/, ""),
-        discipline: "aw119_training",
+        discipline,
         chapter: uploadChapter,
         aircraftProfile: profileValue,
         file_type: ["pdf", "ppsx", "pptx"].includes(ext) ? ext : "other",
