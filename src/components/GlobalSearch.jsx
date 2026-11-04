@@ -4,7 +4,7 @@ import { Search, BookOpen, Siren, GraduationCap, HelpCircle, X, ChevronRight } f
 import { QRH_PROCEDURES } from "@/lib/qrhData";
 import { AW119_KOALA, GENERAL_MODULES } from "@/lib/trainingData";
 import { SAFETY_TOPICS } from "@/lib/academyData";
-import { AW119_TRAINING, TREINAMENTOS_GERAIS } from "@/lib/aw119TrainingData";
+import { AW119_TRAINING, TREINAMENTOS_GERAIS } from "@/lib/trainingData/aw119TrainingData";
 import { LICENSE_TYPES } from "@/lib/pilotUtils";
 
 // Universal search across static content (QRH, academy, library categories, questions)

@@ -5,7 +5,7 @@ import { can } from "@/lib/accessControl";
 import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import MediaThumb from "@/components/academy/MediaThumb";
 import DocumentListItem from "@/components/academy/DocumentListItem";
-import { DIDATIC_NOTICE } from "@/lib/aw119TrainingData";
+import { DIDATIC_NOTICE } from "@/lib/trainingData/aw119TrainingData";
 import { Upload, Loader2, X, ShieldAlert, Inbox } from "lucide-react";
 import { useProfile } from "@/lib/ProfileContext";
 

@@ -1,4 +1,4 @@
-import { AW119_TRAINING, PENDING_CONTENT, DIDATIC_NOTICE } from "./aw119Training";
+import { AW119_TRAINING, PENDING_CONTENT, DIDATIC_NOTICE } from "./aw119TrainingData";
 import { H125_TRAINING } from "./h125Training";
 
 export { PENDING_CONTENT, DIDATIC_NOTICE };

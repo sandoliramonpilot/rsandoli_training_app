@@ -111,9 +111,21 @@ export default async function (req) {
       // C1: convite só é aplicado depois de aprovado pelo administrador geral,
       // e somente a usuários dentro do escopo de quem está listando.
       const usersByEmail = new Map(allUsers.map((u) => [(u.email || "").toLowerCase(), u]));
+      const usersById = new Map(allUsers.map((u) => [u.id, u]));
       for (const inv of invites) {
         if (inv.status !== "pending") continue;
         if ((inv.approval_status || "approved") !== "approved") continue;
+        // C4 (escalonada): o convite só é aplicado se a aprovação foi registrada
+        // pela própria função (approve_invite ou create pelo admin_geral), e não
+        // por edição direta do registro. Revalida a hierarquia do aprovador e o
+        // escopo de perfis contra o aprovador atual, não contra quem lista.
+        if (!inv.approved_by_user_id) continue;
+        const approver = usersById.get(inv.approved_by_user_id);
+        if (!approver) continue;
+        const approverLevel = levelOf(approver);
+        if (!canManageLevel(approverLevel, inv.access_level)) continue;
+        const approverScope = await actorScope(base44, approver);
+        if (!inScope(approverScope, inv)) continue;
         const matched = usersByEmail.get((inv.email || "").toLowerCase());
         if (!matched || !inScope(scope, matched)) continue;
         const patch = {};
@@ -279,6 +291,13 @@ export default async function (req) {
         invited_by_name: user.full_name || user.email || null,
         created_at: new Date().toISOString(),
       };
+      // Convites criados já aprovados (somente admin_geral) recebem o marcador
+      // server-side de aprovação, assim como os aprovados via approve_invite.
+      if (!needsApproval) {
+        invitePayload.approved_by_user_id = user.id;
+        invitePayload.approved_by_name = user.full_name || user.email || null;
+        invitePayload.approved_at = new Date().toISOString();
+      }
       if (body.custom_permissions && typeof body.custom_permissions === "object") {
         invitePayload.custom_permissions = JSON.stringify(body.custom_permissions);
       }
@@ -761,7 +780,12 @@ export default async function (req) {
       } catch (inviteErr) {
         return Response.json({ error: `Falha ao enviar convite: ${inviteErr?.message || inviteErr}` }, { status: 500 });
       }
-      await base44.asServiceRole.entities.UserInvite.update(body.invite_id, { approval_status: "approved" });
+      await base44.asServiceRole.entities.UserInvite.update(body.invite_id, {
+        approval_status: "approved",
+        approved_by_user_id: user.id,
+        approved_by_name: user.full_name || user.email || null,
+        approved_at: new Date().toISOString(),
+      });
       await logAudit(base44, user, { email: invite.email, full_name: invite.full_name }, "Aprovação de convite", `Convite aprovado e enviado — ${invite.email}`);
       return Response.json({ ok: true, message: "Convite aprovado e enviado." });
     }

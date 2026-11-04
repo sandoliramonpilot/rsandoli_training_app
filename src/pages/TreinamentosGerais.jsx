@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
-import { TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/aw119TrainingData";
+import { TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData/aw119TrainingData";
 import BackToDashboard from "@/components/BackToDashboard";
 import {
   Fuel, Droplets, Zap, Radio, LayoutDashboard, Cog, Settings, Wind, Joystick,

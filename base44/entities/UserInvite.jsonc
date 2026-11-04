@@ -75,6 +75,18 @@
       "type": "string",
       "title": "Nome de quem convidou"
     },
+    "approved_by_user_id": {
+      "type": "string",
+      "title": "Aprovado por (ID do usu\u00e1rio, gravado somente pelo backend)"
+    },
+    "approved_by_name": {
+      "type": "string",
+      "title": "Nome de quem aprovou"
+    },
+    "approved_at": {
+      "type": "string",
+      "title": "Data e hora da aprova\u00e7\u00e3o (backend)"
+    },
     "created_at": {
       "type": "string",
       "title": "Data do convite"

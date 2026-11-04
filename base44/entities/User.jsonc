@@ -70,7 +70,14 @@
     "is_master": {
       "type": "boolean",
       "title": "Administrador Geral Master",
-      "default": false
+      "default": false,
+      "rls": {
+        "update": {
+          "user_condition": {
+            "collaborator_role": "editor"
+          }
+        }
+      }
     }
   }
 }
