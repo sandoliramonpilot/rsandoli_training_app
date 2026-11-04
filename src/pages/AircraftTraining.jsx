@@ -19,7 +19,9 @@ export default function AircraftTraining() {
   const { profileValue } = useProfile();
 
   const training = getTraining(profileValue);
-
+  const data = training?.data ?? { modules: [], subtitle: "" };
+  const discipline = training?.discipline ?? null;
+  
   const [activeModule, setActiveModule] = useState(
     training?.data?.modules?.[0]?.id ?? null
   );
