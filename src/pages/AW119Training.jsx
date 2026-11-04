@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
-import { AW119_TRAINING, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/aw119TrainingData";
+import { getTraining, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData";
 import BackToDashboard from "@/components/BackToDashboard";
 import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import DocumentListItem from "@/components/academy/DocumentListItem";
@@ -14,10 +14,15 @@ import {
 
 const MODULE_ICONS = { Monitor, Plane, Settings };
 
-export default function AW119Training() {
+export default function AircraftTraining() {
   const { user } = useAuth();
-  const { profileFilter, profileValue } = useProfile();
-  const [activeModule, setActiveModule] = useState(AW119_TRAINING.modules[0].id);
+  const { profileValue } = useProfile();
+
+  const training = getTraining(profileValue);
+
+  const [activeModule, setActiveModule] = useState(
+    training?.data?.modules?.[0]?.id ?? null
+  );
   const [expandedChapters, setExpandedChapters] = useState(new Set());
   const [trainingDocs, setTrainingDocs] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -25,15 +30,30 @@ export default function AW119Training() {
   const [uploadTitle, setUploadTitle] = useState("");
 
   const canEdit = can(user, "treinamentos", "editar");
-  const mod = AW119_TRAINING.modules.find((m) => m.id === activeModule) || AW119_TRAINING.modules[0];
-
+  const data = training?.data ?? { modules: [], subtitle: "" };
+  const discipline = training?.discipline ?? null;
+  const mod = data.modules.find((m) => m.id === activeModule) ?? data.modules[0];
   const loadDocs = async () => {
-    const docs = await base44.entities.TrainingDocument.filter({ ...profileFilter, discipline: "aw119_training", status: "active" }).catch(() => []);
+    if (!discipline || !profileValue) {
+      setTrainingDocs([]);
+      return;
+    }
+    const docs = await base44.entities.TrainingDocument.filter({
+      aircraftProfile: profileValue,
+      discipline,
+      status: "active",
+    }).catch(() => []);
     setTrainingDocs(docs);
   };
 
-  useEffect(() => { loadDocs(); }, []);
+  useEffect(() => {
+    loadDocs();
+  }, [profileValue, discipline]);
 
+  useEffect(() => {
+    setActiveModule(training?.data?.modules?.[0]?.id ?? null);
+    setExpandedChapters(new Set());
+  }, [profileValue]);
   const toggleChapter = (id) => {
     setExpandedChapters((prev) => {
       const next = new Set(prev);
