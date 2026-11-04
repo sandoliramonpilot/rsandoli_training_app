@@ -8,6 +8,8 @@ import {
   clearSelectedProfile,
 } from '@/lib/aircraftProfile';
 
+import { TRAINING_BY_AIRCRAFT } from "@/lib/trainingData";
+
 const ProfileContext = createContext(null);
 
 /** Determina os perfis autorizados para o usuário a partir do campo aircraft_profiles. */
@@ -24,26 +26,24 @@ function resolveUserProfiles(user) {
 
 export function ProfileProvider({ children }) {
   const { user } = useAuth();
+  const [aircraft, setAircraft] = useState(null);
 
-  const userProfiles = useMemo(() => resolveUserProfiles(user), [user]);
+  const modulosPermitidos = useMemo(() => {
+    const lista = Array.isArray(user?.modulos_habilitados)
+      ? user.modulos_habilitados
+      : ["AW119"];
+    return lista.filter((m) => TRAINING_BY_AIRCRAFT[m]);
+  }, [user]);
 
-  const [profile, setProfileState] = useState(() => {
-    const stored = getSelectedProfile();
-    return stored;
-  });
-
-  // Ajusta o perfil selecionado quando o usuário muda (login/troca de conta)
   useEffect(() => {
     if (!user) return;
-    const stored = getSelectedProfile();
-    if (userProfiles.includes(stored)) {
-      setProfileState(stored);
-    } else {
-      const fallback = userProfiles[0] || DEFAULT_PROFILE;
-      setSelectedProfile(fallback);
-      setProfileState(fallback);
-    }
-  }, [user, userProfiles]);
+    const salvo = localStorage.getItem("aircraft");
+    const inicial = modulosPermitidos.includes(salvo)
+      ? salvo
+      : modulosPermitidos[0] ?? null;
+    setAircraft(inicial);
+    if (inicial) localStorage.setItem("aircraft", inicial);
+  }, [user, modulosPermitidos]);
 
   const setProfile = (p) => {
     if (!userProfiles.includes(p)) return;
@@ -59,6 +59,26 @@ export function ProfileProvider({ children }) {
     [profile]
   );
 
+  const trocarAeronave = (novo) => {
+    if (!modulosPermitidos.includes(novo)) return false;
+    localStorage.setItem("aircraft", novo);
+    setAircraft(novo);
+    return true;
+  };
+
+  const profileValue = aircraft;
+  const profileFilter = aircraft ? { aircraftProfile: aircraft } : {};
+
+  return (
+    <ProfileContext.Provider
+      value={{ profileValue, profileFilter, aircraft, modulosPermitidos, trocarAeronave }}
+    >
+      {children}
+    </ProfileContext.Provider>
+  );
+}
+
+export const useProfile = () => useContext(ProfileContext);
   const value = {
     profile,           // perfil selecionado ("AW119" | "H125")
     setProfile,        // troca de perfil
