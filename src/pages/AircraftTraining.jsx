@@ -239,7 +239,7 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
             <HelipilotContent chapter={chapter} />
           ) : (
             <ul className="space-y-2">
-              {chapter.items.map((t, i) => (
+              {(chapter.items ?? []).map((t, i) => (
                 <li key={i} className="text-sm text-slate-300 flex items-start gap-2.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" /> {t}
                 </li>
@@ -317,7 +317,7 @@ function HelipilotContent({ chapter }) {
       <div>
         <p className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-2">Conteúdo</p>
         <div className="flex flex-wrap gap-2">
-          {chapter.items.map((t, i) => (
+          {(chapter.items ?? []).map((t, i) => (
             <span key={i} className="text-xs px-3 py-1.5 rounded-lg bg-slate-700/30 text-slate-300 border border-slate-700/40">{t}</span>
           ))}
         </div>
@@ -326,7 +326,7 @@ function HelipilotContent({ chapter }) {
       <div>
         <p className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-2">Modos a organizar</p>
         <div className="flex flex-wrap gap-2">
-          {chapter.modes.map((m) => (
+          {(chapter.modes ?? []).map((m) => (
             <span key={m} className="text-xs px-3 py-1.5 rounded-lg bg-teal-500/10 text-teal-300 border border-teal-500/30 font-mono">{m}</span>
           ))}
         </div>
@@ -337,7 +337,7 @@ function HelipilotContent({ chapter }) {
           Para cada modo, apresentar:
         </p>
         <ol className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5">
-          {chapter.modeFields.map((f, i) => (
+          {(chapter.modeFields ?? []).map((f, i) => (
             <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
               <span className="text-xs text-amber-400 font-mono shrink-0 mt-0.5">{i + 1}.</span> {f}
             </li>
