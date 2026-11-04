@@ -96,11 +96,23 @@
   "rls": {
     "create": {
       "user_condition": {
-        "data.is_master": "Is Master"
+        "role": "admin"
       }
     },
-    "read": null,
-    "update": null,
-    "delete": null
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
   }
 }
