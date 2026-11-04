@@ -1,5 +1,34 @@
 // Dados de treinamento — Módulos gerais + AW119_Koala Academy (premium)
 
+import { AW119_TRAINING, PENDING_CONTENT, DIDATIC_NOTICE } from "./aw119TrainingData";
+import { H125_TRAINING } from "./h125Training";
+
+// Reexporta constantes didáticas consumidas pelas páginas de treinamento.
+export { PENDING_CONTENT, DIDATIC_NOTICE };
+
+// Mapa de treinamentos por perfil de aeronave. Cada entrada retorna
+// { name, label, discipline, data } para a página AircraftTraining.
+const TRAINING_BY_PROFILE = {
+  AW119: {
+    name: AW119_TRAINING.name,
+    label: "AW119Kx / AW119KXi",
+    discipline: "AW119",
+    data: AW119_TRAINING,
+  },
+  H125: {
+    name: H125_TRAINING.name ?? "H125 TRAINING",
+    label: "H125",
+    discipline: "H125",
+    data: H125_TRAINING,
+  },
+};
+
+// Resolve o conjunto de treinamento para o perfil ativo.
+// Retorna sempre um objeto coerente; perfis desconhecidos caem no AW119.
+export function getTraining(profileValue) {
+  return TRAINING_BY_PROFILE[profileValue] || TRAINING_BY_PROFILE.AW119;
+}
+
 export const AW119_KOALA = {
   id: "aw119_koala",
   name: "AW119_Koala",

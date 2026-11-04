@@ -17,7 +17,7 @@ import QRH from '@/pages/QRH';
 import QRHEfis from '@/pages/QRHEfis';
 import Biblioteca from '@/pages/Biblioteca';
 import Treinamentos from '@/pages/Treinamentos';
-import AW119Training from '@/pages/AW119Training';
+import AW119Training from '@/pages/AircraftTraining';
 import TreinamentosGerais from '@/pages/TreinamentosGerais';
 import EmConstrucao from '@/pages/EmConstrucao';
 import ProcedimentosEmergencia from '@/pages/ProcedimentosEmergencia';
