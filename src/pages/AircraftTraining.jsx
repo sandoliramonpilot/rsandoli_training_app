@@ -103,8 +103,8 @@ export default function AircraftTraining() {
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Academy</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">AW119 TRAINING</h1>
-          <p className="text-slate-400 mt-2 text-sm max-w-2xl">{AW119_TRAINING.subtitle}</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">{training.name}</h1>
+          <p className="text-slate-400 mt-2 text-sm max-w-2xl">{data.subtitle}</p>
         </div>
         <BackToDashboard />
       </header>
