@@ -1,3 +1,4 @@
+import { TRAINING_BY_AIRCRAFT } from "@/lib/trainingData";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -37,18 +38,28 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      // Persiste o perfil selecionado antes do login para o ProfileContext usar
-      setSelectedProfile(selectedProfile);
+  await base44.auth.signIn({ email, password });
 
-      await base44.auth.loginViaEmailPassword(email.trim(), password);
-      const me = await base44.auth.me().catch(() => null);
+  const usuario = await base44.auth.me();
+  const modulos = Array.isArray(usuario?.modulos_habilitados)
+    ? usuario.modulos_habilitados.filter((m) => TRAINING_BY_AIRCRAFT[m])
+    : ["AW119"];
 
-      if (me && !["ativa", "convite_pendente"].includes(getAccountStatus(me))) {
-        base44.auth.logout();
-        setError("Sua conta está bloqueada ou desativada. Entre em contato com o administrador.");
-        setLoading(false);
-        return;
-      }
+  if (modulos.length === 0) {
+    navigate("/sem-acesso");
+    return;
+  }
+
+  if (modulos.length === 1) {
+    localStorage.setItem("aircraft", modulos[0]);
+    navigate("/training");
+    return;
+  }
+
+  navigate("/selecionar-modulo");
+} catch (err) {
+  setError(err.message);
+}
 
       if (me) {
         try {
