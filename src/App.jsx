@@ -119,7 +119,7 @@ const AuthenticatedApp = () => {
         <Route path="/qrh-efis" element={<QRHEfis />} />
         <Route path="/biblioteca" element={<Biblioteca />} />
         <Route path="/treinamentos" element={<Treinamentos />} />
-        <Route path="/training" element={<ModuleGate><AircraftTraining /></ModuleGate>} />
+        <Route path="/training" element={<RequireModule moduleId="training"><AircraftTraining /></RequireModule>} />
         <Route path="/treinamentos-gerais" element={<TreinamentosGerais />} />
         <Route path="/limitacoes" element={<Limitacoes />} />
         <Route path="/procedimentos-normais" element={<ProcedimentosNormais />} />
