@@ -117,9 +117,9 @@ export default function AircraftTraining() {
               <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
                 <Crown className="w-3.5 h-3.5" /> Premium
               </span>
-              <span className="text-[11px] text-slate-500 uppercase tracking-wider">Leonardo AW119Kx Koala</span>
+              <span className="text-[11px] text-slate-500 uppercase tracking-wider">{training.label}</span>
             </div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-100">AW119 TRAINING</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-100">{training.name}</h2>
             <p className="text-slate-400 mt-2 text-sm max-w-2xl">{DIDATIC_NOTICE}</p>
           </div>
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
