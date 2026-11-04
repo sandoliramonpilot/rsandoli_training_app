@@ -114,8 +114,7 @@ const AuthenticatedApp = () => {
         <Route path="/dashboard" element={<RequireModule moduleId="dashboard"><Dashboard /></RequireModule>} />
         <Route path="/flight-log" element={<RequireModule moduleId="diario_bordo"><FlightLog /></RequireModule>} />
         <Route path="/aircraft" element={<Aircraft />} />
-        <Route path="/aw119" element={<AW119Training />} />
-        <Route path="/h125" element={<H125Training />} />
+        <Route path="/training" element={<ModuleGate><AircraftTraining /></ModuleGate>} />
         <Route path="/checklist" element={<RequireModule moduleId="checklists"><Checklist /></RequireModule>} />
         <Route path="/qrh" element={<QRH />} />
         <Route path="/qrh-efis" element={<QRHEfis />} />
