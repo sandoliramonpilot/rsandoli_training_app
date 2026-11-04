@@ -130,7 +130,7 @@ export default function AircraftTraining() {
 
       {/* Module tabs */}
       <div className="flex flex-wrap gap-2">
-        {AW119_TRAINING.modules.map((m) => {
+        {data.modules.map((m) => {
           const Icon = MODULE_ICONS[m.icon] || BookOpen;
           const active = m.id === activeModule;
           return (
