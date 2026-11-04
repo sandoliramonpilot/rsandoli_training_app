@@ -18,7 +18,6 @@ import QRHEfis from '@/pages/QRHEfis';
 import Biblioteca from '@/pages/Biblioteca';
 import Treinamentos from '@/pages/Treinamentos';
 import AircraftTraining from '@/pages/AircraftTraining';
-import ModuleGate from '@/components/ModuleGate';
 import TreinamentosGerais from '@/pages/TreinamentosGerais';
 import EmConstrucao from '@/pages/EmConstrucao';
 import ProcedimentosEmergencia from '@/pages/ProcedimentosEmergencia';
@@ -52,7 +51,7 @@ import Privacidade from '@/pages/Privacidade';
 import Termos from '@/pages/Termos';
 import Configuracoes from '@/pages/Configuracoes';
 import UpdatePrompt from '@/components/UpdatePrompt';
-// Add page imports here
+import SemAcesso from '@/pages/SemAcesso';
 
 const PUBLIC_TRUST_PATHS = ["/sobre", "/contato", "/privacidade", "/termos"];
 
@@ -64,14 +63,12 @@ const AuthenticatedApp = () => {
     () => localStorage.getItem("terms_accepted") === "true"
   );
 
-  // A tela de abertura permanece visível somente durante o carregamento real.
   useEffect(() => {
     if (!isLoadingPublicSettings && !isLoadingAuth) {
       document.getElementById("app-splash")?.remove();
     }
   }, [isLoadingPublicSettings, isLoadingAuth]);
 
-  // Show loading spinner while checking app public settings or auth
   if (!isPublicTrustPage && (isLoadingPublicSettings || isLoadingAuth)) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -80,49 +77,48 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required' && !isPublicTrustPage) {
-      // Redirect to login automatically
       navigateToLogin();
       return null;
     }
   }
 
-  // Após autenticação confirmada, exige aceite dos termos antes de liberar o app
   if (!termsAccepted && !isPublicTrustPage) {
     return <TermsModal onAccept={() => setTermsAccepted(true)} />;
   }
 
-  // Render the main app
   return (
     <Routes>
-      {/* Public trust pages — no auth required */}
+      {/* Páginas públicas */}
       <Route path="/sobre" element={<Sobre />} />
       <Route path="/contato" element={<Contato />} />
       <Route path="/privacidade" element={<Privacidade />} />
       <Route path="/termos" element={<Termos />} />
-
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
+
+      {/* Rota de acesso negado: fora do AppLayout para não vazar o menu */}
+      <Route path="/sem-acesso" element={<SemAcesso />} />
+
       <Route element={<AppLayout />}>
-        <Route path="/selecionar-modulo" element={<SelecionarModulo />} />
-        <Route path="/sem-acesso" element={<SemAcessoAoModulo />} />
-        <Route path="/dashboard" element={<RequireModule moduleId="dashboard"><Dashboard /></RequireModule>} />
+        <Route path="/" element={<RequireModule moduleId="dashboard"><Dashboard /></RequireModule>} />
         <Route path="/flight-log" element={<RequireModule moduleId="diario_bordo"><FlightLog /></RequireModule>} />
         <Route path="/aircraft" element={<Aircraft />} />
-        <Route path="/training" element={<ModuleGate><AircraftTraining /></ModuleGate>} />
         <Route path="/checklist" element={<RequireModule moduleId="checklists"><Checklist /></RequireModule>} />
         <Route path="/qrh" element={<QRH />} />
         <Route path="/qrh-efis" element={<QRHEfis />} />
         <Route path="/biblioteca" element={<Biblioteca />} />
         <Route path="/treinamentos" element={<Treinamentos />} />
-        <Route path="/training" element={<RequireModule moduleId="training"><AircraftTraining /></RequireModule>} />
+
+        {/* Módulo de treinamento unificado: AW119 e H125 na mesma página */}
+        <Route path="/training" element={<AircraftTraining />} />
+
         <Route path="/treinamentos-gerais" element={<TreinamentosGerais />} />
         <Route path="/limitacoes" element={<Limitacoes />} />
         <Route path="/procedimentos-normais" element={<ProcedimentosNormais />} />
@@ -143,14 +139,13 @@ const AuthenticatedApp = () => {
         <Route path="/marcos-projeto" element={<MarcosProjeto />} />
         <Route path="/configuracoes" element={<Configuracoes />} />
       </Route>
+
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 };
 
-
 function App() {
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
@@ -170,4 +165,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
