@@ -1,14 +1,14 @@
 // Dados de treinamento — Módulos gerais + AW119_Koala Academy (premium)
 
-import { AW119_TRAINING, TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE } from "./trainingData/aw119TrainingData";
-import { H125_TRAINING } from "./trainingData/h125Training";
+import { AW119_TRAINING, TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE } from "./aw119Training";
+import { H125_TRAINING } from "./h125TrainingData";
 
 // Reexporta constantes didáticas consumidas pelas páginas de treinamento.
-export { AW119_TRAINING, TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE };
+export { AW119_TRAINING, H125_TRAINING, TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE };
 
-// Mapa de treinamentos por perfil de aeronave. Cada entrada retorna
-// { name, label, discipline, data } para a página AircraftTraining.
-const TRAINING_BY_PROFILE = {
+// Mapa de treinamentos por perfil de aeronave — consumido por páginas de seleção
+// e administração de módulos (SelecionarModulo, admin/ModuleAccess).
+export const TRAINING_BY_AIRCRAFT = {
   AW119: {
     name: AW119_TRAINING.name,
     label: "AW119Kx / AW119KXi",
@@ -23,10 +23,12 @@ const TRAINING_BY_PROFILE = {
   },
 };
 
+export const AIRCRAFTS = Object.keys(TRAINING_BY_AIRCRAFT);
+
 // Resolve o conjunto de treinamento para o perfil ativo.
 // Retorna sempre um objeto coerente; perfis desconhecidos caem no AW119.
 export function getTraining(profileValue) {
-  return TRAINING_BY_PROFILE[profileValue] || TRAINING_BY_PROFILE.AW119;
+  return TRAINING_BY_AIRCRAFT[profileValue] || TRAINING_BY_AIRCRAFT.AW119;
 }
 
 export const AW119_KOALA = {

@@ -16,7 +16,7 @@ const MODULE_ICONS = { Monitor, Plane, Settings };
 
 export default function AircraftTraining() {
   const { user } = useAuth();
-  const { profileValue } = useProfile();
+  const { profileValue, profileFilter } = useProfile();
 
   const training = getTraining(profileValue);
   const data = training?.data ?? { modules: [], subtitle: "" };
