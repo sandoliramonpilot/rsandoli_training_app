@@ -10,6 +10,11 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"
+    "verificar": "node scripts/verificar-modulos.mjs",
+    "verificar:pre": "node scripts/verificar-modulos.mjs --pre",
+    "verificar:build": "node scripts/verificar-modulos.mjs --build",
+    "verificar:sh": "bash scripts/verificar-modulos.sh"
+    }
   },
   "dependencies": {
     "@base44/sdk": "^0.8.59",
