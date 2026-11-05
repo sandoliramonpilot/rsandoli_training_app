@@ -14,34 +14,6 @@ function levelOf(u) {
   return u?.role === "admin" ? "administrador" : "operacional";
 }
 
-// Permissões padrão do módulo "pilotos" por nível (espelha src/lib/accessControl.js).
-const PILOTO_DEFAULT_PERMS = {
-  administrador: ["visualizar", "criar", "editar", "todos"],
-  gestor_supervisor: ["visualizar", "criar", "editar", "unidade"],
-  operacional: ["visualizar"],
-  consulta: ["visualizar"],
-};
-
-function canPilots(user, action) {
-  const level = levelOf(user);
-  if (level === "admin_geral") return true;
-  let perms = null;
-  const custom = user?.custom_permissions;
-  if (custom && typeof custom === "string") {
-    try {
-      const parsed = JSON.parse(custom);
-      perms = parsed?.pilotos ?? PILOTO_DEFAULT_PERMS[level];
-    } catch {
-      perms = PILOTO_DEFAULT_PERMS[level];
-    }
-  } else {
-    perms = PILOTO_DEFAULT_PERMS[level];
-  }
-  if (!perms || !Array.isArray(perms)) return false;
-  if (action === "visualizar" && perms.includes("visualizar")) return true;
-  return perms.includes(action);
-}
-
 // Campos editáveis pelo cliente na criação/edição. Campos de revisão ficam de fora.
 const WRITABLE_FIELDS = [
   "aircraftProfile", "license_type", "license_type_label", "other_license_name",
@@ -105,10 +77,13 @@ export default async function (req) {
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
+    // Portão autoritativo: isAdminUser exige User.role === "admin" (papel de plataforma,
+    // não gravável pelo próprio usuário via updateMe) somado a um nível administrativo.
+    // Os campos User.access_level e User.custom_permissions são graváveis pelo próprio
+    // usuário e NUNCA autorizam sozinhos — levelOf/canPilots só valem como camada
+    // adicional, depois de isAdmin confirmar o papel de plataforma.
     const isAdmin = isAdminUser(user);
-    const isGeral = levelOf(user) === "admin_geral";
-    const isManager = canPilots(user, "editar");
-    const canReview = isGeral || canPilots(user, "aprovar");
+    const isGeral = isAdmin && levelOf(user) === "admin_geral";
 
     const pilot = await getPilot(base44, body.pilot_id);
     const self = isSelfOf(user, pilot);
@@ -116,7 +91,7 @@ export default async function (req) {
     // ---------- LIST ----------
     if (action === "list") {
       if (!pilot) return Response.json({ error: "Piloto não informado." }, { status: 400 });
-      if (!self && !canPilots(user, "visualizar") && !isAdmin) {
+      if (!self && !isAdmin) {
         return Response.json({ error: "Acesso negado." }, { status: 403 });
       }
       const filter = { pilot_id: body.pilot_id };
@@ -128,7 +103,7 @@ export default async function (req) {
     // ---------- CREATE ----------
     if (action === "create") {
       if (!pilot) return Response.json({ error: "Piloto não informado." }, { status: 400 });
-      if (!self && !isManager && !isAdmin) {
+      if (!self && !isAdmin) {
         return Response.json({ error: "Você não pode criar licenças para este piloto." }, { status: 403 });
       }
       const payload = pick(body.payload || {}, WRITABLE_FIELDS);
@@ -150,7 +125,7 @@ export default async function (req) {
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
       const recPilot = await getPilot(base44, record.pilot_id);
       const recSelf = isSelfOf(user, recPilot) || self;
-      if (!recSelf && !isManager && !isAdmin) {
+      if (!recSelf && !isAdmin) {
         return Response.json({ error: "Você não pode editar esta licença." }, { status: 403 });
       }
       const patch = pick(body.patch || {}, WRITABLE_FIELDS);
@@ -182,7 +157,7 @@ export default async function (req) {
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
       const recPilot = await getPilot(base44, record.pilot_id);
       const recSelf = isSelfOf(user, recPilot) || self;
-      if (!recSelf && !isManager && !isAdmin) {
+      if (!recSelf && !isAdmin) {
         return Response.json({ error: "Você não pode enviar esta licença." }, { status: 403 });
       }
       if (record.approval_status !== "draft") {
@@ -201,7 +176,7 @@ export default async function (req) {
     // ---------- APPROVE ----------
     if (action === "approve") {
       if (!body.id) return Response.json({ error: "ID não informado." }, { status: 400 });
-      if (!canReview) return Response.json({ error: "Você não pode aprovar licenças." }, { status: 403 });
+      if (!isAdmin) return Response.json({ error: "Você não pode aprovar licenças." }, { status: 403 });
       const record = await base44.asServiceRole.entities.PilotLicense.get(body.id).catch((e) => (e.status === 404 ? null : Promise.reject(e)));
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
       if (record.approval_status !== "pending_review") {
@@ -224,7 +199,7 @@ export default async function (req) {
     // ---------- REJECT ----------
     if (action === "reject") {
       if (!body.id) return Response.json({ error: "ID não informado." }, { status: 400 });
-      if (!canReview) return Response.json({ error: "Você não pode rejeitar licenças." }, { status: 403 });
+      if (!isAdmin) return Response.json({ error: "Você não pode rejeitar licenças." }, { status: 403 });
       const record = await base44.asServiceRole.entities.PilotLicense.get(body.id).catch((e) => (e.status === 404 ? null : Promise.reject(e)));
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
       if (record.approval_status !== "pending_review") {
