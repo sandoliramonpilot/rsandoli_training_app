@@ -1,4 +1,5 @@
 // Perfis de acesso (níveis) e módulos do aplicativo — base para controle de acesso
+
 export const ACCESS_LEVELS = [
   { id: "admin_geral", name: "Administrador Geral", rank: 5 },
   { id: "administrador", name: "Administrador", rank: 4 },
@@ -15,7 +16,7 @@ export const ACCOUNT_STATUSES = [
   { id: "desativada", name: "Desativada" },
 ];
 
-// Módulos para controle de permissão (quando existentes no app)
+// Módulos para controle de permissão
 export const PERMISSION_MODULES = [
   { id: "dashboard", name: "Dashboard", path: "/" },
   { id: "diario_bordo", name: "Diário de Bordo", path: "/flight-log" },
@@ -61,8 +62,10 @@ export const PERMISSION_ACTIONS = [
 ];
 
 // Permissões padrão por nível (módulo -> ações permitidas). Admin Geral = todos.
+// h125_training NÃO consta aqui de propósito: é liberado individualmente
+// via custom_permissions do usuário.
 export const DEFAULT_PERMISSIONS_BY_LEVEL = {
-  admin_geral: "*", // acesso total
+  admin_geral: "*",
   administrador: {
     dashboard: ["visualizar"],
     diario_bordo: ["visualizar", "criar", "editar", "exportar", "todos"],
@@ -170,8 +173,15 @@ export const DEFAULT_PERMISSIONS_BY_LEVEL = {
   },
 };
 
-export const ACCESS_LEVEL_LABELS = ACCESS_LEVELS.reduce((acc, l) => { acc[l.id] = l.name; return acc; }, {});
-export const ACCOUNT_STATUS_LABELS = ACCOUNT_STATUSES.reduce((acc, s) => { acc[s.id] = s.name; return acc; }, {});
+export const ACCESS_LEVEL_LABELS = ACCESS_LEVELS.reduce((acc, l) => {
+  acc[l.id] = l.name;
+  return acc;
+}, {});
+
+export const ACCOUNT_STATUS_LABELS = ACCOUNT_STATUSES.reduce((acc, s) => {
+  acc[s.id] = s.name;
+  return acc;
+}, {});
 
 /** Nível de acesso do usuário (lido do campo customizado access_level ou derivado de role). */
 export function getAccessLevel(user) {
@@ -191,8 +201,10 @@ export function can(user, moduleId, action) {
   const level = getAccessLevel(user);
   if (!level) return false;
   if (level === "admin_geral") return true;
+
   const custom = user?.custom_permissions;
   let perms = null;
+
   if (custom && typeof custom === "string") {
     try {
       const parsed = JSON.parse(custom);
@@ -200,9 +212,12 @@ export function can(user, moduleId, action) {
     } catch {
       perms = DEFAULT_PERMISSIONS_BY_LEVEL[level]?.[moduleId];
     }
+  } else if (custom && typeof custom === "object") {
+    perms = custom[moduleId] ?? DEFAULT_PERMISSIONS_BY_LEVEL[level]?.[moduleId];
   } else {
     perms = DEFAULT_PERMISSIONS_BY_LEVEL[level]?.[moduleId];
   }
+
   if (!perms || !Array.isArray(perms)) return false;
   if (action === "visualizar" && perms.includes("visualizar")) return true;
   return perms.includes(action);
@@ -236,4 +251,33 @@ export function firstAuthorizedPath(user) {
 /** Verifica se o usuário possui pelo menos um módulo autorizado. */
 export function hasAnyAuthorizedModule(user) {
   return PERMISSION_MODULES.some((mod) => can(user, mod.id, "visualizar"));
+}
+
+// ============================================================
+// Módulos de treinamento por aeronave
+// ============================================================
+
+export const TRAINING_MODULES = ["aw119_training", "h125_training"];
+
+/** Módulos de treinamento que o usuário pode visualizar. */
+export function getTrainingModules(user) {
+  return TRAINING_MODULES.filter((m) => can(user, m, "visualizar"));
+}
+
+/** Se o usuário tem acesso a pelo menos um módulo de treinamento. */
+export function canAccessTraining(user) {
+  return getTrainingModules(user).length > 0;
+}
+
+/** Mapeia moduleId de treinamento para o perfil de aeronave correspondente. */
+export const TRAINING_MODULE_TO_AIRCRAFT = {
+  aw119_training: "AW119",
+  h125_training: "H125",
+};
+
+/** Perfis de aeronave liberados ao usuário, derivados das permissões. */
+export function getAuthorizedAircraft(user) {
+  return getTrainingModules(user)
+    .map((m) => TRAINING_MODULE_TO_AIRCRAFT[m])
+    .filter(Boolean);
 }
