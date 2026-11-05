@@ -52,7 +52,13 @@
         "role": "admin"
       }
     },
-    "create": {},
+    "create": {
+      "data.actor_user_id": {
+        "$in": [
+          "__rls_deny__"
+        ]
+      }
+    },
     "update": false,
     "delete": false
   }

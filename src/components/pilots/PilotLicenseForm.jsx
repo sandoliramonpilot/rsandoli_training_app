@@ -117,10 +117,18 @@ export default function PilotLicenseForm({ pilot, license, existingLicenses, onC
       Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
 
       if (isEdit) {
-        await base44.entities.PilotLicense.update(license.id, payload);
+        await base44.functions.invoke("managePilotLicense", {
+          action: "update",
+          id: license.id,
+          pilot_id: pilot.id,
+          patch: payload,
+        });
       } else {
-        payload.approval_status = "draft";
-        await base44.entities.PilotLicense.create(payload);
+        await base44.functions.invoke("managePilotLicense", {
+          action: "create",
+          pilot_id: pilot.id,
+          payload,
+        });
       }
       onSaved();
     } catch (err) {

@@ -35,8 +35,16 @@ export default function PilotLicensesSection({ pilot, isManager, onRefresh }) {
   const { profileFilter } = useProfile();
 
   const load = useCallback(async () => {
-    const list = await base44.entities.PilotLicense.filter({ ...profileFilter, pilot_id: pilot.id }).catch(() => []);
-    setLicenses(list);
+    try {
+      const res = await base44.functions.invoke("managePilotLicense", {
+        action: "list",
+        pilot_id: pilot.id,
+        aircraftProfile: profileFilter?.aircraftProfile || undefined,
+      });
+      setLicenses(res.data?.items || []);
+    } catch {
+      setLicenses([]);
+    }
   }, [pilot.id, profileFilter]);
 
   useEffect(() => { load(); }, [load]);
@@ -47,34 +55,19 @@ export default function PilotLicensesSection({ pilot, isManager, onRefresh }) {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const logAudit = async (action, details) => {
-    try {
-      await base44.entities.AccessAuditLog.create({
-        actor_user_id: me?.id || null,
-        actor_name: me?.full_name || me?.email || "Sistema",
-        target_name: pilot.full_name,
-        action: `Licença — ${action}`,
-        details,
-        created_at: new Date().toISOString(),
-      });
-    } catch {}
-  };
-
   const handleSaved = async () => {
     setShowForm(false);
     setEditing(null);
     await load();
     onRefresh?.();
     setToast(editing ? "Licença atualizada com sucesso." : "Licença criada com sucesso.");
-    await logAudit(editing ? "edição" : "criação", editing ? `Licença editada: ${editing.license_type_label || editing.license_type}` : `Nova licença criada`);
   };
 
   const handleDelete = async (lic) => {
     if (!confirm(`Excluir a licença "${lic.license_type_label || lic.license_type}"?`)) return;
     setBusy(lic.id);
     try {
-      await base44.entities.PilotLicense.delete(lic.id);
-      await logAudit("exclusão", `Licença excluída: ${lic.license_type_label || lic.license_type}`);
+      await base44.functions.invoke("managePilotLicense", { action: "delete", id: lic.id, pilot_id: pilot.id });
       await load();
       setToast("Licença excluída.");
     } catch (e) {
@@ -86,10 +79,7 @@ export default function PilotLicensesSection({ pilot, isManager, onRefresh }) {
   const sendForReview = async (lic) => {
     setBusy(lic.id);
     try {
-      const log = JSON.parse(lic.approval_log || "[]");
-      log.push({ action: "sent_review", by: me?.full_name || me?.email, at: new Date().toISOString() });
-      await base44.entities.PilotLicense.update(lic.id, { approval_status: "pending_review", approval_log: JSON.stringify(log) });
-      await logAudit("envio para conferência", `Licença enviada: ${lic.license_type_label || lic.license_type}`);
+      await base44.functions.invoke("managePilotLicense", { action: "send_for_review", id: lic.id, pilot_id: pilot.id });
       await load();
       setToast("Licença enviada para conferência.");
     } catch (e) {
@@ -101,16 +91,7 @@ export default function PilotLicensesSection({ pilot, isManager, onRefresh }) {
   const approve = async (lic) => {
     setBusy(lic.id);
     try {
-      const log = JSON.parse(lic.approval_log || "[]");
-      log.push({ action: "approved", by: me?.full_name || me?.email, at: new Date().toISOString() });
-      await base44.entities.PilotLicense.update(lic.id, {
-        approval_status: "approved",
-        reviewed_by: me?.full_name || me?.email,
-        reviewed_at: new Date().toISOString(),
-        review_decision: "approved",
-        approval_log: JSON.stringify(log),
-      });
-      await logAudit("aprovação", `Licença aprovada: ${lic.license_type_label || lic.license_type}`);
+      await base44.functions.invoke("managePilotLicense", { action: "approve", id: lic.id, pilot_id: pilot.id });
       await load();
       setToast("Licença aprovada.");
     } catch (e) {
@@ -123,17 +104,7 @@ export default function PilotLicensesSection({ pilot, isManager, onRefresh }) {
     if (!rejecting) return;
     setBusy(rejecting.id);
     try {
-      const log = JSON.parse(rejecting.approval_log || "[]");
-      log.push({ action: "rejected", by: me?.full_name || me?.email, at: new Date().toISOString(), reason: rejectReason });
-      await base44.entities.PilotLicense.update(rejecting.id, {
-        approval_status: "rejected",
-        reviewed_by: me?.full_name || me?.email,
-        reviewed_at: new Date().toISOString(),
-        review_decision: "rejected",
-        review_justification: rejectReason,
-        approval_log: JSON.stringify(log),
-      });
-      await logAudit("rejeição", `Licença rejeitada: ${rejecting.license_type_label || rejecting.license_type}${rejectReason ? ` — ${rejectReason}` : ""}`);
+      await base44.functions.invoke("managePilotLicense", { action: "reject", id: rejecting.id, pilot_id: pilot.id, reason: rejectReason });
       await load();
       setToast("Licença rejeitada.");
     } catch (e) {
