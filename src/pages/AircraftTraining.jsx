@@ -4,12 +4,11 @@ import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
 import { getTraining, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData";
 import BackToDashboard from "@/components/BackToDashboard";
-import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import DocumentListItem from "@/components/academy/DocumentListItem";
 import { useProfile } from "@/lib/ProfileContext";
 import {
   GraduationCap, Crown, Monitor, Plane, Settings, ChevronRight, ChevronDown,
-  FileText, Upload, Loader2, X, AlertTriangle, ShieldAlert, BookOpen, Layers,
+  Upload, Loader2, X, AlertTriangle, ShieldAlert, BookOpen, Layers,
 } from "lucide-react";
 
 const MODULE_ICONS = { Monitor, Plane, Settings };
@@ -32,8 +31,6 @@ export default function AircraftTraining() {
   const [uploadTitle, setUploadTitle] = useState("");
 
   const canEdit = can(user, "treinamentos", "editar");
-  const data = training?.data ?? { modules: [], subtitle: "" };
-  const discipline = training?.discipline ?? null;
   const mod = data.modules.find((m) => m.id === activeModule) ?? data.modules[0];
   const loadDocs = async () => {
     if (!discipline || !profileValue) {

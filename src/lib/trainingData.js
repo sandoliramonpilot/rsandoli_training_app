@@ -1,10 +1,10 @@
 // Dados de treinamento — Módulos gerais + AW119_Koala Academy (premium)
 
-import { AW119_TRAINING, PENDING_CONTENT, DIDATIC_NOTICE } from "./trainingData/aw119TrainingData";
+import { AW119_TRAINING, TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE } from "./trainingData/aw119TrainingData";
 import { H125_TRAINING } from "./trainingData/h125Training";
 
 // Reexporta constantes didáticas consumidas pelas páginas de treinamento.
-export { PENDING_CONTENT, DIDATIC_NOTICE };
+export { AW119_TRAINING, TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE };
 
 // Mapa de treinamentos por perfil de aeronave. Cada entrada retorna
 // { name, label, discipline, data } para a página AircraftTraining.

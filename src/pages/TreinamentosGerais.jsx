@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import { useAuth } from "@/lib/AuthContext";
-import { can } from "@/lib/accessControl";
-import { DIDATIC_NOTICE } from "@/lib/trainingData";
+import { TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData";
 import BackToDashboard from "@/components/BackToDashboard";
 import {
   Fuel, Droplets, Zap, Radio, LayoutDashboard, Cog, Settings, Wind, Joystick,
-  ChevronDown, ChevronRight, AlertTriangle, BookOpen, GraduationCap,
+  ChevronDown, ChevronRight, AlertTriangle, BookOpen,
 } from "lucide-react";
 
 const MODULE_ICONS = {
@@ -13,9 +11,7 @@ const MODULE_ICONS = {
 };
 
 export default function TreinamentosGerais() {
-  const { user } = useAuth();
   const [expanded, setExpanded] = useState(new Set([TREINAMENTOS_GERAIS.modules[0].id]));
-  const canEdit = can(user, "treinamentos", "editar");
 
   const toggle = (id) => {
     setExpanded((prev) => {
