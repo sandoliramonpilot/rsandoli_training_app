@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useProfile } from "@/lib/ProfileContext";
 import { can } from "@/lib/accessControl";
-import { getTraining, TREINAMENTOS_GERAIS } from "@/lib/aw119Training.js";
+import { getTraining, TREINAMENTOS_GERAIS } from "@/lib/trainingData/index.js";
 import { Search, X, Loader2 } from "lucide-react";
 
 export default function GlobalSearch({ open, onClose }) {
