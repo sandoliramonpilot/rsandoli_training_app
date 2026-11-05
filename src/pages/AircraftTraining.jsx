@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
+import { useProfile } from "@/lib/ProfileContext";
 import { getTraining, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData";
 import BackToDashboard from "@/components/BackToDashboard";
+import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import DocumentListItem from "@/components/academy/DocumentListItem";
-import { useProfile } from "@/lib/ProfileContext";
+import SemAcessoAoModulo from "@/components/SemAcessoAoModulo";
 import {
   GraduationCap, Crown, Monitor, Plane, Settings, ChevronRight, ChevronDown,
   Upload, Loader2, X, AlertTriangle, ShieldAlert, BookOpen, Layers,
@@ -20,39 +22,43 @@ export default function AircraftTraining() {
   const training = getTraining(profileValue);
   const data = training?.data ?? { modules: [], subtitle: "" };
   const discipline = training?.discipline ?? null;
-  
-  const [activeModule, setActiveModule] = useState(
-    training?.data?.modules?.[0]?.id ?? null
-  );
+
+  const [activeModule, setActiveModule] = useState(null);
   const [expandedChapters, setExpandedChapters] = useState(new Set());
   const [trainingDocs, setTrainingDocs] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadChapter, setUploadChapter] = useState(null);
   const [uploadTitle, setUploadTitle] = useState("");
 
-  const canEdit = can(user, "treinamentos", "editar");
-  const mod = data.modules.find((m) => m.id === activeModule) ?? data.modules[0];
+  const canEdit = can(user, discipline, "editar");
+
+  const mod =
+    data.modules.find((m) => m.id === activeModule) ?? data.modules[0] ?? null;
+
   const loadDocs = async () => {
     if (!discipline || !profileValue) {
       setTrainingDocs([]);
       return;
     }
-    const docs = await base44.entities.TrainingDocument.filter({
-      aircraftProfile: profileValue,
-      discipline,
-      status: "active",
-    }).catch(() => []);
-    setTrainingDocs(docs);
+    const docs = await base44.entities.TrainingDocument
+      .filter({
+        aircraftProfile: profileValue,
+        discipline,
+        status: "active",
+      })
+      .catch(() => []);
+    setTrainingDocs(docs ?? []);
   };
+
+  useEffect(() => {
+    setActiveModule(data.modules[0]?.id ?? null);
+    setExpandedChapters(new Set());
+  }, [profileValue]);
 
   useEffect(() => {
     loadDocs();
   }, [profileValue, discipline]);
 
-  useEffect(() => {
-    setActiveModule(training?.data?.modules?.[0]?.id ?? null);
-    setExpandedChapters(new Set());
-  }, [profileValue]);
   const toggleChapter = (id) => {
     setExpandedChapters((prev) => {
       const next = new Set(prev);
@@ -65,15 +71,18 @@ export default function AircraftTraining() {
   const handleUpload = async (e) => {
     e.preventDefault();
     const file = e.target.files?.[0];
-    if (!file || !uploadChapter) return;
+    if (!file || !uploadChapter || !discipline) return;
+
     const ext = file.name.split(".").pop()?.toLowerCase();
     if (!["pdf", "ppsx", "pptx", "doc", "docx"].includes(ext)) {
       alert("Formato não suportado. Use PDF, PPSX, PPTX, DOC ou DOCX.");
       return;
     }
+
     setUploading(true);
     try {
       const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+
       await base44.entities.TrainingDocument.create({
         title: uploadTitle || file.name.replace(/\.[^/.]+$/, ""),
         discipline,
@@ -86,6 +95,7 @@ export default function AircraftTraining() {
         uploaded_by: user?.full_name || user?.email || "",
         approval_status: "pending_review",
       });
+
       setUploadTitle("");
       setUploadChapter(null);
       await loadDocs();
@@ -97,18 +107,22 @@ export default function AircraftTraining() {
     }
   };
 
+  if (!training) return <SemAcessoAoModulo />;
+  if (!mod) return null;
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Academy</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">{training.name}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">
+            {training.name}
+          </h1>
           <p className="text-slate-400 mt-2 text-sm max-w-2xl">{data.subtitle}</p>
         </div>
         <BackToDashboard />
       </header>
 
-      {/* Premium banner */}
       <div className="bg-gradient-to-br from-[#1A1D25] to-[#12141A] rounded-2xl border border-amber-500/20 shadow-lg overflow-hidden">
         <div className="p-6 md:p-8 flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -127,7 +141,6 @@ export default function AircraftTraining() {
         </div>
       </div>
 
-      {/* Module tabs */}
       <div className="flex flex-wrap gap-2">
         {data.modules.map((m) => {
           const Icon = MODULE_ICONS[m.icon] || BookOpen;
@@ -137,7 +150,9 @@ export default function AircraftTraining() {
               key={m.id}
               onClick={() => setActiveModule(m.id)}
               className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors border ${
-                active ? "bg-amber-500 text-slate-900 border-amber-500" : "bg-[#1A1D25] text-slate-300 border-slate-700/60 hover:border-amber-500/40"
+                active
+                  ? "bg-amber-500 text-slate-900 border-amber-500"
+                  : "bg-[#1A1D25] text-slate-300 border-slate-700/60 hover:border-amber-500/40"
               }`}
             >
               <Icon className="w-4 h-4" /> {m.title}
@@ -146,7 +161,6 @@ export default function AircraftTraining() {
         })}
       </div>
 
-      {/* Module content */}
       <div className="space-y-4">
         <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-5">
           <div className="flex items-start gap-3">
@@ -154,10 +168,12 @@ export default function AircraftTraining() {
             <div>
               <h3 className="font-semibold text-slate-100">{mod.title}</h3>
               <p className="text-sm text-slate-400 mt-1">{mod.objective}</p>
-              {mod.levels && (
+              {mod.levels?.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {mod.levels.map((l) => (
-                    <span key={l} className="text-xs px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/30">{l}</span>
+                    <span key={l} className="text-xs px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/30">
+                      {l}
+                    </span>
                   ))}
                 </div>
               )}
@@ -172,8 +188,7 @@ export default function AircraftTraining() {
           </div>
         )}
 
-        {/* Chapters */}
-        {mod.chapters?.map((ch) => {
+        {(mod.chapters ?? []).map((ch) => {
           const isOpen = expandedChapters.has(ch.id);
           const docs = trainingDocs.filter((d) => d.chapter === ch.id);
           return (
@@ -196,7 +211,6 @@ export default function AircraftTraining() {
           );
         })}
 
-        {/* Items (for modules without chapters) */}
         {mod.items && !mod.chapters && (
           <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-5">
             <ul className="space-y-2">
@@ -213,8 +227,13 @@ export default function AircraftTraining() {
   );
 }
 
-function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUploadOpen, uploadTitle, setUploadTitle, onUploadClick, onCancelUpload, onFileSelect, onUpdated }) {
-  const fileInputRef = React.useRef(null);
+function ChapterCard({
+  chapter, isOpen, onToggle, docs, canEdit, uploading, isUploadOpen,
+  uploadTitle, setUploadTitle, onUploadClick, onCancelUpload, onFileSelect, onUpdated,
+}) {
+  const fileInputRef = useRef(null);
+  const items = chapter.items ?? [];
+
   return (
     <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 overflow-hidden">
       <button
@@ -222,7 +241,11 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
         className="w-full flex items-center justify-between px-5 py-3.5 bg-[#12141A] border-b border-slate-700/60 hover:bg-white/[0.02] transition-colors"
       >
         <div className="flex items-center gap-2.5 text-left">
-          {chapter.isHelipilotArea ? <ShieldAlert className="w-4 h-4 text-teal-400 shrink-0" /> : <ChevronRight className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />}
+          {chapter.isHelipilotArea ? (
+            <ShieldAlert className="w-4 h-4 text-teal-400 shrink-0" />
+          ) : (
+            <ChevronRight className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+          )}
           <h3 className="font-semibold text-sm text-slate-100">{chapter.title}</h3>
         </div>
         <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isOpen ? "rotate-180" : ""}`} />
@@ -238,7 +261,7 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
             <HelipilotContent chapter={chapter} />
           ) : (
             <ul className="space-y-2">
-              {(chapter.items ?? []).map((t, i) => (
+              {items.map((t, i) => (
                 <li key={i} className="text-sm text-slate-300 flex items-start gap-2.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" /> {t}
                 </li>
@@ -258,7 +281,9 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
 
           {docs.length > 0 && (
             <div className="space-y-2 pt-2 border-t border-slate-700/40">
-              <p className="text-xs uppercase tracking-wider text-slate-500 font-medium pt-2">Documentos anexados</p>
+              <p className="text-xs uppercase tracking-wider text-slate-500 font-medium pt-2">
+                Documentos anexados
+              </p>
               {docs.map((d) => (
                 <DocumentListItem key={d.id} doc={d} canEdit={canEdit} onUpdated={onUpdated} />
               ))}
@@ -281,7 +306,13 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
                     className="w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500"
                   />
                   <div className="flex items-center gap-2">
-                    <input ref={fileInputRef} type="file" accept=".pdf,.ppsx,.pptx,.doc,.docx" onChange={onFileSelect} className="hidden" />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.ppsx,.pptx,.doc,.docx"
+                      onChange={onFileSelect}
+                      className="hidden"
+                    />
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -311,13 +342,19 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
 }
 
 function HelipilotContent({ chapter }) {
+  const items = chapter.items ?? [];
+  const modes = chapter.modes ?? [];
+  const modeFields = chapter.modeFields ?? [];
+
   return (
     <div className="space-y-4">
       <div>
         <p className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-2">Conteúdo</p>
         <div className="flex flex-wrap gap-2">
-          {(chapter.items ?? []).map((t, i) => (
-            <span key={i} className="text-xs px-3 py-1.5 rounded-lg bg-slate-700/30 text-slate-300 border border-slate-700/40">{t}</span>
+          {items.map((t, i) => (
+            <span key={i} className="text-xs px-3 py-1.5 rounded-lg bg-slate-700/30 text-slate-300 border border-slate-700/40">
+              {t}
+            </span>
           ))}
         </div>
       </div>
@@ -325,8 +362,10 @@ function HelipilotContent({ chapter }) {
       <div>
         <p className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-2">Modos a organizar</p>
         <div className="flex flex-wrap gap-2">
-          {(chapter.modes ?? []).map((m) => (
-            <span key={m} className="text-xs px-3 py-1.5 rounded-lg bg-teal-500/10 text-teal-300 border border-teal-500/30 font-mono">{m}</span>
+          {modes.map((m) => (
+            <span key={m} className="text-xs px-3 py-1.5 rounded-lg bg-teal-500/10 text-teal-300 border border-teal-500/30 font-mono">
+              {m}
+            </span>
           ))}
         </div>
       </div>
@@ -336,7 +375,7 @@ function HelipilotContent({ chapter }) {
           Para cada modo, apresentar:
         </p>
         <ol className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5">
-          {(chapter.modeFields ?? []).map((f, i) => (
+          {modeFields.map((f, i) => (
             <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
               <span className="text-xs text-amber-400 font-mono shrink-0 mt-0.5">{i + 1}.</span> {f}
             </li>
