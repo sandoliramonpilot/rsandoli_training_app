@@ -1,20 +1,17 @@
 {
-  "name": "base44-app",
+  "name": "rsandoli-training-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint . --quiet",
-    "lint:fix": "eslint . --fix",
-    "typecheck": "tsc -p ./jsconfig.json",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint .",
     "verificar": "node scripts/verificar-modulos.mjs",
     "verificar:pre": "node scripts/verificar-modulos.mjs --pre",
     "verificar:build": "node scripts/verificar-modulos.mjs --build",
     "verificar:sh": "bash scripts/verificar-modulos.sh"
-    }
   },
   "dependencies": {
     "@base44/sdk": "^0.8.59",
