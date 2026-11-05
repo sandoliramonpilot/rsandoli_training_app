@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import { AIRCRAFT_PROFILES, DEFAULT_PROFILE } from '@/lib/aircraftProfile';
+import {
+  AIRCRAFT_PROFILES,
+  DEFAULT_PROFILE,
+  getSelectedProfile,
+  setSelectedProfile,
+  profileQueryFilter,
+} from '@/lib/aircraftProfile';
 
 const ProfileContext = createContext(null);
 
@@ -39,23 +45,26 @@ export function ProfileProvider({ children }) {
       setAircraft(null);
       return;
     }
-    const salvo = localStorage.getItem('aircraft');
+
+    // Preferência salva na sessão (via aircraftProfile.js)
+    const salvo = getSelectedProfile();
     const inicial = modulosPermitidos.includes(salvo)
       ? salvo
       : modulosPermitidos[0] ?? null;
+
     setAircraft(inicial);
-    if (inicial) localStorage.setItem('aircraft', inicial);
+    if (inicial) setSelectedProfile(inicial);
   }, [user, modulosPermitidos]);
 
   const trocarAeronave = (novo) => {
     if (!modulosPermitidos.includes(novo)) return false;
-    localStorage.setItem('aircraft', novo);
+    setSelectedProfile(novo);
     setAircraft(novo);
     return true;
   };
 
   const profileValue = aircraft;
-  const profileFilter = aircraft ? { aircraftProfile: aircraft } : {};
+  const profileFilter = aircraft ? profileQueryFilter(aircraft) : {};
 
   const value = useMemo(
     () => ({
