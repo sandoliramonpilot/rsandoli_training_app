@@ -1,283 +1,175 @@
-// Perfis de acesso (níveis) e módulos do aplicativo — base para controle de acesso
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import { canLogin, getAuthorizedAircraft } from "@/lib/accessControl";
+import { PROFILE_LABELS, PROFILE_DESCRIPTIONS } from "@/lib/aircraftProfile";
+import { Loader2, Plane, Lock, Mail, ArrowRight } from "lucide-react";
 
-export const ACCESS_LEVELS = [
-  { id: "admin_geral", name: "Administrador Geral", rank: 5 },
-  { id: "administrador", name: "Administrador", rank: 4 },
-  { id: "gestor_supervisor", name: "Gestor / Supervisor", rank: 3 },
-  { id: "operacional", name: "Usuário Operacional", rank: 2 },
-  { id: "consulta", name: "Usuário de Consulta", rank: 1 },
-];
+export default function Login() {
+  const navigate = useNavigate();
 
-export const ACCOUNT_STATUSES = [
-  { id: "convite_pendente", name: "Convite pendente" },
-  { id: "ativa", name: "Ativa" },
-  { id: "bloqueada", name: "Bloqueada" },
-  { id: "suspensa", name: "Suspensa" },
-  { id: "desativada", name: "Desativada" },
-];
+  const [etapa, setEtapa] = useState("credenciais");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [perfis, setPerfis] = useState([]);
+  const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
-// Módulos para controle de permissão
-export const PERMISSION_MODULES = [
-  { id: "dashboard", name: "Dashboard", path: "/" },
-  { id: "diario_bordo", name: "Diário de Bordo", path: "/flight-log" },
-  { id: "aeronaves", name: "Aeronaves", path: "/aircraft" },
-  { id: "checklists", name: "Checklists", path: "/checklist" },
-  { id: "qrh", name: "QRH", path: "/qrh" },
-  { id: "qrh_efis", name: "QRH-EFIS", path: "/qrh-efis" },
-  { id: "biblioteca", name: "Biblioteca", path: "/biblioteca" },
-  { id: "pilotos", name: "Pilotos", path: "/pilotos" },
-  { id: "oat", name: "OAT/TRIP.OPER", path: "/oat" },
-  { id: "treinamentos", name: "Treinamentos", path: "/treinamentos" },
-  { id: "aw119_training", name: "AW119 Training", path: "/training" },
-  { id: "h125_training", name: "H125 Training", path: "/training" },
-  { id: "treinamentos_gerais", name: "Treinamentos Gerais", path: "/treinamentos-gerais" },
-  { id: "limitacoes", name: "Limitações", path: "/limitacoes" },
-  { id: "procedimentos_normais", name: "Procedimentos Normais", path: "/procedimentos-normais" },
-  { id: "procedimentos_emergencia", name: "Procedimentos de Emergência", path: "/procedimentos-emergencia" },
-  { id: "simulados", name: "Simulados", path: "/simulados" },
-  { id: "questoes", name: "Questões de prova", path: "/questoes" },
-  { id: "recursos_visuais", name: "Recursos Audiovisuais", path: "/recursos-audiovisuais" },
-  { id: "briefing_emergencia", name: "Briefing de Emergência", path: "/briefing-emergencia" },
-  { id: "treinamento_recorrente", name: "Treinamento Recorrente", path: "/treinamento-recorrente" },
-  { id: "gestao", name: "Gestão", path: "/gestao" },
-  { id: "escalas", name: "Escalas", path: "/escalas" },
-  { id: "usuarios", name: "Usuários e Acessos", path: "/usuarios" },
-  { id: "auditoria", name: "Auditoria", path: "/usuarios/auditoria" },
-  { id: "marcos_projeto", name: "Marcos do Projeto", path: "/marcos-projeto" },
-];
+  const entrar = async (e) => {
+    e.preventDefault();
+    setErro("");
+    setCarregando(true);
 
-export const PERMISSION_ACTIONS = [
-  { id: "visualizar", name: "Visualizar" },
-  { id: "criar", name: "Criar" },
-  { id: "editar", name: "Editar" },
-  { id: "excluir", name: "Excluir" },
-  { id: "aprovar", name: "Aprovar" },
-  { id: "finalizar", name: "Finalizar" },
-  { id: "exportar", name: "Exportar" },
-  { id: "download", name: "Download" },
-  { id: "administrar", name: "Administrar" },
-  { id: "proprios", name: "Registros próprios" },
-  { id: "unidade", name: "Registros da unidade" },
-  { id: "todos", name: "Todos os registros" },
-];
-
-// Permissões padrão por nível (módulo -> ações permitidas). Admin Geral = todos.
-// h125_training NÃO consta aqui de propósito: é liberado individualmente
-// via custom_permissions do usuário.
-export const DEFAULT_PERMISSIONS_BY_LEVEL = {
-  admin_geral: "*",
-  administrador: {
-    dashboard: ["visualizar"],
-    diario_bordo: ["visualizar", "criar", "editar", "exportar", "todos"],
-    aeronaves: ["visualizar", "criar", "editar", "todos"],
-    checklists: ["visualizar", "criar", "editar", "finalizar", "todos"],
-    qrh: ["visualizar"],
-    qrh_efis: ["visualizar"],
-    biblioteca: ["visualizar", "criar", "editar", "download", "todos"],
-    pilotos: ["visualizar", "criar", "editar", "todos"],
-    oat: ["visualizar", "criar", "editar", "todos"],
-    treinamentos: ["visualizar", "editar"],
-    aw119_training: ["visualizar", "editar"],
-    treinamentos_gerais: ["visualizar", "editar"],
-    limitacoes: ["visualizar"],
-    procedimentos_normais: ["visualizar"],
-    procedimentos_emergencia: ["visualizar"],
-    simulados: ["visualizar", "criar", "todos"],
-    questoes: ["visualizar", "criar", "editar"],
-    recursos_visuais: ["visualizar"],
-    briefing_emergencia: ["visualizar"],
-    treinamento_recorrente: ["visualizar"],
-    gestao: ["visualizar"],
-    escalas: ["visualizar", "criar", "editar", "excluir", "todos"],
-    usuarios: ["visualizar", "criar", "editar"],
-    auditoria: ["visualizar"],
-    marcos_projeto: ["visualizar", "criar", "editar", "excluir"],
-  },
-  gestor_supervisor: {
-    dashboard: ["visualizar"],
-    diario_bordo: ["visualizar", "criar", "editar", "unidade"],
-    aeronaves: ["visualizar", "criar", "editar"],
-    checklists: ["visualizar", "aprovar", "unidade"],
-    qrh: ["visualizar"],
-    qrh_efis: ["visualizar"],
-    biblioteca: ["visualizar", "download"],
-    pilotos: ["visualizar", "criar", "editar", "unidade"],
-    oat: ["visualizar", "criar", "editar", "unidade"],
-    treinamentos: ["visualizar", "editar"],
-    aw119_training: ["visualizar"],
-    treinamentos_gerais: ["visualizar"],
-    limitacoes: ["visualizar"],
-    procedimentos_normais: ["visualizar"],
-    procedimentos_emergencia: ["visualizar"],
-    simulados: ["visualizar"],
-    questoes: ["visualizar"],
-    recursos_visuais: ["visualizar"],
-    briefing_emergencia: ["visualizar"],
-    treinamento_recorrente: ["visualizar"],
-    gestao: ["visualizar"],
-    escalas: ["visualizar", "criar", "editar"],
-    usuarios: [],
-    auditoria: [],
-  },
-  operacional: {
-    dashboard: ["visualizar"],
-    diario_bordo: ["visualizar", "criar", "proprios"],
-    aeronaves: ["visualizar"],
-    checklists: ["visualizar", "criar", "editar", "finalizar", "proprios"],
-    qrh: ["visualizar"],
-    qrh_efis: ["visualizar"],
-    biblioteca: ["visualizar", "download"],
-    pilotos: ["visualizar"],
-    oat: ["visualizar"],
-    treinamentos: ["visualizar"],
-    aw119_training: ["visualizar"],
-    treinamentos_gerais: ["visualizar"],
-    limitacoes: ["visualizar"],
-    procedimentos_normais: ["visualizar"],
-    procedimentos_emergencia: ["visualizar"],
-    simulados: ["visualizar", "criar"],
-    questoes: ["visualizar"],
-    recursos_visuais: ["visualizar"],
-    briefing_emergencia: ["visualizar"],
-    treinamento_recorrente: ["visualizar"],
-    gestao: [],
-    escalas: ["visualizar"],
-    usuarios: [],
-    auditoria: [],
-  },
-  consulta: {
-    dashboard: ["visualizar"],
-    diario_bordo: ["visualizar"],
-    aeronaves: ["visualizar"],
-    checklists: ["visualizar"],
-    qrh: ["visualizar"],
-    qrh_efis: ["visualizar"],
-    biblioteca: ["visualizar"],
-    pilotos: ["visualizar"],
-    oat: ["visualizar"],
-    treinamentos: ["visualizar"],
-    aw119_training: ["visualizar"],
-    treinamentos_gerais: ["visualizar"],
-    limitacoes: ["visualizar"],
-    procedimentos_normais: ["visualizar"],
-    procedimentos_emergencia: ["visualizar"],
-    simulados: ["visualizar"],
-    questoes: ["visualizar"],
-    recursos_visuais: ["visualizar"],
-    briefing_emergencia: ["visualizar"],
-    treinamento_recorrente: ["visualizar"],
-    gestao: [],
-    escalas: ["visualizar"],
-    usuarios: [],
-    auditoria: [],
-  },
-};
-
-export const ACCESS_LEVEL_LABELS = ACCESS_LEVELS.reduce((acc, l) => {
-  acc[l.id] = l.name;
-  return acc;
-}, {});
-
-export const ACCOUNT_STATUS_LABELS = ACCOUNT_STATUSES.reduce((acc, s) => {
-  acc[s.id] = s.name;
-  return acc;
-}, {});
-
-/** Nível de acesso do usuário (lido do campo customizado access_level ou derivado de role). */
-export function getAccessLevel(user) {
-  if (!user) return null;
-  const al = user.access_level;
-  if (al && ACCESS_LEVELS.some((l) => l.id === al)) return al;
-  return user.role === "admin" ? "administrador" : "operacional";
-}
-
-/** Status da conta (padrão: ativa). */
-export function getAccountStatus(user) {
-  return user?.account_status || "ativa";
-}
-
-/** Verifica se o usuário tem permissão de fazer a ação no módulo. */
-export function can(user, moduleId, action) {
-  const level = getAccessLevel(user);
-  if (!level) return false;
-  if (level === "admin_geral") return true;
-
-  const custom = user?.custom_permissions;
-  let perms = null;
-
-  if (custom && typeof custom === "string") {
     try {
-      const parsed = JSON.parse(custom);
-      perms = parsed[moduleId] ?? DEFAULT_PERMISSIONS_BY_LEVEL[level]?.[moduleId];
-    } catch {
-      perms = DEFAULT_PERMISSIONS_BY_LEVEL[level]?.[moduleId];
+      await base44.auth.signIn({ email, password: senha });
+
+      const usuario = await base44.auth.me();
+
+      if (!canLogin(usuario)) {
+        setErro("Sua conta não está ativa. Fale com o administrador.");
+        setCarregando(false);
+        return;
+      }
+
+      const disponiveis = getAuthorizedAircraft(usuario);
+
+      if (disponiveis.length === 0) {
+        navigate("/sem-acesso");
+        return;
+      }
+
+      if (disponiveis.length === 1) {
+        localStorage.setItem("aircraft_profile", disponiveis[0]);
+        navigate("/training");
+        return;
+      }
+
+      setPerfis(disponiveis);
+      setEtapa("modulo");
+    } catch (err) {
+      setErro(err?.message || "Não foi possível entrar. Verifique e-mail e senha.");
+    } finally {
+      setCarregando(false);
     }
-  } else if (custom && typeof custom === "object") {
-    perms = custom[moduleId] ?? DEFAULT_PERMISSIONS_BY_LEVEL[level]?.[moduleId];
-  } else {
-    perms = DEFAULT_PERMISSIONS_BY_LEVEL[level]?.[moduleId];
+  };
+
+  const escolherModulo = (aeronave) => {
+    localStorage.setItem("aircraft_profile", aeronave);
+    navigate("/training");
+  };
+
+  if (etapa === "modulo") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#12141A] p-6">
+        <div className="w-full max-w-2xl space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-slate-100">Selecione seu módulo</h1>
+            <p className="text-sm text-slate-400 mt-1">
+              Você tem acesso a mais de um treinamento. Escolha por onde começar.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            {perfis.map((aeronave) => (
+              <button
+                key={aeronave}
+                onClick={() => escolherModulo(aeronave)}
+                className="group text-left p-6 rounded-2xl bg-[#1A1D25] border border-slate-700/60 hover:border-amber-500/60 transition-colors"
+              >
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center mb-4">
+                  <Plane className="w-5 h-5 text-slate-900" />
+                </div>
+                <p className="text-sm font-semibold text-slate-100">
+                  {PROFILE_LABELS[aeronave] || aeronave} TRAINING
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {PROFILE_DESCRIPTIONS[aeronave] || ""}
+                </p>
+                <span className="inline-flex items-center gap-1 text-xs text-amber-400 mt-4 group-hover:gap-2 transition-all">
+                  Entrar <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => {
+              setEtapa("credenciais");
+              setPerfis([]);
+            }}
+            className="w-full text-xs text-slate-500 hover:text-slate-300"
+          >
+            Voltar
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  if (!perms || !Array.isArray(perms)) return false;
-  if (action === "visualizar" && perms.includes("visualizar")) return true;
-  return perms.includes(action);
-}
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#12141A] p-6">
+      <form onSubmit={entrar} className="w-full max-w-sm space-y-4">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-slate-100">Entrar</h1>
+          <p className="text-sm text-slate-400 mt-1">Acesse sua conta de treinamento</p>
+        </div>
 
-/** Se o usuário pode gerenciar outros usuários (admin_geral ou administrador). */
-export function canManageUsers(user) {
-  const level = getAccessLevel(user);
-  return level === "admin_geral" || level === "administrador";
-}
+        <div>
+          <label className="text-xs text-slate-400 mb-1.5 block">E-mail</label>
+          <div className="relative">
+            <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500"
+              placeholder="seu@email.com"
+            />
+          </div>
+        </div>
 
-/** Se o usuário pode acessar a auditoria. */
-export function canViewAudit(user) {
-  return getAccessLevel(user) === "admin_geral";
-}
+        <div>
+          <label className="text-xs text-slate-400 mb-1.5 block">Senha</label>
+          <div className="relative">
+            <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500"
+              placeholder="••••••••"
+            />
+          </div>
+        </div>
 
-/** Se a conta permite login (ativa ou convite_pendente). */
-export function canLogin(user) {
-  const s = getAccountStatus(user);
-  return s === "ativa" || s === "convite_pendente";
-}
+        {erro && (
+          <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+            {erro}
+          </p>
+        )}
 
-/** Primeiro caminho de módulo autorizado para o usuário (para redirecionar após login). */
-export function firstAuthorizedPath(user) {
-  for (const mod of PERMISSION_MODULES) {
-    if (can(user, mod.id, "visualizar")) return mod.path;
-  }
-  return "/";
-}
+        <button
+          type="submit"
+          disabled={carregando}
+          className="w-full py-2.5 rounded-lg bg-amber-500 text-slate-900 text-sm font-semibold hover:bg-amber-400 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+        >
+          {carregando ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          {carregando ? "Entrando..." : "Entrar"}
+        </button>
 
-/** Verifica se o usuário possui pelo menos um módulo autorizado. */
-export function hasAnyAuthorizedModule(user) {
-  return PERMISSION_MODULES.some((mod) => can(user, mod.id, "visualizar"));
-}
-
-// ============================================================
-// Módulos de treinamento por aeronave
-// ============================================================
-
-export const TRAINING_MODULES = ["aw119_training", "h125_training"];
-
-/** Módulos de treinamento que o usuário pode visualizar. */
-export function getTrainingModules(user) {
-  return TRAINING_MODULES.filter((m) => can(user, m, "visualizar"));
-}
-
-/** Se o usuário tem acesso a pelo menos um módulo de treinamento. */
-export function canAccessTraining(user) {
-  return getTrainingModules(user).length > 0;
-}
-
-/** Mapeia moduleId de treinamento para o perfil de aeronave correspondente. */
-export const TRAINING_MODULE_TO_AIRCRAFT = {
-  aw119_training: "AW119",
-  h125_training: "H125",
-};
-
-/** Perfis de aeronave liberados ao usuário, derivados das permissões. */
-export function getAuthorizedAircraft(user) {
-  return getTrainingModules(user)
-    .map((m) => TRAINING_MODULE_TO_AIRCRAFT[m])
-    .filter(Boolean);
+        <div className="flex justify-between text-xs pt-2">
+          <a href="/forgot-password" className="text-slate-500 hover:text-amber-400">
+            Esqueci a senha
+          </a>
+          <a href="/register" className="text-slate-500 hover:text-amber-400">
+            Criar conta
+          </a>
+        </div>
+      </form>
+    </div>
+  );
 }
