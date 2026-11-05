@@ -1,274 +1,345 @@
-#!/usr/bin/env bash
-# Auditoria de separacao AW119 / H125
-# Uso: bash scripts/verificar-modulos.sh
-#      bash scripts/verificar-modulos.sh --build
-#      bash scripts/verificar-modulos.sh --pre    (antes da migracao)
+#!/usr/bin/env node
+// Auditoria de separacao AW119 / H125
+// Uso: node scripts/verificar-modulos.mjs
+//      node scripts/verificar-modulos.mjs --build
+//      node scripts/verificar-modulos.mjs --pre
 
-set -u
+import fs from "fs";
+import path from "path";
+import { execSync } from "child_process";
 
-VERDE="\033[0;32m"
-VERMELHO="\033[0;31m"
-AMARELO="\033[0;33m"
-AZUL="\033[0;36m"
-RESET="\033[0m"
+const C = {
+  verde: "\x1b[32m",
+  vermelho: "\x1b[31m",
+  amarelo: "\x1b[33m",
+  azul: "\x1b[36m",
+  reset: "\x1b[0m",
+};
 
-FALHAS=0
-AVISOS=0
-MODO="${1:-}"
+const MODO = process.argv.includes("--pre")
+  ? "pre"
+  : process.argv.includes("--build")
+  ? "build"
+  : "pos";
 
-titulo() {
-  echo ""
-  echo "──────────────────────────────────────────────"
-  echo "$1"
-  echo "──────────────────────────────────────────────"
+let falhas = 0;
+let avisos = 0;
+
+const titulo = (t) => {
+  console.log("");
+  console.log("──────────────────────────────────────────────");
+  console.log(t);
+  console.log("──────────────────────────────────────────────");
+};
+
+const ok = (m) => console.log(`${C.verde}OK${C.reset}     ${m}`);
+const falha = (m) => {
+  console.log(`${C.vermelho}FALHA${C.reset}  ${m}`);
+  falhas++;
+};
+const aviso = (m) => {
+  console.log(`${C.amarelo}AVISO${C.reset}  ${m}`);
+  avisos++;
+};
+const info = (m) => console.log(`${C.azul}INFO${C.reset}   ${m}`);
+
+const existe = (p) => fs.existsSync(path.resolve(p));
+
+const ler = (p) => {
+  try {
+    return fs.readFileSync(path.resolve(p), "utf8");
+  } catch {
+    return "";
+  }
+};
+
+// Percorre src/ recursivamente e devolve arquivos de texto
+function listarArquivos(dir = "src") {
+  const base = path.resolve(dir);
+  if (!fs.existsSync(base)) return [];
+
+  const saida = [];
+  const pilha = [base];
+
+  while (pilha.length) {
+    const atual = pilha.pop();
+    for (const entrada of fs.readdirSync(atual, { withFileTypes: true })) {
+      const completo = path.join(atual, entrada.name);
+      if (entrada.isDirectory()) {
+        pilha.push(completo);
+      } else if (/\.(js|jsx|ts|tsx)$/.test(entrada.name)) {
+        saida.push(completo);
+      }
+    }
+  }
+  return saida;
 }
 
-ok()    { echo -e "${VERDE}OK${RESET}     $1"; }
-falha() { echo -e "${VERMELHO}FALHA${RESET}  $1"; FALHAS=$((FALHAS + 1)); }
-aviso() { echo -e "${AMARELO}AVISO${RESET}  $1"; AVISOS=$((AVISOS + 1)); }
-info()  { echo -e "${AZUL}INFO${RESET}   $1"; }
+// Busca um padrao em src/ e devolve ocorrencias formatadas
+function buscar(padrao, { ignorar = [] } = {}) {
+  const regex = padrao instanceof RegExp ? padrao : new RegExp(padrao);
+  const resultados = [];
 
-# ────────────────────────────────────────────────
-# 1. Arquivos de dados
-# ────────────────────────────────────────────────
-titulo "1. Arquivos de dados"
+  for (const arquivo of listarArquivos("src")) {
+    const relativo = path.relative(process.cwd(), arquivo);
+    if (ignorar.some((i) => relativo.includes(i))) continue;
 
-if [ -f "src/lib/trainingData/index.js" ]; then
-  ok "src/lib/trainingData/index.js"
-  MIGRADO=1
-else
-  if [ "$MODO" = "--pre" ]; then
-    info "src/lib/trainingData/index.js ainda nao criado (modo pre-migracao)"
-  else
-    falha "Ausente: src/lib/trainingData/index.js"
-  fi
-  MIGRADO=0
-fi
+    const linhas = ler(arquivo).split("\n");
+    linhas.forEach((linha, i) => {
+      if (regex.test(linha)) {
+        resultados.push(`${relativo}:${i + 1}: ${linha.trim()}`);
+      }
+    });
+  }
+  return resultados;
+}
 
-if [ -f "src/lib/trainingData/aw119Training.js" ]; then
-  ok "src/lib/trainingData/aw119Training.js"
-elif [ -f "src/lib/aw119TrainingData.js" ]; then
-  if [ "$MODO" = "--pre" ]; then
-    info "src/lib/aw119TrainingData.js ainda no caminho antigo (modo pre-migracao)"
-  else
-    falha "Arquivo ainda em src/lib/aw119TrainingData.js. Mova para trainingData/."
-  fi
-else
-  falha "Nao encontrado: aw119Training.js nem aw119TrainingData.js"
-fi
+// ────────────────────────────────────────────────
+// 1. Arquivos de dados
+// ────────────────────────────────────────────────
+titulo("1. Arquivos de dados");
 
-if [ -f "src/lib/trainingData/h125Training.js" ]; then
-  ok "src/lib/trainingData/h125Training.js"
-else
-  if [ "$MODO" = "--pre" ]; then
-    info "h125Training.js ainda nao criado"
-  else
-    falha "Ausente: src/lib/trainingData/h125Training.js"
-  fi
-fi
+if (existe("src/lib/trainingData/index.js")) {
+  ok("src/lib/trainingData/index.js");
+} else if (MODO === "pre") {
+  info("src/lib/trainingData/index.js ainda nao criado (modo pre-migracao)");
+} else {
+  falha("Ausente: src/lib/trainingData/index.js");
+}
 
-# notices.js e treinamentosGerais.js: NAO verificados (decisao do usuario)
+if (existe("src/lib/trainingData/aw119Training.js")) {
+  ok("src/lib/trainingData/aw119Training.js");
+} else if (existe("src/lib/aw119TrainingData.js")) {
+  if (MODO === "pre") {
+    info("src/lib/aw119TrainingData.js ainda no caminho antigo");
+  } else {
+    falha("Arquivo ainda em src/lib/aw119TrainingData.js. Mova para trainingData/.");
+  }
+} else {
+  falha("Nao encontrado: aw119Training.js nem aw119TrainingData.js");
+}
 
-# ────────────────────────────────────────────────
-# 2. Paginas
-# ────────────────────────────────────────────────
-titulo "2. Paginas"
+if (existe("src/lib/trainingData/h125Training.js")) {
+  ok("src/lib/trainingData/h125Training.js");
+} else if (MODO === "pre") {
+  info("h125Training.js ainda nao criado");
+} else {
+  falha("Ausente: src/lib/trainingData/h125Training.js");
+}
 
-if [ -f "src/pages/AircraftTraining.jsx" ]; then
-  ok "src/pages/AircraftTraining.jsx"
-else
-  if [ -f "src/pages/AW119Training.jsx" ]; then
-    if [ "$MODO" = "--pre" ]; then
-      info "src/pages/AW119Training.jsx ainda nao renomeado"
-    else
-      falha "Página ainda e AW119Training.jsx. Renomeie para AircraftTraining.jsx."
-    fi
-  else
-    falha "Nem AircraftTraining.jsx nem AW119Training.jsx encontrados"
-  fi
-fi
+// notices.js e treinamentosGerais.js: nao verificados por decisao do usuario
 
-if [ -f "src/pages/SemAcesso.jsx" ]; then
-  ok "src/pages/SemAcesso.jsx"
-else
-  aviso "src/pages/SemAcesso.jsx ausente (rota /sem-acesso nao funcionara)"
-fi
+// ────────────────────────────────────────────────
+// 2. Paginas
+// ────────────────────────────────────────────────
+titulo("2. Paginas");
 
-if [ -f "src/components/SemAcessoAoModulo.jsx" ]; then
-  ok "src/components/SemAcessoAoModulo.jsx"
-else
-  aviso "src/components/SemAcessoAoModulo.jsx ausente (AircraftTraining precisa dele)"
-fi
+if (existe("src/pages/AircraftTraining.jsx")) {
+  ok("src/pages/AircraftTraining.jsx");
+} else if (existe("src/pages/AW119Training.jsx")) {
+  if (MODO === "pre") {
+    info("src/pages/AW119Training.jsx ainda nao renomeado");
+  } else {
+    falha("Página ainda e AW119Training.jsx. Renomeie para AircraftTraining.jsx.");
+  }
+} else {
+  falha("Nem AircraftTraining.jsx nem AW119Training.jsx encontrados");
+}
 
-# ModuleGate: NAO verificado como obrigatorio (decisao: usar RequireModule)
+if (existe("src/pages/SemAcesso.jsx")) {
+  ok("src/pages/SemAcesso.jsx");
+} else {
+  aviso("src/pages/SemAcesso.jsx ausente (rota /sem-acesso nao funcionara)");
+}
 
-# ────────────────────────────────────────────────
-# 3. Imports do caminho antigo
-# ────────────────────────────────────────────────
-titulo "3. Imports de aw119TrainingData"
+if (existe("src/components/SemAcessoAoModulo.jsx")) {
+  ok("src/components/SemAcessoAoModulo.jsx");
+} else {
+  aviso("src/components/SemAcessoAoModulo.jsx ausente (AircraftTraining precisa dele)");
+}
 
-SAIDA=$(grep -rn "aw119TrainingData" src/ 2>/dev/null)
-if [ -z "$SAIDA" ]; then
-  ok "Nenhum import do caminho antigo."
-else
-  if [ "$MODO" = "--pre" ]; then
-    info "Imports do caminho antigo (esperado antes da migracao):"
-    echo "$SAIDA" | sed 's/^/       /'
-  else
-    falha "Ainda existem imports do caminho antigo:"
-    echo "$SAIDA"
-  fi
-fi
+// ModuleGate: nao verificado como obrigatorio (decisao: usar RequireModule)
 
-# ────────────────────────────────────────────────
-# 4. Uso direto do dataset AW119
-# ────────────────────────────────────────────────
-titulo "4. Uso direto de AW119_TRAINING"
+// ────────────────────────────────────────────────
+// 3. Imports do caminho antigo
+// ────────────────────────────────────────────────
+titulo("3. Imports de aw119TrainingData");
 
-SAIDA=$(grep -rn "AW119_TRAINING" src/ 2>/dev/null | grep -v "src/lib/trainingData/" | grep -v "src/lib/aw119TrainingData.js")
-if [ -z "$SAIDA" ]; then
-  ok "Nenhum uso direto fora do arquivo de dados."
-else
-  if [ "$MODO" = "--pre" ]; then
-    info "Usos diretos (esperado antes da migracao):"
-    echo "$SAIDA" | sed 's/^/       /'
-  else
-    falha "Uso direto do dataset do AW119:"
-    echo "$SAIDA"
-  fi
-fi
+const importsAntigos = buscar(/aw119TrainingData/);
+if (importsAntigos.length === 0) {
+  ok("Nenhum import do caminho antigo.");
+} else if (MODO === "pre") {
+  info("Imports do caminho antigo (esperado antes da migracao):");
+  importsAntigos.forEach((l) => console.log("       " + l));
+} else {
+  falha("Ainda existem imports do caminho antigo:");
+  importsAntigos.forEach((l) => console.log("       " + l));
+}
 
-# ────────────────────────────────────────────────
-# 5. Rotas mortas
-# ────────────────────────────────────────────────
-titulo "5. Rotas antigas"
+// ────────────────────────────────────────────────
+// 4. Uso direto do dataset AW119
+// ────────────────────────────────────────────────
+titulo("4. Uso direto de AW119_TRAINING");
 
-SAIDA=$(grep -rn "/aw119-training\|/h125-training" src/ 2>/dev/null)
-if [ -z "$SAIDA" ]; then
-  ok "Nenhuma rota antiga referenciada."
-else
-  falha "Rotas antigas ainda referenciadas:"
-  echo "$SAIDA"
-fi
+const usosDiretos = buscar(/AW119_TRAINING/, {
+  ignorar: ["src/lib/trainingData/", "src/lib/aw119TrainingData.js"],
+});
+if (usosDiretos.length === 0) {
+  ok("Nenhum uso direto fora do arquivo de dados.");
+} else if (MODO === "pre") {
+  info("Usos diretos (esperado antes da migracao):");
+  usosDiretos.forEach((l) => console.log("       " + l));
+} else {
+  falha("Uso direto do dataset do AW119:");
+  usosDiretos.forEach((l) => console.log("       " + l));
+}
 
-# ────────────────────────────────────────────────
-# 6. moduleId invalido
-# ────────────────────────────────────────────────
-titulo "6. moduleId=\"training\" (inexistente em PERMISSION_MODULES)"
+// ────────────────────────────────────────────────
+// 5. Rotas mortas
+// ────────────────────────────────────────────────
+titulo("5. Rotas antigas");
 
-SAIDA=$(grep -rn 'moduleId="training"' src/ 2>/dev/null)
-if [ -z "$SAIDA" ]; then
-  ok "Nenhuma rota usa moduleId=\"training\"."
-else
-  falha "moduleId=\"training\" encontrado (bloqueia todos os usuarios):"
-  echo "$SAIDA"
-fi
+const rotasMortas = buscar(/\/aw119-training|\/h125-training/);
+if (rotasMortas.length === 0) {
+  ok("Nenhuma rota antiga referenciada.");
+} else {
+  falha("Rotas antigas ainda referenciadas:");
+  rotasMortas.forEach((l) => console.log("       " + l));
+}
 
-# ────────────────────────────────────────────────
-# 7. Campo descartado
-# ────────────────────────────────────────────────
-titulo "7. modulos_habilitados (campo descartado)"
+// ────────────────────────────────────────────────
+// 6. moduleId invalido
+// ────────────────────────────────────────────────
+titulo('6. moduleId="training" (inexistente em PERMISSION_MODULES)');
 
-SAIDA=$(grep -rn "modulos_habilitados" src/ 2>/dev/null)
-if [ -z "$SAIDA" ]; then
-  ok "Nenhum resquicio do campo antigo."
-else
-  falha "Campo descartado ainda em uso:"
-  echo "$SAIDA"
-fi
+const moduleIdInvalido = buscar(/moduleId="training"/);
+if (moduleIdInvalido.length === 0) {
+  ok('Nenhuma rota usa moduleId="training".');
+} else {
+  falha('moduleId="training" encontrado (bloqueia todos os usuarios):');
+  moduleIdInvalido.forEach((l) => console.log("       " + l));
+}
 
-# ────────────────────────────────────────────────
-# 8. Pagina duplicada do H125
-# ────────────────────────────────────────────────
-titulo "8. Pagina H125 separada"
+// ────────────────────────────────────────────────
+// 7. Campo descartado
+// ────────────────────────────────────────────────
+titulo("7. modulos_habilitados (campo descartado)");
 
-SAIDA=$(ls src/pages/ 2>/dev/null | grep -i "h125")
-if [ -z "$SAIDA" ]; then
-  ok "Nenhuma pagina H125 separada."
-else
-  aviso "Pagina H125 encontrada (verifique se e duplicata):"
-  echo "$SAIDA" | sed 's/^/       /'
-fi
+const campoAntigo = buscar(/modulos_habilitados/);
+if (campoAntigo.length === 0) {
+  ok("Nenhum resquicio do campo antigo.");
+} else {
+  falha("Campo descartado ainda em uso:");
+  campoAntigo.forEach((l) => console.log("       " + l));
+}
 
-# ────────────────────────────────────────────────
-# 9. accessControl
-# ────────────────────────────────────────────────
-titulo "9. accessControl.js"
+// ────────────────────────────────────────────────
+// 8. Pagina H125 separada
+// ────────────────────────────────────────────────
+titulo("8. Pagina H125 separada");
 
-if grep -q "h125_training" src/lib/accessControl.js 2>/dev/null; then
-  ok "h125_training presente em PERMISSION_MODULES."
-else
-  falha "h125_training ausente em accessControl.js."
-fi
+let paginasH125 = [];
+try {
+  paginasH125 = fs
+    .readdirSync(path.resolve("src/pages"))
+    .filter((f) => /h125/i.test(f));
+} catch {
+  paginasH125 = [];
+}
 
-if grep -q "getTrainingModules\|canAccessTraining" src/lib/accessControl.js 2>/dev/null; then
-  ok "Funcoes getTrainingModules/canAccessTraining presentes."
-else
-  aviso "Funcoes getTrainingModules/canAccessTraining ausentes."
-fi
+if (paginasH125.length === 0) {
+  ok("Nenhuma pagina H125 separada.");
+} else {
+  aviso("Pagina H125 encontrada (verifique se e duplicata):");
+  paginasH125.forEach((f) => console.log("       " + f));
+}
 
-# ────────────────────────────────────────────────
-# 10. aircraftProfile
-# ────────────────────────────────────────────────
-titulo "10. AIRCRAFT_PROFILES contem H125"
+// ────────────────────────────────────────────────
+// 9. accessControl
+// ────────────────────────────────────────────────
+titulo("9. accessControl.js");
 
-if [ -f "src/lib/aircraftProfile.js" ]; then
-  if grep -q "H125" src/lib/aircraftProfile.js 2>/dev/null; then
-    ok "H125 presente em aircraftProfile.js"
-  else
-    falha "H125 ausente em aircraftProfile.js. O modulo sera filtrado fora."
-  fi
-else
-  falha "Ausente: src/lib/aircraftProfile.js"
-fi
+const accessControl = ler("src/lib/accessControl.js");
 
-# ────────────────────────────────────────────────
-# 11. ProfileContext sem campo descartado
-# ────────────────────────────────────────────────
-titulo "11. ProfileContext"
+if (accessControl.includes("h125_training")) {
+  ok("h125_training presente em PERMISSION_MODULES.");
+} else {
+  falha("h125_training ausente em accessControl.js.");
+}
 
-if [ -f "src/lib/ProfileContext.jsx" ]; then
-  if grep -q "modulos_habilitados" src/lib/ProfileContext.jsx 2>/dev/null; then
-    falha "ProfileContext ainda le modulos_habilitados."
-  else
-    ok "ProfileContext sem modulos_habilitados."
-  fi
-  if grep -q "aircraft_profiles" src/lib/ProfileContext.jsx 2>/dev/null; then
-    ok "ProfileContext le aircraft_profiles."
-  else
-    aviso "ProfileContext nao referencia aircraft_profiles."
-  fi
-else
-  falha "Ausente: src/lib/ProfileContext.jsx"
-fi
+if (/getTrainingModules|canAccessTraining/.test(accessControl)) {
+  ok("Funcoes getTrainingModules/canAccessTraining presentes.");
+} else {
+  aviso("Funcoes getTrainingModules/canAccessTraining ausentes.");
+}
 
-# ────────────────────────────────────────────────
-# 12. Build
-# ────────────────────────────────────────────────
-titulo "12. Build de producao"
+// ────────────────────────────────────────────────
+// 10. aircraftProfile
+// ────────────────────────────────────────────────
+titulo("10. AIRCRAFT_PROFILES contem H125");
 
-if [ "$MODO" = "--build" ]; then
-  if npm run build > /tmp/build-modulos.log 2>&1; then
-    ok "Build passou."
-  else
-    falha "Build falhou. Veja /tmp/build-modulos.log"
-    tail -30 /tmp/build-modulos.log
-  fi
-else
-  info "Build nao executado. Use: bash scripts/verificar-modulos.sh --build"
-fi
+if (existe("src/lib/aircraftProfile.js")) {
+  if (ler("src/lib/aircraftProfile.js").includes("H125")) {
+    ok("H125 presente em aircraftProfile.js");
+  } else {
+    falha("H125 ausente em aircraftProfile.js. O modulo sera filtrado fora.");
+  }
+} else {
+  falha("Ausente: src/lib/aircraftProfile.js");
+}
 
-# ────────────────────────────────────────────────
-# Resumo
-# ────────────────────────────────────────────────
-echo ""
-echo "══════════════════════════════════════════════"
-if [ "$FALHAS" -eq 0 ]; then
-  echo -e "${VERDE}Auditoria concluida sem falhas criticas.${RESET}"
-  echo "Avisos: $AVISOS"
-  exit 0
-else
-  echo -e "${VERMELHO}$FALHAS falha(s) critica(s), $AVISOS aviso(s).${RESET}"
-  echo "Nao publique."
-  exit 1
-fi
+// ────────────────────────────────────────────────
+// 11. ProfileContext
+// ────────────────────────────────────────────────
+titulo("11. ProfileContext");
+
+if (existe("src/lib/ProfileContext.jsx")) {
+  const ctx = ler("src/lib/ProfileContext.jsx");
+
+  if (ctx.includes("modulos_habilitados")) {
+    falha("ProfileContext ainda le modulos_habilitados.");
+  } else {
+    ok("ProfileContext sem modulos_habilitados.");
+  }
+
+  if (ctx.includes("aircraft_profiles")) {
+    ok("ProfileContext le aircraft_profiles.");
+  } else {
+    aviso("ProfileContext nao referencia aircraft_profiles.");
+  }
+} else {
+  falha("Ausente: src/lib/ProfileContext.jsx");
+}
+
+// ────────────────────────────────────────────────
+// 12. Build
+// ────────────────────────────────────────────────
+titulo("12. Build de producao");
+
+if (MODO === "build") {
+  try {
+    execSync("npm run build", { stdio: "pipe" });
+    ok("Build passou.");
+  } catch (e) {
+    falha("Build falhou.");
+    const saida = (e.stdout?.toString() || "") + (e.stderr?.toString() || "");
+    console.log(saida.split("\n").slice(-30).join("\n"));
+  }
+} else {
+  info("Build nao executado. Use: node scripts/verificar-modulos.mjs --build");
+}
+
+// ────────────────────────────────────────────────
+// Resumo
+// ────────────────────────────────────────────────
+console.log("");
+console.log("══════════════════════════════════════════════");
+if (falhas === 0) {
+  console.log(`${C.verde}Auditoria concluida sem falhas criticas.${C.reset}`);
+  console.log(`Avisos: ${avisos}`);
+  process.exit(0);
+} else {
+  console.log(`${C.vermelho}${falhas} falha(s) critica(s), ${avisos} aviso(s).${C.reset}`);
+  console.log("Nao publique.");
+  process.exit(1);
+}
