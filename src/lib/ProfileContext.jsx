@@ -21,6 +21,7 @@ function resolveUserProfiles(user) {
       profiles = [];
     }
   }
+
   if (!Array.isArray(profiles) || profiles.length === 0) return [DEFAULT_PROFILE];
 
   const validos = profiles.filter((p) => AIRCRAFT_PROFILES.includes(p));
