@@ -9,6 +9,10 @@ export function ProfileProvider({ children }) {
   const [selectedAircraft, setAircraft] = useState(
     () => localStorage.getItem("aircraft") || localStorage.getItem("aircraft_profile")
   );
+  const MODULE_TO_AIRCRAFT = {
+    aw119_training: "AW119",
+    h125_training: "H125",
+  };
   const modulosPermitidos = useMemo(() => {
     const lista = Array.isArray(user?.modulos_habilitados)
       ? user.modulos_habilitados
