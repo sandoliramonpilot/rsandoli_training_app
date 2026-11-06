@@ -10,11 +10,6 @@ import {
 
 const ProfileContext = createContext(null);
 
-/**
- * Perfis de aeronave autorizados para o usuário.
- * Fonte de verdade: user.aircraft_profiles.
- * Admin geral e is_master recebem todos os perfis.
- */
 function resolveUserProfiles(user) {
   if (!user) return [DEFAULT_PROFILE];
   if (user.is_master || user.access_level === 'admin_geral') return AIRCRAFT_PROFILES;
@@ -45,13 +40,10 @@ export function ProfileProvider({ children }) {
       setAircraft(null);
       return;
     }
-
-    // Preferência salva na sessão (via aircraftProfile.js)
     const salvo = getSelectedProfile();
     const inicial = modulosPermitidos.includes(salvo)
       ? salvo
       : modulosPermitidos[0] ?? null;
-
     setAircraft(inicial);
     if (inicial) setSelectedProfile(inicial);
   }, [user, modulosPermitidos]);
