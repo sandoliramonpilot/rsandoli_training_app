@@ -257,10 +257,6 @@ export function hasAnyAuthorizedModule(user) {
 // Módulos de treinamento por aeronave
 // ============================================================
 
-// ============================================================
-// Módulos de treinamento por aeronave
-// ============================================================
-
 export const TRAINING_MODULES = ["aw119_training", "h125_training"];
 
 /** Módulos de treinamento que o usuário pode visualizar. */
