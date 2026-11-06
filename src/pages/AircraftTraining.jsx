@@ -16,13 +16,18 @@ const MODULE_ICONS = { Monitor, Plane, Settings };
 
 export default function AircraftTraining() {
   const { user } = useAuth();
-  const { profileValue, profileFilter } = useProfile();
+  const { profileValue } = useProfile();
 
   const training = getTraining(profileValue);
+
+  const [activeModule, setActiveModule] = useState(
+    training?.data?.modules?.[0]?.id ?? null
+  );
+
   const data = training?.data ?? { modules: [], subtitle: "" };
   const discipline = training?.discipline ?? null;
+  const mod = data.modules.find((m) => m.id === activeModule) ?? data.modules[0];
 
-  const [activeModule, setActiveModule] = useState(null);
   const [expandedChapters, setExpandedChapters] = useState(new Set());
   const [trainingDocs, setTrainingDocs] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -48,6 +53,7 @@ export default function AircraftTraining() {
       .catch(() => []);
     setTrainingDocs(docs ?? []);
   };
+  
   useEffect(() => {
     setActiveModule(data.modules[0]?.id ?? null);
     setExpandedChapters(new Set());
@@ -118,6 +124,7 @@ export default function AircraftTraining() {
     );
   }
 
+  if (!training) return <SemAcessoAoModulo />;
   if (!mod) return null;
 
   return (
