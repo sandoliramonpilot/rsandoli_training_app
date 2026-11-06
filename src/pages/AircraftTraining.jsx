@@ -41,7 +41,7 @@ export default function AircraftTraining() {
     }
     const docs = await base44.entities.TrainingDocument
       .filter({
-        ...profileFilter,
+        aircraftProfile: profileValue,
         discipline,
         status: "active",
       })
