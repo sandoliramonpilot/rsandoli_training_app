@@ -5,12 +5,26 @@
     "access_level": {
       "type": "string",
       "title": "N\u00edvel de acesso",
-      "description": "Somente backend. admin_geral | administrador | gestor_supervisor | operacional | consulta"
+      "description": "Somente backend. admin_geral | administrador | gestor_supervisor | operacional | consulta",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "collaborator_role": "editor"
+          }
+        }
+      }
     },
     "aircraft_profiles": {
       "type": "string",
       "title": "Perfis de aeronave autorizados",
-      "description": "Somente backend. admin_geral | administrador | gestor_supervisor | operacional | consulta"
+      "description": "Somente backend. admin_geral | administrador | gestor_supervisor | operacional | consulta",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "collaborator_role": "editor"
+          }
+        }
+      }
     },
     "account_status": {
       "type": "string",
@@ -47,7 +61,14 @@
     },
     "custom_permissions": {
       "type": "string",
-      "title": "Permiss\u00f5es personalizadas (JSON)"
+      "title": "Permiss\u00f5es personalizadas (JSON)",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "collaborator_role": "editor"
+          }
+        }
+      }
     },
     "must_change_password": {
       "type": "boolean",

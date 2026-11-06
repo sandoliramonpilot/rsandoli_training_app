@@ -32,8 +32,11 @@ export function generateTempPassword(length = 12) {
 export const ACCESS_LEVEL_VALUES = ["admin_geral", "administrador", "gestor_supervisor", "operacional", "consulta"];
 export const ADMIN_ACCESS_LEVELS = ["admin_geral", "administrador"];
 
-// Nível efetivo do usuário. O campo User.access_level é customizado e gravável pelo
-// próprio usuário (como account_status), então ele NUNCA autoriza sozinho: ver isAdminUser.
+// Nível efetivo do usuário. O campo User.access_level é bloqueado por RLS em nível de
+// campo (collaborator_role: editor) — somente editores da workspace ou o backend
+// (asServiceRole) podem gravá-lo. Por isso o valor armazenado é a fonte autoritativa do
+// nível hierárquico e não pode ser forjado pelo próprio usuário via updateMe. O portão
+// isAdminUser continua exigindo o papel de plataforma (User.role) somado ao nível.
 export function levelOf(user) {
   if (user?.access_level && ACCESS_LEVEL_VALUES.includes(user.access_level)) return user.access_level;
   return user?.role === "admin" ? "administrador" : "operacional";

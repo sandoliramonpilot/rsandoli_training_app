@@ -79,9 +79,10 @@ export default async function (req) {
     const action = body.action;
     // Portão autoritativo: isAdminUser exige User.role === "admin" (papel de plataforma,
     // não gravável pelo próprio usuário via updateMe) somado a um nível administrativo.
-    // Os campos User.access_level e User.custom_permissions são graváveis pelo próprio
-    // usuário e NUNCA autorizam sozinhos — levelOf/canPilots só valem como camada
-    // adicional, depois de isAdmin confirmar o papel de plataforma.
+    // Os campos User.access_level e User.custom_permissions são bloqueados por RLS em
+    // nível de campo (collaborator_role: editor), então o valor armazenado é a fonte
+    // autoritativa do nível e das permissões — não podem ser forjados via updateMe.
+    // levelOf só vale como camada adicional, depois de isAdmin confirmar o papel.
     const isAdmin = isAdminUser(user);
     const isGeral = isAdmin && levelOf(user) === "admin_geral";
 
