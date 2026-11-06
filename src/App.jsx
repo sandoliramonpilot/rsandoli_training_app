@@ -100,8 +100,8 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
-
-
+      <Route path="/selecionar-modulo" element={<SelecionarModulo />} />
+      <Route path="/sem-acesso" element={<SemAcessoAoModulo />} />
       
       <Route element={<AppLayout />}>
         <Route path="/" element={<RequireModule moduleId="dashboard"><Dashboard /></RequireModule>} />
