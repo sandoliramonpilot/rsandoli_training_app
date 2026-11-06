@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
 import { useProfile } from "@/lib/ProfileContext";
-import { getTrainingModules } from "@/lib/accessControl";
+import { getTraining, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData";
 import BackToDashboard from "@/components/BackToDashboard";
 import DocumentListItem from "@/components/academy/DocumentListItem";
 import {
