@@ -21,15 +21,28 @@ export default function Login() {
     setCarregando(true);
 
     try {
-      await base44.auth.signIn({ email, password: senha });
+      await base44.auth.signIn({ email, password });
 
       const usuario = await base44.auth.me();
+      const modulos = Array.isArray(usuario?.modulos_habilitados)
+        ? usuario.modulos_habilitados.filter((m) => TRAINING_BY_AIRCRAFT[m])
+        : ["AW119"];
 
-      if (!canLogin(usuario)) {
-        setErro("Sua conta não está ativa. Fale com o administrador.");
-        setCarregando(false);
+      if (modulos.length === 0) {
+        navigate("/sem-acesso");
         return;
       }
+
+      if (modulos.length === 1) {
+        localStorage.setItem("aircraft", modulos[0]);
+        navigate("/training");
+        return;
+      }
+
+      navigate("/selecionar-modulo");
+    } catch (err) {
+      setError(err.message);
+    }
 
       const disponiveis = getAuthorizedAircraft(usuario);
 
