@@ -5,7 +5,6 @@ import { can } from "@/lib/accessControl";
 import { useProfile } from "@/lib/ProfileContext";
 import { getTraining, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData";
 import BackToDashboard from "@/components/BackToDashboard";
-import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import DocumentListItem from "@/components/academy/DocumentListItem";
 import {
   GraduationCap, Crown, Monitor, Plane, Settings, ChevronRight, ChevronDown,
@@ -26,7 +25,6 @@ export default function AircraftTraining() {
 
   const data = training?.data ?? { modules: [], subtitle: "" };
   const discipline = training?.discipline ?? null;
-  const mod = data.modules.find((m) => m.id === activeModule) ?? data.modules[0];
 
   const [expandedChapters, setExpandedChapters] = useState(new Set());
   const [trainingDocs, setTrainingDocs] = useState([]);
@@ -124,7 +122,6 @@ export default function AircraftTraining() {
     );
   }
 
-  if (!training) return <SemAcessoAoModulo />;
   if (!mod) return null;
 
   return (
