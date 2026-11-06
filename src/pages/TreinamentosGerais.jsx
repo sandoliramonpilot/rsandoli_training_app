@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/aw119Training.js";
+import { TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData";
 import BackToDashboard from "@/components/BackToDashboard";
 import {
   Fuel, Droplets, Zap, Radio, LayoutDashboard, Cog, Settings, Wind, Joystick,
