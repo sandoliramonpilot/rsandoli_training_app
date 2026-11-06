@@ -1,7 +1,9 @@
-import { AW119_TRAINING, PENDING_CONTENT, DIDATIC_NOTICE } from "./aw119Training";
+import { AW119_TRAINING } from "./aw119Training";
 import { H125_TRAINING } from "./h125Training";
+import { TREINAMENTOS_GERAIS } from "./treinamentosGerais";
+import { PENDING_CONTENT, DIDATIC_NOTICE } from "./notices";
 
-export { PENDING_CONTENT, DIDATIC_NOTICE };
+export { AW119_TRAINING, H125_TRAINING, TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE };
 
 export const TRAINING_BY_AIRCRAFT = {
   AW119: {
