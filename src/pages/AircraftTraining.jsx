@@ -7,7 +7,6 @@ import { getTraining, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData
 import BackToDashboard from "@/components/BackToDashboard";
 import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import DocumentListItem from "@/components/academy/DocumentListItem";
-import SemAcessoAoModulo from "@/components/SemAcessoAoModulo";
 import {
   GraduationCap, Crown, Monitor, Plane, Settings, ChevronRight, ChevronDown,
   Upload, Loader2, X, AlertTriangle, ShieldAlert, BookOpen, Layers,
@@ -107,7 +106,19 @@ export default function AircraftTraining() {
     }
   };
 
-  if (!training) return <SemAcessoAoModulo />;
+  if (!training) {
+    return (
+      <div className="max-w-lg mx-auto mt-16 text-center space-y-3">
+        <ShieldAlert className="w-12 h-12 text-amber-500 mx-auto" />
+        <h2 className="text-xl font-semibold text-slate-100">Nenhum módulo liberado</h2>
+        <p className="text-sm text-slate-400">
+          Sua conta ainda não tem acesso a um módulo de treinamento. Solicite ao
+          administrador a liberação do AW119 ou do H125.
+        </p>
+      </div>
+    );
+  }
+
   if (!mod) return null;
 
   return (
