@@ -111,7 +111,7 @@ const AuthenticatedApp = () => {
         <Route path="/treinamentos" element={<Treinamentos />} />
 
         {/* Módulo de treinamento unificado: AW119 e H125 na mesma página */}
-        <Route path="/training" element={<AircraftTraining />} />
+        <Route path="/training" element={<ModuleGate><AircraftTraining /></ModuleGate>} />
 
         <Route path="/treinamentos-gerais" element={<TreinamentosGerais />} />
         <Route path="/limitacoes" element={<Limitacoes />} />
