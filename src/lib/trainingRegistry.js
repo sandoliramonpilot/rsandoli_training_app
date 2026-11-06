@@ -1,5 +1,5 @@
 import { AW119_TRAINING } from "./aw119TrainingData";
-import { H125_TRAINING } from "./h125TrainingData";
+import { H125_TRAINING } from "@/lib/h125TrainingData";
 
 export const TRAINING_BY_AIRCRAFT = {
   AW119: {
@@ -10,7 +10,7 @@ export const TRAINING_BY_AIRCRAFT = {
   H125: {
     data: H125_TRAINING,
     discipline: "h125_training",
-    label: "Airbus H125",
+    label: "Airbus AS 350 B2 VEMD",
   },
 };
 
