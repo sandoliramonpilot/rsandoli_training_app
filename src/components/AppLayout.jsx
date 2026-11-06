@@ -127,8 +127,6 @@ function SidebarContent({ location, onNavigate }) {
   const showGestao = can(user, "gestao", "visualizar");
   const showMarcos = canManageUsers(user);
 
-  { label: "Perfis de Aeronave", path: "/perfis-aeronave", icon: Plane, moduleId: "usuarios" },
-  
   return (
     <>
       <div className="px-6 py-7 flex items-center gap-3 border-b border-slate-800">
@@ -214,6 +212,21 @@ function SidebarContent({ location, onNavigate }) {
                 >
                   <UserCog style={{ width: 18, height: 18 }} />
                   Usuários e Acessos
+                </Link>
+              )}
+              {showUsersMenu && (
+                <Link
+                  to="/perfis-aeronave"
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                    isActive(location, "/perfis-aeronave")
+                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/20"
+                      : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+                  )}
+                >
+                  <Plane style={{ width: 18, height: 18 }} />
+                  Perfis de Aeronave
                 </Link>
               )}
               {showMarcos && (
