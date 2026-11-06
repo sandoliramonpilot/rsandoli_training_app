@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-route
 import TermsModal from "@/components/TermsModal";
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import PerfisAeronave from '@/pages/admin/PerfisAeronave';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import AppLayout from '@/components/AppLayout';
@@ -101,6 +102,7 @@ const AuthenticatedApp = () => {
       <Route path="/oauth/consent" element={<OAuthConsent />} />
 
       <Route element={<AppLayout />}>
+        <Route path="/perfis-aeronave" element={<RequireModule moduleId="usuarios"><PerfisAeronave /></RequireModule>} />
         <Route path="/" element={<RequireModule moduleId="dashboard"><Dashboard /></RequireModule>} />
         <Route path="/flight-log" element={<RequireModule moduleId="diario_bordo"><FlightLog /></RequireModule>} />
         <Route path="/aircraft" element={<Aircraft />} />
