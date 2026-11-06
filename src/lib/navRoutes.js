@@ -7,7 +7,7 @@ export const NAV_MODULE_ROUTES = [
   { label: "QRH", path: "/qrh", moduleId: "qrh" },
   { label: "Pilotos", path: "/pilotos", moduleId: "pilotos" },
   { label: "Treinamento", path: "/treinamentos", moduleId: "treinamentos" },
-  { label: "AW119 Training", path: "/aw119-training", moduleId: "aw119_training" },
+  { label: "AW119 Training", path: "/training", moduleId: "aw119_training" },
   { label: "Treinamentos Gerais", path: "/treinamentos-gerais", moduleId: "treinamentos_gerais" },
   { label: "Limitações", path: "/limitacoes", moduleId: "limitacoes" },
   { label: "Procedimentos Normais", path: "/procedimentos-normais", moduleId: "procedimentos_normais" },
