@@ -19,7 +19,6 @@ import Biblioteca from '@/pages/Biblioteca';
 import Treinamentos from '@/pages/Treinamentos';
 import AircraftTraining from '@/pages/AircraftTraining';
 import TreinamentosGerais from '@/pages/TreinamentosGerais';
-import EmConstrucao from '@/pages/EmConstrucao';
 import ProcedimentosEmergencia from '@/pages/ProcedimentosEmergencia';
 import TreinamentoRecorrente from '@/pages/TreinamentoRecorrente';
 import BriefingEmergencia from '@/pages/BriefingEmergencia';
@@ -51,7 +50,6 @@ import Privacidade from '@/pages/Privacidade';
 import Termos from '@/pages/Termos';
 import Configuracoes from '@/pages/Configuracoes';
 import UpdatePrompt from '@/components/UpdatePrompt';
-import SemAcesso from '@/pages/SemAcesso';
 
 const PUBLIC_TRUST_PATHS = ["/sobre", "/contato", "/privacidade", "/termos"];
 
@@ -92,7 +90,6 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      {/* Páginas públicas */}
       <Route path="/sobre" element={<Sobre />} />
       <Route path="/contato" element={<Contato />} />
       <Route path="/privacidade" element={<Privacidade />} />
@@ -102,9 +99,6 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
-
-      {/* Rota de acesso negado: fora do AppLayout para não vazar o menu */}
-      <Route path="/sem-acesso" element={<SemAcesso />} />
 
       <Route element={<AppLayout />}>
         <Route path="/" element={<RequireModule moduleId="dashboard"><Dashboard /></RequireModule>} />
