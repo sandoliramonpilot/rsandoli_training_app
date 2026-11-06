@@ -12,18 +12,6 @@
     "verificar:pre": "node scripts/verificar-modulos.mjs --pre",
     "verificar:build": "node scripts/verificar-modulos.mjs --build",
     "verificar:sh": "bash scripts/verificar-modulos.sh"
-  {
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "lint": "eslint .",
-    "verificar": "node scripts/verificar-modulos.mjs",
-    "verificar:pre": "node scripts/verificar-modulos.mjs --pre",
-    "verificar:build": "node scripts/verificar-modulos.mjs --build",
-    "verificar:sh": "bash scripts/verificar-modulos.sh"
-  }
-  }
   },
   "dependencies": {
     "@base44/sdk": "^0.8.59",
