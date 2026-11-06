@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
 import { useProfile } from "@/lib/ProfileContext";
-import { getTraining, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData";
+import { getTrainingModules } from "@/lib/accessControl";
 import BackToDashboard from "@/components/BackToDashboard";
 import DocumentListItem from "@/components/academy/DocumentListItem";
 import {
@@ -11,6 +11,8 @@ import {
   Upload, Loader2, X, AlertTriangle, ShieldAlert, BookOpen, Layers,
 } from "lucide-react";
 
+const modulos = getTrainingModules(user);
+const [aeronave, setAeronave] = useState(modulos[0] ?? null);
 const MODULE_ICONS = { Monitor, Plane, Settings };
 
 export default function AircraftTraining() {
@@ -26,6 +28,7 @@ export default function AircraftTraining() {
   const data = training?.data ?? { modules: [], subtitle: "" };
   const discipline = training?.discipline ?? null;
 
+  const [activeModule, setActiveModule] = useState(null);
   const [expandedChapters, setExpandedChapters] = useState(new Set());
   const [trainingDocs, setTrainingDocs] = useState([]);
   const [uploading, setUploading] = useState(false);
