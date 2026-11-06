@@ -18,7 +18,6 @@ import QRHEfis from '@/pages/QRHEfis';
 import Biblioteca from '@/pages/Biblioteca';
 import Treinamentos from '@/pages/Treinamentos';
 import AircraftTraining from "@/pages/AircraftTraining";
-import ModuleGate from "@/components/ModuleGate";
 import TreinamentosGerais from '@/pages/TreinamentosGerais';
 import ProcedimentosEmergencia from '@/pages/ProcedimentosEmergencia';
 import TreinamentoRecorrente from '@/pages/TreinamentoRecorrente';
@@ -53,6 +52,7 @@ import Configuracoes from '@/pages/Configuracoes';
 import UpdatePrompt from '@/components/UpdatePrompt';
 
 const PUBLIC_TRUST_PATHS = ["/sobre", "/contato", "/privacidade", "/termos"];
+const TRAINING_MODULE_IDS = ["aw119_training", "h125_training"];
 
 const AuthenticatedApp = () => {
   const location = useLocation();
@@ -114,7 +114,7 @@ const AuthenticatedApp = () => {
         <Route path="/treinamentos" element={<Treinamentos />} />
 
         {/* Módulo de treinamento unificado: AW119 e H125 na mesma página */}
-        <Route path="/training" element={<ModuleGate><AircraftTraining /></ModuleGate>} />
+        <Route path="/training" element={<RequireModule moduleIds={TRAINING_MODULE_IDS}><AircraftTraining /></RequireModule>} />
 
         <Route path="/treinamentos-gerais" element={<TreinamentosGerais />} />
         <Route path="/limitacoes" element={<Limitacoes />} />
