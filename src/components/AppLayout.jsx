@@ -127,6 +127,8 @@ function SidebarContent({ location, onNavigate }) {
   const showGestao = can(user, "gestao", "visualizar");
   const showMarcos = canManageUsers(user);
 
+  { label: "Perfis de Aeronave", path: "/perfis-aeronave", icon: Plane, moduleId: "usuarios" },
+  
   return (
     <>
       <div className="px-6 py-7 flex items-center gap-3 border-b border-slate-800">
