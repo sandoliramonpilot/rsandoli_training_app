@@ -53,6 +53,22 @@ export default function Login() {
     }
   };
 
+      const usuario = await base44.auth.me();
+      const modulos = Array.isArray(usuario?.modulos_habilitados)
+        ? usuario.modulos_habilitados
+        : ["AW119"];
+
+      if (modulos.length === 0) {
+        navigate("/sem-acesso");
+        return;
+      }
+      if (modulos.length === 1) {
+        localStorage.setItem("aircraft", modulos[0]);
+        navigate("/training");
+        return;
+      }
+      navigate("/selecionar-modulo");
+  
   const escolherModulo = (aeronave) => {
     localStorage.setItem("aircraft_profile", aeronave);
     navigate("/training");
