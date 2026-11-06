@@ -1,44 +1,23 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
-import { useAuth } from '@/lib/AuthContext';
-import { AIRCRAFT_PROFILES, DEFAULT_PROFILE } from '@/lib/aircraftProfile';
-import { canLogin } from '@/lib/accessControl';
-import { Loader2, Plane, Lock, Mail, ArrowRight } from 'lucide-react';
-
-const AIRCRAFT_LABELS = {
-  AW119: { nome: 'AW119 TRAINING', desc: 'Leonardo AW119Kx Koala' },
-  H125: { nome: 'H125 TRAINING', desc: 'Airbus H125' },
-};
-
-function resolvePerfis(user) {
-  if (!user) return [DEFAULT_PROFILE];
-  if (user.is_master || user.access_level === 'admin_geral') return AIRCRAFT_PROFILES;
-
-  let perfis = user.aircraft_profiles;
-  if (typeof perfis === 'string') {
-    try { perfis = JSON.parse(perfis); } catch { perfis = []; }
-  }
-  if (!Array.isArray(perfis) || perfis.length === 0) return [DEFAULT_PROFILE];
-
-  const validos = perfis.filter((p) => AIRCRAFT_PROFILES.includes(p));
-  return validos.length > 0 ? validos : [DEFAULT_PROFILE];
-}
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import { canLogin, getAuthorizedAircraft } from "@/lib/accessControl";
+import { PROFILE_LABELS, PROFILE_DESCRIPTIONS } from "@/lib/aircraftProfile";
+import { Loader2, Plane, Lock, Mail, ArrowRight } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
-  const [etapa, setEtapa] = useState('credenciais');
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+  const [etapa, setEtapa] = useState("credenciais");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
   const [perfis, setPerfis] = useState([]);
-  const [erro, setErro] = useState('');
+  const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
 
   const entrar = async (e) => {
     e.preventDefault();
-    setErro('');
+    setErro("");
     setCarregando(true);
 
     try {
@@ -47,39 +26,39 @@ export default function Login() {
       const usuario = await base44.auth.me();
 
       if (!canLogin(usuario)) {
-        setErro('Sua conta não está ativa. Fale com o administrador.');
+        setErro("Sua conta não está ativa. Fale com o administrador.");
         setCarregando(false);
         return;
       }
 
-      const disponiveis = resolvePerfis(usuario);
+      const disponiveis = getAuthorizedAircraft(usuario);
 
       if (disponiveis.length === 0) {
-        navigate('/sem-acesso');
+        navigate("/sem-acesso");
         return;
       }
 
       if (disponiveis.length === 1) {
-        localStorage.setItem('aircraft', disponiveis[0]);
-        navigate('/training');
+        localStorage.setItem("aircraft_profile", disponiveis[0]);
+        navigate("/training");
         return;
       }
 
       setPerfis(disponiveis);
-      setEtapa('modulo');
+      setEtapa("modulo");
     } catch (err) {
-      setErro(err?.message || 'Não foi possível entrar. Verifique e-mail e senha.');
+      setErro(err?.message || "Não foi possível entrar. Verifique e-mail e senha.");
     } finally {
       setCarregando(false);
     }
   };
 
   const escolherModulo = (aeronave) => {
-    localStorage.setItem('aircraft', aeronave);
-    navigate('/training');
+    localStorage.setItem("aircraft_profile", aeronave);
+    navigate("/training");
   };
 
-  if (etapa === 'modulo') {
+  if (etapa === "modulo") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#12141A] p-6">
         <div className="w-full max-w-2xl space-y-6">
@@ -91,33 +70,31 @@ export default function Login() {
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            {perfis.map((aeronave) => {
-              const info = AIRCRAFT_LABELS[aeronave] || {
-                nome: aeronave,
-                desc: '',
-              };
-              return (
-                <button
-                  key={aeronave}
-                  onClick={() => escolherModulo(aeronave)}
-                  className="group text-left p-6 rounded-2xl bg-[#1A1D25] border border-slate-700/60 hover:border-amber-500/60 transition-colors"
-                >
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center mb-4">
-                    <Plane className="w-5 h-5 text-slate-900" />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-100">{info.nome}</p>
-                  <p className="text-xs text-slate-500 mt-1">{info.desc}</p>
-                  <span className="inline-flex items-center gap-1 text-xs text-amber-400 mt-4 group-hover:gap-2 transition-all">
-                    Entrar <ArrowRight className="w-3.5 h-3.5" />
-                  </span>
-                </button>
-              );
-            })}
+            {perfis.map((aeronave) => (
+              <button
+                key={aeronave}
+                onClick={() => escolherModulo(aeronave)}
+                className="group text-left p-6 rounded-2xl bg-[#1A1D25] border border-slate-700/60 hover:border-amber-500/60 transition-colors"
+              >
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center mb-4">
+                  <Plane className="w-5 h-5 text-slate-900" />
+                </div>
+                <p className="text-sm font-semibold text-slate-100">
+                  {PROFILE_LABELS[aeronave] || aeronave} TRAINING
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {PROFILE_DESCRIPTIONS[aeronave] || ""}
+                </p>
+                <span className="inline-flex items-center gap-1 text-xs text-amber-400 mt-4 group-hover:gap-2 transition-all">
+                  Entrar <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </button>
+            ))}
           </div>
 
           <button
             onClick={() => {
-              setEtapa('credenciais');
+              setEtapa("credenciais");
               setPerfis([]);
             }}
             className="w-full text-xs text-slate-500 hover:text-slate-300"
@@ -181,7 +158,7 @@ export default function Login() {
           className="w-full py-2.5 rounded-lg bg-amber-500 text-slate-900 text-sm font-semibold hover:bg-amber-400 disabled:opacity-50 inline-flex items-center justify-center gap-2"
         >
           {carregando ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          {carregando ? 'Entrando...' : 'Entrar'}
+          {carregando ? "Entrando..." : "Entrar"}
         </button>
 
         <div className="flex justify-between text-xs pt-2">
