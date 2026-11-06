@@ -31,7 +31,7 @@ const navSections = [
   {
     label: "Academy",
     items: [
-      { label: "AW119 TRAINING", path: "/aw119-training", icon: Crown, moduleId: "aw119_training", badge: "Premium" },
+      { label: "AW119 TRAINING", path: "/training", icon: Crown, moduleId: "aw119_training", badge: "Premium" },
       { label: "Dashboard de Progresso", path: "/painel-progresso", icon: TrendingUp, moduleId: "treinamentos" },
       { label: "Treinamentos Gerais", path: "/treinamentos-gerais", icon: GraduationCap, moduleId: "treinamentos_gerais" },
       { label: "Limitações", path: "/limitacoes", icon: Gauge, moduleId: "limitacoes" },
