@@ -1,3 +1,4 @@
+import { TRAINING_BY_AIRCRAFT } from "@/lib/trainingData";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
