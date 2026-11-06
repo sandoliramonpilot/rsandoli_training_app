@@ -1,53 +1,135 @@
-import fs from "fs";
-import path from "path";
+// H125 TRAINING — Estrutura completa de módulos, tópicos e capítulos
+// Conteúdo técnico sem fonte aprovada é marcado como PENDENTE.
+// Não inventar procedimentos, limitações, valores operacionais, memory items,
+// ações imediatas, mensagens CAS, lógicas do AFCS, características técnicas,
+// critérios de interrupção de manobras ou sequências de checklist.
 
-const ORIGEM = path.resolve("src/lib/trainingData/aw119Training.js");
-const DESTINO = path.resolve("src/lib/trainingData/h125Training.js");
-
-const fonte = fs.readFileSync(ORIGEM, "utf8");
-
-// Extrai o bloco do AW119_TRAINING
-const inicio = fonte.indexOf("AW119_TRAINING");
-if (inicio === -1) {
-  console.error("AW119_TRAINING não encontrado em", ORIGEM);
-  process.exit(1);
-}
-
-// Importa o módulo dinamicamente para ler a estrutura real
-const mod = await import(ORIGEM);
-const aw119 = mod.AW119_TRAINING;
-
-if (!aw119?.modules?.length) {
-  console.error("AW119_TRAINING.modules vazio ou inválido.");
-  process.exit(1);
-}
-
-const clonar = (obj) => JSON.parse(JSON.stringify(obj));
-
-const h125 = {
-  subtitle: "Treinamento teórico Airbus H125.",
-  modules: aw119.modules.map((m) => ({
-    ...clonar(m),
-    objective: "Conteúdo em elaboração.",
-    note: undefined,
-    chapters: (m.chapters ?? []).map((ch) => ({
-      ...clonar(ch),
-      objective: "Conteúdo em elaboração.",
-      items: ["Conteúdo em elaboração."],
-      note: undefined,
-      modes: ch.modes ? clonar(ch.modes) : undefined,
-      modeFields: ch.modeFields ? clonar(ch.modeFields) : undefined,
-    })),
-  })),
+export const H125_TRAINING = {
+  id: "h125_training",
+  name: "H125 TRAINING",
+  subtitle:
+    "Formação teórica, treinamento recorrente e preparação técnica para pilotos do Airbus H125.",
+  premium: true,
+  modules: [
+    {
+      id: "genesys_efis_idu_680",
+      title: "GENESYS EFIS IDU-680",
+      icon: "Monitor",
+      objective:
+        "Fornecer treinamento progressivo sobre o Genesys EFIS IDU-680 instalado na configuração aplicável do H125.",
+      levels: ["Básico", "Intermediário", "Avançado", "Instrutor"],
+      chapters: [
+        {
+          id: "ge_ch1",
+          title: "Capítulo 1 — Generalidades",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+        {
+          id: "ge_ch2",
+          title: "Capítulo 2 — Arquitetura",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+        {
+          id: "ge_ch3",
+          title: "Capítulo 3 — Integração",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+        {
+          id: "ge_ch4",
+          title: "Capítulo 4 — Processamento",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+        {
+          id: "ge_ch5",
+          title: "Capítulo 5 — Simbologia e Exibição",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+        {
+          id: "ge_ch6",
+          title: "Capítulo 6 — Sistemas",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+        {
+          id: "ge_ch7",
+          title: "Capítulo 7 — Falhas e Modos Reversíveis",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+        {
+          id: "ge_ch8",
+          title: "Capítulo 8 — HeliPilot/AFCS",
+          isHelipilotArea: true,
+          objective:
+            "Área exclusiva dentro do Genesys EFIS IDU-680 para o sistema HeliPilot/AFCS.",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+          modes: ["SAS", "HDG", "NAV", "IAS", "VS", "ALT", "GO AROUND"],
+          modeFields: [
+            "Finalidade",
+            "Pré-requisitos",
+            "Forma de seleção",
+            "Indicação de modo armado",
+            "Indicação de modo ativo",
+            "Parâmetro controlado",
+            "Comportamento esperado",
+            "Transições",
+            "Interações com outros modos",
+            "Como monitorar",
+            "Condições de cancelamento",
+            "Limitações",
+            "Condições degradadas",
+            "Erros comuns",
+            "Exemplo didático",
+            "Referência documental",
+          ],
+        },
+        {
+          id: "ge_ch9",
+          title: "Capítulo 9 — PFD",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+        {
+          id: "ge_ch10",
+          title: "Capítulo 10 — MFD",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+        {
+          id: "ge_ch11",
+          title: "Capítulo 11 — Navegação",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+        {
+          id: "ge_ch12",
+          title: "Capítulo 12 — Funções do Menu e Configurações",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+      ],
+    },
+    {
+      id: "conhecimento_geral",
+      title: "TÓPICO 1 — CONHECIMENTO GERAL DA AERONAVE",
+      icon: "Plane",
+      objective:
+        "Apresentar o Airbus H125, suas características gerais, configurações e aplicações.",
+      items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+    },
+    {
+      id: "particularidades_h125",
+      title: "PARTICULARIDADES DO H125",
+      icon: "Settings",
+      objective:
+        "Reunir conteúdos específicos da configuração H125 sem duplicar conteúdos gerais.",
+      allowAdminChapters: true,
+      chapters: [
+        {
+          id: "px_ch1",
+          title: "Capítulo 1 — Acionamento",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+        {
+          id: "px_ch2",
+          title: "Capítulo 2 — Check de Sistemas",
+          items: ["CONTEÚDO PENDENTE DE DOCUMENTAÇÃO E APROVAÇÃO TÉCNICA"],
+        },
+      ],
+    },
+  ],
 };
-
-const saida = `export const H125_TRAINING = ${JSON.stringify(h125, null, 2)};\n`;
-
-fs.writeFileSync(DESTINO, saida, "utf8");
-
-const totalModulos = h125.modules.length;
-const totalCapitulos = h125.modules.reduce((a, m) => a + (m.chapters?.length ?? 0), 0);
-
-console.log(`Gerado ${DESTINO}`);
-console.log(`Módulos: ${totalModulos} | Capítulos: ${totalCapitulos}`);
-console.log("Revise o conteúdo técnico antes de publicar.");
