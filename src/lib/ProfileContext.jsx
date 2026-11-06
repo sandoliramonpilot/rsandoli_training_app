@@ -1,76 +1,32 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@/lib/AuthContext';
-import {
-  AIRCRAFT_PROFILES,
-  DEFAULT_PROFILE,
-  getSelectedProfile,
-  setSelectedProfile,
-  profileQueryFilter,
-} from '@/lib/aircraftProfile';
+import { TRAINING_BY_AIRCRAFT } from "@/lib/trainingData";
 
-const ProfileContext = createContext(null);
+// dentro do provider, depois de obter o user:
 
-function resolveUserProfiles(user) {
-  if (!user) return [DEFAULT_PROFILE];
-  if (user.is_master || user.access_level === 'admin_geral') return AIRCRAFT_PROFILES;
+const [aircraft, setAircraft] = useState(null);
 
-  let profiles = user.aircraft_profiles;
-  if (typeof profiles === 'string') {
-    try {
-      profiles = JSON.parse(profiles);
-    } catch {
-      profiles = [];
-    }
-  }
+const modulosPermitidos = useMemo(() => {
+  const lista = Array.isArray(user?.modulos_habilitados)
+    ? user.modulos_habilitados
+    : ["AW119"]; // campo ainda não existe na base: comportamento legado
+  return lista.filter((m) => TRAINING_BY_AIRCRAFT[m]);
+}, [user]);
 
-  if (!Array.isArray(profiles) || profiles.length === 0) return [DEFAULT_PROFILE];
+useEffect(() => {
+  if (!user) return;
+  const salvo = localStorage.getItem("aircraft");
+  const inicial = modulosPermitidos.includes(salvo)
+    ? salvo
+    : modulosPermitidos[0] ?? null;
+  setAircraft(inicial);
+  if (inicial) localStorage.setItem("aircraft", inicial);
+}, [user, modulosPermitidos]);
 
-  const validos = profiles.filter((p) => AIRCRAFT_PROFILES.includes(p));
-  return validos.length > 0 ? validos : [DEFAULT_PROFILE];
-}
+const trocarAeronave = (novo) => {
+  if (!modulosPermitidos.includes(novo)) return false;
+  localStorage.setItem("aircraft", novo);
+  setAircraft(novo);
+  return true;
+};
 
-export function ProfileProvider({ children }) {
-  const { user } = useAuth();
-  const [aircraft, setAircraft] = useState(null);
-
-  const modulosPermitidos = useMemo(() => resolveUserProfiles(user), [user]);
-
-  useEffect(() => {
-    if (!user) {
-      setAircraft(null);
-      return;
-    }
-    const salvo = getSelectedProfile();
-    const inicial = modulosPermitidos.includes(salvo)
-      ? salvo
-      : modulosPermitidos[0] ?? null;
-    setAircraft(inicial);
-    if (inicial) setSelectedProfile(inicial);
-  }, [user, modulosPermitidos]);
-
-  const trocarAeronave = (novo) => {
-    if (!modulosPermitidos.includes(novo)) return false;
-    setSelectedProfile(novo);
-    setAircraft(novo);
-    return true;
-  };
-
-  const profileValue = aircraft;
-  const profileFilter = aircraft ? profileQueryFilter(aircraft) : {};
-
-  const value = useMemo(
-    () => ({
-      profileValue,
-      profileFilter,
-      aircraft,
-      modulosPermitidos,
-      trocarAeronave,
-      temMultiplosPerfis: modulosPermitidos.length > 1,
-    }),
-    [profileValue, profileFilter, aircraft, modulosPermitidos]
-  );
-
-  return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
-}
-
-export const useProfile = () => useContext(ProfileContext);
+const profileValue = aircraft;
+const profileFilter = aircraft ? { aircraftProfile: aircraft } : {};
