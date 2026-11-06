@@ -18,7 +18,6 @@ export default function GlobalSearch({ open, onClose }) {
 
   const training = getTraining(profileValue);
 
-  // Índice estático: módulos e capítulos do treinamento ativo
   const indiceTreinamento = useMemo(() => {
     const modulos = training?.data?.modules ?? [];
     const itens = [];
@@ -42,7 +41,6 @@ export default function GlobalSearch({ open, onClose }) {
     return itens;
   }, [training]);
 
-  // Índice estático: treinamentos gerais
   const indiceGerais = useMemo(() => {
     const modulos = TREINAMENTOS_GERAIS?.modules ?? [];
     return modulos.map((m) => ({
@@ -52,7 +50,6 @@ export default function GlobalSearch({ open, onClose }) {
     }));
   }, []);
 
-  // Documentos do módulo ativo
   useEffect(() => {
     if (!open || !profileValue || !training) {
       setDocs([]);
@@ -109,9 +106,7 @@ export default function GlobalSearch({ open, onClose }) {
         : []),
     ];
 
-    return todos
-      .filter((i) => i.title?.toLowerCase().includes(t))
-      .slice(0, 20);
+    return todos.filter((i) => i.title?.toLowerCase().includes(t)).slice(0, 20);
   }, [termo, indiceTreinamento, indiceDocumentos, indiceGerais, user]);
 
   const irPara = (item) => {
