@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useProfile } from "@/lib/ProfileContext";
 
@@ -12,7 +12,9 @@ export function useTrainingDocs(discipline, options = {}) {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
 
-  const { status = "active", extra = {} } = options;
+  const status = options.status ?? "active";
+  const extraKey = JSON.stringify(options.extra ?? {});
+  const extra = useMemo(() => JSON.parse(extraKey), [extraKey]);
 
   const carregar = useCallback(async () => {
     if (!profileValue || !discipline) {
@@ -36,7 +38,7 @@ export function useTrainingDocs(discipline, options = {}) {
     } finally {
       setCarregando(false);
     }
-  }, [profileValue, discipline, status, JSON.stringify(extra)]);
+  }, [profileValue, discipline, status, extra]);
 
   useEffect(() => {
     carregar();
