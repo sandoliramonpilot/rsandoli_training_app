@@ -63,37 +63,41 @@
       "type": "string",
       "title": "Destino"
     },
-    "departure_time": {
+    "engine_start_time": {
       "type": "string",
       "title": "Acionamento (HH:MM)"
     },
-    "departure_time": {
+    "takeoff_time": {
       "type": "string",
       "title": "Decolagem (HH:MM)"
     },
-    "arrival_time": {
+    "landing_time": {
       "type": "string",
       "title": "Pouso (HH:MM)"
     },
-    "departure_time": {
+    "engine_shutdown_time": {
       "type": "string",
       "title": "Corte (HH:MM)"
-    },
+    }
     "flight_hour_initial": {
-      "type": "string",
-      "title": "Hor. Voo Inicial"
+      "type": "number",
+      "title": "Hor. Voo Inicial",
+      "minimum": 0
     },
-    "flight_hour_final": {
-      "type": "string",
-      "title": "Hor. Voo Final"
+      "flight_hour_final": {
+      "type": "number",
+      "title": "Hor. Voo Final",
+      "minimum": 0
     },
-    "engine_hour_initial": {
-      "type": "string",
-      "title": "Hor. Motor Inicial"
+      "engine_hour_initial": {
+      "type": "number",
+      "title": "Hor. Motor Inicial",
+      "minimum": 0
     },
-    "engine_hour_final": {
-      "type": "string",
-      "title": "Hor. Motor Final"
+      "engine_hour_final": {
+      "type": "number",
+      "title": "Hor. Motor Final",
+      "minimum": 0
     }
     "flight_time_minutes": {
       "type": "integer",
