@@ -16,7 +16,6 @@ export const ACCOUNT_STATUSES = [
   { id: "desativada", name: "Desativada" },
 ];
 
-// Módulos para controle de permissão
 export const PERMISSION_MODULES = [
   { id: "dashboard", name: "Dashboard", path: "/" },
   { id: "diario_bordo", name: "Diário de Bordo", path: "/flight-log" },
@@ -61,9 +60,8 @@ export const PERMISSION_ACTIONS = [
   { id: "todos", name: "Todos os registros" },
 ];
 
-// Permissões padrão por nível (módulo -> ações permitidas). Admin Geral = todos.
 // h125_training NÃO consta aqui de propósito: é liberado individualmente
-// via custom_permissions do usuário.
+// via aircraft_profiles do usuário (ver ProfileContext).
 export const DEFAULT_PERMISSIONS_BY_LEVEL = {
   admin_geral: "*",
   administrador: {
@@ -183,7 +181,6 @@ export const ACCOUNT_STATUS_LABELS = ACCOUNT_STATUSES.reduce((acc, s) => {
   return acc;
 }, {});
 
-/** Nível de acesso do usuário (lido do campo customizado access_level ou derivado de role). */
 export function getAccessLevel(user) {
   if (!user) return null;
   const al = user.access_level;
@@ -191,12 +188,10 @@ export function getAccessLevel(user) {
   return user.role === "admin" ? "administrador" : "operacional";
 }
 
-/** Status da conta (padrão: ativa). */
 export function getAccountStatus(user) {
   return user?.account_status || "ativa";
 }
 
-/** Verifica se o usuário tem permissão de fazer a ação no módulo. */
 export function can(user, moduleId, action) {
   const level = getAccessLevel(user);
   if (!level) return false;
@@ -223,24 +218,20 @@ export function can(user, moduleId, action) {
   return perms.includes(action);
 }
 
-/** Se o usuário pode gerenciar outros usuários (admin_geral ou administrador). */
 export function canManageUsers(user) {
   const level = getAccessLevel(user);
   return level === "admin_geral" || level === "administrador";
 }
 
-/** Se o usuário pode acessar a auditoria. */
 export function canViewAudit(user) {
   return getAccessLevel(user) === "admin_geral";
 }
 
-/** Se a conta permite login (ativa ou convite_pendente). */
 export function canLogin(user) {
   const s = getAccountStatus(user);
   return s === "ativa" || s === "convite_pendente";
 }
 
-/** Primeiro caminho de módulo autorizado para o usuário (para redirecionar após login). */
 export function firstAuthorizedPath(user) {
   for (const mod of PERMISSION_MODULES) {
     if (can(user, mod.id, "visualizar")) return mod.path;
@@ -248,7 +239,6 @@ export function firstAuthorizedPath(user) {
   return "/";
 }
 
-/** Verifica se o usuário possui pelo menos um módulo autorizado. */
 export function hasAnyAuthorizedModule(user) {
   return PERMISSION_MODULES.some((mod) => can(user, mod.id, "visualizar"));
 }
@@ -259,6 +249,16 @@ export function hasAnyAuthorizedModule(user) {
 
 export const TRAINING_MODULES = ["aw119_training", "h125_training"];
 
+export const TRAINING_MODULE_TO_AIRCRAFT = {
+  aw119_training: "AW119",
+  h125_training: "H125",
+};
+
+export const AIRCRAFT_TO_TRAINING_MODULE = {
+  AW119: "aw119_training",
+  H125: "h125_training",
+};
+
 /** Módulos de treinamento que o usuário pode visualizar. */
 export function getTrainingModules(user) {
   return TRAINING_MODULES.filter((m) => can(user, m, "visualizar"));
@@ -268,12 +268,6 @@ export function getTrainingModules(user) {
 export function canAccessTraining(user) {
   return getTrainingModules(user).length > 0;
 }
-
-/** Mapeia moduleId de treinamento para o perfil de aeronave correspondente. */
-export const TRAINING_MODULE_TO_AIRCRAFT = {
-  aw119_training: "AW119",
-  h125_training: "H125",
-};
 
 /** Perfis de aeronave liberados ao usuário, derivados das permissões. */
 export function getAuthorizedAircraft(user) {
