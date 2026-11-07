@@ -7,7 +7,7 @@ const DESTINO = path.resolve("src/lib/trainingData/h125Training.js");
 const fonte = fs.readFileSync(ORIGEM, "utf8");
 
 // Extrai o bloco do AW119_TRAINING
-const inicio = fonte.indexOf("AW119_TRAINING");
+const inicio = fonte.indexOf("TRAINING");
 if (inicio === -1) {
   console.error("AW119_TRAINING não encontrado em", ORIGEM);
   process.exit(1);
