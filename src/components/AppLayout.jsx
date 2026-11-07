@@ -31,7 +31,7 @@ const navSections = [
   {
     label: "Academy",
     items: [
-      { label: "AW119 TRAINING", path: "/training", icon: Crown, moduleId: "aw119_training", badge: "Premium" },
+      { label: "Treinamentos", path: "/training", icon: Crown, moduleId: "aw119_training", badge: "Premium" },
       { label: "Dashboard de Progresso", path: "/painel-progresso", icon: TrendingUp, moduleId: "treinamentos" },
       { label: "Treinamentos Gerais", path: "/treinamentos-gerais", icon: GraduationCap, moduleId: "treinamentos_gerais" },
       { label: "Limitações", path: "/limitacoes", icon: Gauge, moduleId: "limitacoes" },
@@ -48,6 +48,7 @@ const navSections = [
     label: "Conhecimento",
     items: [
       { label: "Biblioteca", path: "/biblioteca", icon: Library, moduleId: "biblioteca" },
+      { label: "Legislação", path: "/Legislação", icon: Library, moduleId: "Legislação" },
     ],
   },
 ];
@@ -120,7 +121,15 @@ function SidebarContent({ location, onNavigate }) {
   const { user, logout } = useAuth();
   const visibleSections = React.useMemo(() => {
     return navSections
-      .map((s) => ({ ...s, items: s.items.filter((i) => can(user, i.moduleId, "visualizar")) }))
+      .map((s) => ({
+        ...s,
+        items: s.items.filter((i) => {
+          if (i.moduleId === "aw119_training") {
+      return can(user, "aw119_training", "visualizar") || can(user, "h125_training", "visualizar");
+    }
+    return can(user, i.moduleId, "visualizar");
+  }),
+}))
       .filter((s) => s.items.length > 0);
   }, [user]);
   const showUsersMenu = canManageUsers(user);
@@ -227,6 +236,7 @@ function SidebarContent({ location, onNavigate }) {
                 >
                   <Plane style={{ width: 18, height: 18 }} />
                   Perfis de Aeronave
+                  { label: "Perfis de Aeronave", path: "/perfis-aeronave", icon: Plane, moduleId: "usuarios" },
                 </Link>
               )}
               {showMarcos && (
