@@ -196,6 +196,19 @@ export function can(user, moduleId, action) {
   const level = getAccessLevel(user);
   if (!level) return false;
   if (level === "admin_geral") return true;
+  // Módulos de treinamento são governados por aircraft_profiles, não por custom_permissions
+  if (moduleId === "aw119_training" || moduleId === "h125_training") {
+    const aeronave = TRAINING_MODULE_TO_AIRCRAFT[moduleId];
+    let perfis = user?.aircraft_profiles;
+    if (typeof perfis === "string") {
+      try { perfis = JSON.parse(perfis); } catch { perfis = []; }
+    }
+    if (!Array.isArray(perfis) || perfis.length === 0) {
+      // Usuário antigo sem o campo: mantém acesso ao AW119 (retrocompatível)
+      return moduleId === "aw119_training" && action === "visualizar";
+    }
+    return perfis.includes(aeronave);
+  }
 
   const custom = user?.custom_permissions;
   let perms = null;
