@@ -193,7 +193,6 @@ function SidebarContent({ location, onNavigate }) {
           <div>
             <p className="px-3 mb-1.5 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Administração</p>
             <div className="space-y-1">
-            { label: "Perfis de Aeronave", path: "/perfis-aeronave", icon: Plane, moduleId: "usuarios" },  
               {showGestao && (
                 <Link
                   to="/gestao"
@@ -237,7 +236,6 @@ function SidebarContent({ location, onNavigate }) {
                 >
                   <Plane style={{ width: 18, height: 18 }} />
                   Perfis de Aeronave
-                  { label: "Perfis de Aeronave", path: "/perfis-aeronave", icon: Plane, moduleId: "usuarios" },
                 </Link>
               )}
               {showMarcos && (
