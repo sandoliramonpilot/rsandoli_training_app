@@ -65,12 +65,36 @@
     },
     "departure_time": {
       "type": "string",
+      "title": "Acionamento (HH:MM)"
+    },
+    "departure_time": {
+      "type": "string",
       "title": "Decolagem (HH:MM)"
     },
     "arrival_time": {
       "type": "string",
       "title": "Pouso (HH:MM)"
     },
+    "departure_time": {
+      "type": "string",
+      "title": "Corte (HH:MM)"
+    },
+    "flight_hour_initial": {
+      "type": "string",
+      "title": "Hor. Voo Inicial"
+    },
+    "flight_hour_final": {
+      "type": "string",
+      "title": "Hor. Voo Final"
+    },
+    "engine_hour_initial": {
+      "type": "string",
+      "title": "Hor. Motor Inicial"
+    },
+    "engine_hour_final": {
+      "type": "string",
+      "title": "Hor. Motor Final"
+    }
     "flight_time_minutes": {
       "type": "integer",
       "title": "Tempo total de voo (minutos)",
@@ -119,11 +143,15 @@
     "ifr": {
       "type": "boolean",
       "title": "IFR",
-      "default": false
+      "default"},: false
     },
     "fuel_uplift_liters": {
       "type": "number",
-      "title": "Combust\u00edvel abastecido (L)"
+      "title": "Combust\u00edvel Inicial (Kg)"
+    },
+    "fuel_uplift_liters": {
+      "type": "number",
+      "title": "Combust\u00edvel abastecido (Kg)"
     },
     "notes": {
       "type": "string",
