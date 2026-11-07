@@ -44,14 +44,17 @@ const emptyForm = {
   copilot_role: "",
   departure_location: "",
   arrival_location: "",
+
   engine_start_time: "",
   takeoff_time: "",
   landing_time: "",
   engine_shutdown_time: "",
+
   flight_hour_initial: "",
   flight_hour_final: "",
   engine_hour_initial: "",
   engine_hour_final: "",
+
   flight_time_minutes: 0,
   day_time_minutes: 0,
   night_time_minutes: 0,
@@ -120,8 +123,17 @@ export default function FlightLog() {
       copilot_role: f.copilot_role || "",
       departure_location: f.departure_location || "",
       arrival_location: f.arrival_location || "",
-      departure_time: f.departure_time || "",
-      arrival_time: f.arrival_time || "",
+
+      engine_start_time: f.engine_start_time || "",
+      takeoff_time: f.takeoff_time || "",
+      landing_time: f.landing_time || "",
+      engine_shutdown_time: f.engine_shutdown_time || "",
+
+      flight_hour_initial: f.flight_hour_initial ?? "",
+      flight_hour_final: f.flight_hour_final ?? "",
+      engine_hour_initial: f.engine_hour_initial ?? "",
+      engine_hour_final: f.engine_hour_final ?? "",
+
       flight_time_minutes: f.flight_time_minutes || 0,
       day_time_minutes: f.day_time_minutes || 0,
       night_time_minutes: f.night_time_minutes || 0,
@@ -135,14 +147,19 @@ export default function FlightLog() {
   };
 
   const onField = (k, v) => {
-    setForm((prev) => {
-      const next = { ...prev, [k]: v };
-      if (k === "departure_time" || k === "arrival_time") {
-        next.flight_time_minutes = calcMinutes(next.departure_time, next.arrival_time);
-      }
-      return next;
-    });
-  };
+  setForm((prev) => {
+    const next = { ...prev, [k]: v };
+
+    if (k === "takeoff_time" || k === "landing_time") {
+      next.flight_time_minutes = calcMinutes(
+        next.takeoff_time,
+        next.landing_time
+      );
+    }
+
+    return next;
+  });
+};
 
   const remove = async (f) => {
     if (!confirm("Excluir este registro de voo?")) return;
@@ -215,10 +232,26 @@ export default function FlightLog() {
                   <tr key={f.id} className="hover:bg-slate-50/60 transition-colors align-top">
                     <td className="px-5 py-3 whitespace-nowrap text-slate-600">{f.date ? new Date(f.date).toLocaleDateString("pt-BR") : "—"}</td>
                     <td className="px-5 py-3">
-                      <span className="text-slate-900 font-medium">{f.departure_location || "—"}</span>
+                      <div>
+                      <span className="text-slate-900 font-medium">{f.departure_location || "—"}
+                      </span>
+
                       <span className="text-slate-300 mx-1.5">→</span>
-                      <span className="text-slate-900 font-medium">{f.arrival_location || "—"}</span>
-                      
+                      <span className="text-slate-900 font-medium">{f.arrival_location || "—"}
+                      </span>
+                      </div>
+
+                      <div className="mt-1 text-[11px] text-slate-500 whitespace-nowrap">
+                        Acionamento {f.engine_start_time || "—"} {" · "}
+                        Decolagem {f.takeoff_time || "—"} {" · "}
+                        Pouso {f.landing_time || "—"}  {" · "}
+                        Corte {f.engine_shutdown_time || "—"}
+                      </div>
+
+                      <div className="mt-0.5 text-[11px] text-slate-400 whitespace-nowrap">
+                        Hor. voo: {f.flight_hour_initial ?? "—"} → {f.flight_hour_final ?? "—"} {" · "}
+                        Hor. motor: {f.engine_hour_initial ?? "—"} → {f.engine_hour_final ?? "—"}
+                      </div>
                     </td>
                     <td className="px-5 py-3 text-slate-600 whitespace-nowrap">{f.aircraft_registration || "—"}</td>
                     <td className="px-5 py-3">
@@ -294,6 +327,12 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSubmi
   const hasCopilot = !!form.copilot_name?.trim();
   const hasPilot = !!form.pilot_name?.trim();
 
+  const flightHourInitial = form.flight_hour_initial === "" ? null : Number(form.flight_hour_initial);
+  const flightHourFinal = form.flight_hour_final === "" ? null : Number(form.flight_hour_final);
+
+  const engineHourInitial = form.engine_hour_initial === "" ? null : Number(form.engine_hour_initial);
+  const engineHourFinal = form.engine_hour_final === "" ? null : Number(form.engine_hour_final);
+  
   const validate = () => {
     if (hasPilot && !form.pilot_role) {
       return 'Campo obrigatório: "Função a bordo" do piloto.';
@@ -310,6 +349,13 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSubmi
     if (ifrExceeds) {
       return `Inconsistência: tempo IFR (${ifr} min) superior ao tempo total (${total} min).`;
     }
+    if (flightHourInitial !== null && flightHourFinal !== null && flightHourFinal < flightHourInitial {
+      return 'Inconsistência: "Hor. Voo Final" não pode ser menor que "Hor. Voo Inicial".';
+    }
+    if (engineHourInitial !== null && engineHourFinal !== null && engineHourFinal < engineHourInitial)
+    {
+      return 'Inconsistência: "Hor. Motor Final" não pode ser menor que "Hor. Motor Inicial".';
+    }
     return "";
   };
 
@@ -325,15 +371,20 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSubmi
     const payload = {
       ...form,
       aircraft_registration: ac?.registration || "",
+      flight_hour_initial: form.flight_hour_initial === "" ? null : Number(form.flight_hour_initial),
+      flight_hour_final: form.flight_hour_final === "" ? null : Number(form.flight_hour_final),
+      engine_hour_initial: form.engine_hour_initial === "" ? null : Number(form.engine_hour_initial),
+      engine_hour_final: form.engine_hour_final === "" ? null : Number(form.engine_hour_final),
       landings: Number(form.landings) || 1,
       flight_time_minutes: total,
       day_time_minutes: day,
       night_time_minutes: night,
       ifr_time_minutes: ifr,
-      fuel_uplift_liters: form.fuel_uplift_liters === "" ? null : Number(form.fuel_uplift_liters),
+      fuel_uplift_kilo: form.fuel_uplift_liters === "" ? null : Number(form.fuel_uplift_liters),
       pilot_role: hasPilot ? form.pilot_role : null,
       copilot_role: hasCopilot ? form.copilot_role : null,
     };
+
     onSubmit(payload);
   };
 
@@ -387,12 +438,38 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSubmi
             <Field label="Destino *">
               <input required value={form.arrival_location} onChange={(e) => onField("arrival_location", e.target.value)} className={inputCls} placeholder="SBGR / local" />
             </Field>
+            <Field label="Acionamento (HH:MM)">
+              <input  type="time" value={form.engine_start_time}  onChange={(e) => onField("engine_start_time", e.target.value)} className={inputCls} />
+            </Field>
+            
             <Field label="Decolagem (HH:MM)">
-              <input type="time" value={form.departure_time} onChange={(e) => onField("departure_time", e.target.value)} className={inputCls} />
+              <input type="time" value={form.takeoff_time} onChange={(e) => onField("takeoff_time", e.target.value)} className={inputCls} />
             </Field>
+
             <Field label="Pouso (HH:MM)">
-              <input type="time" value={form.arrival_time} onChange={(e) => onField("arrival_time", e.target.value)} className={inputCls} />
+              <input type="time" value={form.landing_time} onChange={(e) => onField("landing_time", e.target.value)} className={inputCls} />
             </Field>
+
+            <Field label="Corte (HH:MM)">
+            <input type="time" value={form.engine_shutdown_time} onChange={(e) => onField("engine_shutdown_time", e.target.value)} className={inputCls} />
+            </Field>
+
+            <Field label="Hor. Voo Inicial">
+            <input type="number" min="0" step="0.1" inputMode="decimal" value={form.flight_hour_initial} onChange={(e) => onField("flight_hour_initial", e.target.value)} className={inputCls} placeholder="Ex.: 2345.6" />
+            </Field>
+
+            <Field label="Hor. Voo Final">
+            <input type="number" min="0" step="0.1" inputMode="decimal" value={form.flight_hour_final} onChange={(e) => onField("flight_hour_final", e.target.value)} className={inputCls} placeholder="Ex.: 2346.8" />
+            </Field>
+
+            <Field label="Hor. Motor Inicial">
+            <input type="number” min="0" step="0.1" inputMode="decimal" value={form.engine_hour_initial} onChange={(e) => onField("engine_hour_initial", e.target.value)} className={inputCls} placeholder="Ex.: 1876.3" />
+            </Field>
+
+            <Field label="Hor. Motor Final">
+            <input type="number" min="0" step="0.1" inputMode="decimal" value={form.engine_hour_final} onChange={(e) => onField("engine_hour_final", e.target.value)} className={inputCls} placeholder="Ex.: 1877.7" />
+            </Field>
+
             <Field label="Tipo de voo">
               <select value={form.flight_type} onChange={(e) => onField("flight_type", e.target.value)} className={inputCls}>
                 {Object.entries(FLIGHT_TYPE_LABELS).map(([k, v]) => (
