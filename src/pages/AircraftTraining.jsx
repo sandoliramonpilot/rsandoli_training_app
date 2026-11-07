@@ -5,19 +5,24 @@ import { can } from "@/lib/accessControl";
 import { useProfile } from "@/lib/ProfileContext";
 import { getTraining, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData";
 import BackToDashboard from "@/components/BackToDashboard";
-import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import DocumentListItem from "@/components/academy/DocumentListItem";
 import {
   GraduationCap, Crown, Monitor, Plane, Settings, ChevronRight, ChevronDown,
   Upload, Loader2, X, AlertTriangle, ShieldAlert, BookOpen, Layers,
+  LayoutDashboard, Cog, Fuel, Wind, Droplets, Zap, Radio, Gauge, Scale,
+  TrendingUp, FileText, Siren, PackageSearch, ClipboardCheck,
 } from "lucide-react";
 
-const MODULE_ICONS = { Monitor, Plane, Settings };
+const MODULE_ICONS = {
+  Monitor, Plane, Settings, BookOpen, LayoutDashboard, Cog, Fuel, Wind,
+  Droplets, Zap, Radio, Gauge, Scale, TrendingUp, FileText, Siren,
+  PackageSearch, ClipboardCheck,
+};
 
 export default function AircraftTraining() {
   const { user } = useAuth();
-  const { profileValue, profileFilter } = useProfile();
-  
+  const { profileValue } = useProfile();
+
   const training = getTraining(profileValue);
   const data = training?.data ?? { modules: [], subtitle: "" };
   const discipline = training?.discipline ?? null;
@@ -29,7 +34,7 @@ export default function AircraftTraining() {
   const [uploadChapter, setUploadChapter] = useState(null);
   const [uploadTitle, setUploadTitle] = useState("");
 
-  const canEdit = can(user, discipline, "editar");
+  const canEdit = discipline ? can(user, discipline, "editar") : false;
 
   const mod =
     data.modules.find((m) => m.id === activeModule) ?? data.modules[0] ?? null;
@@ -252,11 +257,7 @@ function ChapterCard({
         className="w-full flex items-center justify-between px-5 py-3.5 bg-[#12141A] border-b border-slate-700/60 hover:bg-white/[0.02] transition-colors"
       >
         <div className="flex items-center gap-2.5 text-left">
-          {chapter.isHelipilotArea ? (
-            <ShieldAlert className="w-4 h-4 text-teal-400 shrink-0" />
-          ) : (
-            <ChevronRight className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
-          )}
+          <ChevronRight className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
           <h3 className="font-semibold text-sm text-slate-100">{chapter.title}</h3>
         </div>
         <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isOpen ? "rotate-180" : ""}`} />
@@ -268,17 +269,13 @@ function ChapterCard({
             <p className="text-xs text-slate-500 italic">{chapter.objective}</p>
           )}
 
-          {chapter.isHelipilotArea ? (
-            <HelipilotContent chapter={chapter} />
-          ) : (
-            <ul className="space-y-2">
-              {items.map((t, i) => (
-                <li key={i} className="text-sm text-slate-300 flex items-start gap-2.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" /> {t}
-                </li>
-              ))}
-            </ul>
-          )}
+          <ul className="space-y-2">
+            {items.map((t, i) => (
+              <li key={i} className="text-sm text-slate-300 flex items-start gap-2.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" /> {t}
+              </li>
+            ))}
+          </ul>
 
           {chapter.note && (
             <div className="px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/20 text-amber-300/80 text-xs">
@@ -348,51 +345,6 @@ function ChapterCard({
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-function HelipilotContent({ chapter }) {
-  const items = chapter.items ?? [];
-  const modes = chapter.modes ?? [];
-  const modeFields = chapter.modeFields ?? [];
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <p className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-2">Conteúdo</p>
-        <div className="flex flex-wrap gap-2">
-          {items.map((t, i) => (
-            <span key={i} className="text-xs px-3 py-1.5 rounded-lg bg-slate-700/30 text-slate-300 border border-slate-700/40">
-              {t}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <p className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-2">Modos a organizar</p>
-        <div className="flex flex-wrap gap-2">
-          {modes.map((m) => (
-            <span key={m} className="text-xs px-3 py-1.5 rounded-lg bg-teal-500/10 text-teal-300 border border-teal-500/30 font-mono">
-              {m}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <p className="text-xs uppercase tracking-wider text-slate-500 font-medium mb-2">
-          Para cada modo, apresentar:
-        </p>
-        <ol className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5">
-          {modeFields.map((f, i) => (
-            <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
-              <span className="text-xs text-amber-400 font-mono shrink-0 mt-0.5">{i + 1}.</span> {f}
-            </li>
-          ))}
-        </ol>
-      </div>
     </div>
   );
 }
