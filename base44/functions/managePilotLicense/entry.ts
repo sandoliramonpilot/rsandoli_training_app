@@ -129,11 +129,25 @@ export default async function (req) {
       if (!recSelf && !isAdmin) {
         return Response.json({ error: "Você não pode editar esta licença." }, { status: 403 });
       }
+      // Piloto só edita rascunhos; editar reverte para "draft" e exige nova conferência
+      // (igual ao approveTechnicalValidations). Administradores mantêm o estado atual.
+      if (!isAdmin) {
+        if (record.approval_status !== "draft") {
+          return Response.json({ error: "Licenças já conferidas não podem ser editadas pelo piloto. Solicite reabertura ao administrador." }, { status: 403 });
+        }
+      }
       const patch = pick(body.patch || {}, WRITABLE_FIELDS);
       if ("situation" in patch) patch.situation = sanitizeSituation(patch.situation, isAdmin);
       // Usuário comum nunca toca nos campos de revisão via esta ação.
       for (const f of REVIEW_FIELDS) delete patch[f];
       if (Object.keys(patch).length === 0) return Response.json({ error: "Nada para atualizar." }, { status: 400 });
+      if (!isAdmin) {
+        patch.approval_status = "draft";
+        patch.reviewed_by = null;
+        patch.reviewed_at = null;
+        patch.review_decision = null;
+        patch.review_justification = null;
+      }
       await base44.asServiceRole.entities.PilotLicense.update(body.id, patch);
       await logAudit(base44, user, recPilot || pilot, "Licença — edição", `Licença editada: ${record.license_type_label || record.license_type || ""}`);
       return Response.json({ ok: true });
