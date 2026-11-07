@@ -349,7 +349,7 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSubmi
     if (ifrExceeds) {
       return `Inconsistência: tempo IFR (${ifr} min) superior ao tempo total (${total} min).`;
     }
-    if (flightHourInitial !== null && flightHourFinal !== null && flightHourFinal < flightHourInitial {
+    if (flightHourInitial !== null && flightHourFinal !== null && flightHourFinal < flightHourInitial) {
       return 'Inconsistência: "Hor. Voo Final" não pode ser menor que "Hor. Voo Inicial".';
     }
     if (engineHourInitial !== null && engineHourFinal !== null && engineHourFinal < engineHourInitial)
@@ -463,7 +463,7 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSubmi
             </Field>
 
             <Field label="Hor. Motor Inicial">
-            <input type="number” min="0" step="0.1" inputMode="decimal" value={form.engine_hour_initial} onChange={(e) => onField("engine_hour_initial", e.target.value)} className={inputCls} placeholder="Ex.: 1876.3" />
+            <input type="number" min="0" step="0.1" inputMode="decimal" value={form.engine_hour_initial} onChange={(e) => onField("engine_hour_initial", e.target.value)} className={inputCls} placeholder="Ex.: 1876.3" />
             </Field>
 
             <Field label="Hor. Motor Final">
