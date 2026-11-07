@@ -51,7 +51,7 @@ const emptyForm = {
   flight_hour_initial: "",
   flight_hour_final: "",
   engine_hour_initial: "",
-  engine_hour_final: ""
+  engine_hour_final: "",
   flight_time_minutes: 0,
   day_time_minutes: 0,
   night_time_minutes: 0,
