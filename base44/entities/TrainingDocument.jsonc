@@ -2,7 +2,7 @@
   "name": "TrainingDocument",
   "type": "object",
   "properties": {
-    "aircraftProfile": {
+    "aircraftProfile": "AW119" {
       "type": "string",
       "enum": [
         "AW119",
