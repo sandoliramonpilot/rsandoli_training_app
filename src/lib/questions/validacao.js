@@ -15,9 +15,9 @@ export function validarQuestao(q) {
   if (q.courseId !== COURSE_ID) erros.push(`courseId deve ser "${COURSE_ID}"`);
   if (!MODULE_IDS.has(q.moduleId)) erros.push(`moduleId inválido: ${q.moduleId}`);
   if (!QUESTION_TYPES.includes(q.type)) erros.push(`type inválido: ${q.type}`);
-  if (!COGNITIVE_LEVELS.includes(q.cognitiveLevel)) erros.push(`cognitiveLevel inválido`);
-  if (!DIFFICULTIES.includes(q.difficulty)) erros.push(`difficulty inválida`);
-  if (!CONTENT_STATUS.includes(q.status)) erros.push(`status inválido`);
+  if (!COGNITIVE_LEVELS.includes(q.cognitiveLevel)) erros.push("cognitiveLevel inválido");
+  if (!DIFFICULTIES.includes(q.difficulty)) erros.push("difficulty inválida");
+  if (!CONTENT_STATUS.includes(q.status)) erros.push("status inválido");
   if (!APPLICABILITY.includes(q.applicability?.classification)) {
     erros.push("applicability.classification inválida");
   }
