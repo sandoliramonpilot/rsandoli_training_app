@@ -127,6 +127,7 @@ const AuthenticatedApp = () => {
         <Route path="/pilotos" element={<Pilotos />} />
         <Route path="/oat" element={<Oat />} />
         <Route path="/escalas" element={<Escalas />} />
+        <Route path="/banco-questoes" element={<RequireModule moduleId="questoes"><BancoQuestoes /></RequireModule>} />
         <Route path="/questoes" element={<Questoes />} />
         <Route path="/simulados" element={<Simulados />} />
         <Route path="/usuarios" element={<RequireModule moduleId="usuarios"><Usuarios /></RequireModule>} />
