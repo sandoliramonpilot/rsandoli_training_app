@@ -28,6 +28,7 @@ import ProcedimentosNormais from '@/pages/ProcedimentosNormais';
 import Limitacoes from '@/pages/Limitacoes';
 import Gestao from '@/pages/Gestao';
 import Pilotos from '@/pages/Pilotos';
+import BancoQuestoes from '@/pages/admin/BancoQuestoes';
 import Questoes from '@/pages/Questoes';
 import Simulados from '@/pages/Simulados';
 import Usuarios from '@/pages/Usuarios';
