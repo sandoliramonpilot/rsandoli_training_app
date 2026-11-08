@@ -10,7 +10,7 @@ const BASE = {
   aircraftModel: AIRCRAFT_MODEL,
   aircraftVariant: AIRCRAFT_VARIANT,
   avionicsConfiguration: AVIONICS_CONFIGURATION,
-  moduleId: "hidraulico",
+  moduleId: "eletrico",
   status: "technical_review",
   active: false,
   version: 1,
@@ -25,7 +25,7 @@ const FONTE = {
   issuer: "",
   revision: "",
   revisionDate: "",
-  section: "Sistema Hidráulico",
+  section: "Sistema Elétrico",
   subsection: "",
   printedPage: "",
   pdfPage: "",
@@ -33,26 +33,26 @@ const FONTE = {
   verified: false,
 };
 
-export const M10_HIDRAULICO = [
+export const M11_ELETRICO = [
   {
     ...BASE,
-    questionCode: "H125-B2V-M10-Q001",
-    chapterId: "hid_ch2",
+    questionCode: "H125-B2V-M11-Q001",
+    chapterId: "ele_ch2",
     type: "single_choice",
-    cognitiveLevel: "analysis",
-    difficulty: "hard",
+    cognitiveLevel: "comprehension",
+    difficulty: "medium",
     questionText:
-      "Qual é a diferença conceitual entre a chave de corte hidráulico no coletivo e o botão ACCU TST?",
+      "Qual é a finalidade do EMER SHED no sistema elétrico descrito?",
     options: [
-      { id: "A", text: "Os dois comandos têm exatamente a mesma atuação." },
-      { id: "B", text: "O corte hidráulico despressuriza os acumuladores principais, enquanto o ACCU TST também atua no compensador do rotor de cauda." },
-      { id: "C", text: "O ACCU TST opera somente o sistema elétrico." },
-      { id: "D", text: "A chave de corte hidráulico atua somente no servocomando traseiro." },
+      { id: "A", text: "Aumentar a geração de energia em voo." },
+      { id: "B", text: "Preservar alimentação de barramentos essenciais em condição de emergência." },
+      { id: "C", text: "Substituir a bateria em caso de falha." },
+      { id: "D", text: "Recarregar a bateria durante o voo." },
     ],
     correctAnswer: ["B"],
     answerExplanation:
-      "O manual descreve atuações diferentes. O ACCU TST também despressuriza o compensador de esforços do rotor de cauda, aspecto relevante para testes e treinamento.",
-    source: { ...FONTE, subsection: "ACCU TST e corte hidráulico" },
+      "O EMER SHED preserva a alimentação de barramentos essenciais em condição de emergência, mantendo os equipamentos críticos energizados.",
+    source: { ...FONTE, subsection: "Modos de alimentação" },
     applicability: {
       classification: "configuration_dependent",
       aircraftVariant: AIRCRAFT_VARIANT,
@@ -63,23 +63,23 @@ export const M10_HIDRAULICO = [
   },
   {
     ...BASE,
-    questionCode: "H125-B2V-M10-Q002",
-    chapterId: "hid_ch1",
+    questionCode: "H125-B2V-M11-Q002",
+    chapterId: "ele_ch1",
     type: "single_choice",
-    cognitiveLevel: "comprehension",
-    difficulty: "medium",
+    cognitiveLevel: "recall",
+    difficulty: "easy",
     questionText:
-      "Quantos servocomandos principais e quantos servocomandos traseiros compõem a arquitetura hidráulica descrita?",
+      "Qual é o valor da tensão do sistema DC regulado descrito na fonte?",
     options: [
-      { id: "A", text: "Dois principais e dois traseiros." },
-      { id: "B", text: "Três principais e um traseiro." },
-      { id: "C", text: "Quatro principais e um traseiro." },
-      { id: "D", text: "Três principais e dois traseiros." },
+      { id: "A", text: "12 V" },
+      { id: "B", text: "24 V" },
+      { id: "C", text: "28 V" },
+      { id: "D", text: "115 V" },
     ],
-    correctAnswer: ["B"],
+    correctAnswer: ["C"],
     answerExplanation:
-      "A arquitetura inclui três servocomandos principais e um servocomando traseiro, além dos acumuladores de segurança e do compensador de esforços do rotor de cauda.",
-    source: { ...FONTE, subsection: "Arquitetura" },
+      "A configuração descrita possui sistema DC regulado em 28 V, com arranque-gerador, bateria e tomada de fonte externa.",
+    source: { ...FONTE, subsection: "Geração DC" },
     applicability: {
       classification: "configuration_dependent",
       aircraftVariant: AIRCRAFT_VARIANT,
