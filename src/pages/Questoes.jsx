@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { QUESTION_BANK, DIFFICULTY, SUBJECTS, SYSTEMS } from "@/lib/questionData";
 import { Search, HelpCircle, BookOpen, ChevronDown, ChevronUp, Filter } from "lucide-react";
+import { useTrainingDocs, criarTrainingDoc } from "@/hooks/useTrainingDocs";
 
 export default function Questoes() {
   const [query, setQuery] = useState("");
