@@ -1,4 +1,4 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
+import { createClientFromRequest } from "npm:@base44/sdk";
 import { AUDITABLE_ACTIONS, generateNumericCode, getCodeSecret, hashCode, isActiveAccount, SENSITIVE_OPERATIONS } from "../../shared/accessSecurity.js";
 
 const CODE_TTL_MINUTES = 5;
