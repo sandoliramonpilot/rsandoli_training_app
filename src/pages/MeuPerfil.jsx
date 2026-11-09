@@ -117,7 +117,8 @@ export default function MeuPerfil() {
       setPwdMsg("Senha alterada com sucesso.");
       setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
     } catch (err) {
-      setPwdError(err?.message || "Não foi possível alterar a senha. Verifique a senha atual.");
+      const apiMsg = err?.response?.data?.error || err?.data?.error || err?.message;
+      setPwdError(apiMsg || "Não foi possível alterar a senha. Verifique a senha atual.");
     } finally {
       setPwdSaving(false);
     }

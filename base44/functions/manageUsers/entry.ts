@@ -1,4 +1,5 @@
-import { AUDITABLE_ACTIONS, canManageLevel, generateTempPassword, getCodeSecret, hashCode, isActiveAccount, rankOf, SENSITIVE_OPERATIONS, setAccountStatusRecord } from "../../shared/accessSecurity.js";
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.59";
+import { AUDITABLE_ACTIONS, canManageLevel, getCodeSecret, hashCode, isActiveAccount, isAdminUser, SENSITIVE_OPERATIONS, setAccountStatusRecord } from "../../shared/accessSecurity.js";
 const ACCOUNT_STATUSES = ["convite_pendente", "ativa", "bloqueada", "suspensa", "desativada"];
 const ACCESS_LEVELS = ["admin_geral", "administrador", "gestor_supervisor", "operacional", "consulta"];
 

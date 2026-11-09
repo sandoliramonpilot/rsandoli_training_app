@@ -1,4 +1,4 @@
-import { createClientFromRequest } from "npm:@base44/sdk";
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.59";
 import { AUDITABLE_ACTIONS, isActiveAccount } from "../../shared/accessSecurity.js";
 
 // Realiza a troca de senha no backend e só então limpa o flag administrativo
@@ -26,10 +26,17 @@ async function logAudit(base44, actor, action, details) {
   } catch {}
 }
 
+function extractMessage(err, fallback) {
+  if (err?.message && typeof err.message === "string" && !err.message.includes("[object")) return err.message;
+  if (err?.data?.message) return err.data.message;
+  if (typeof err === "string") return err;
+  return fallback;
+}
+
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
     if (!(await isActiveAccount(base44, user))) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
 
@@ -56,10 +63,30 @@ export default async function (req) {
     // Troca a senha no servidor — a plataforma valida a senha atual.
     // Só depois de a troca ser confirmada é que o flag administrativo é limpo,
     // eliminando a possibilidade de limpar o flag sem efetivamente trocar a senha.
-    await base44.auth.changePassword({ currentPassword, newPassword });
+    try {
+      await base44.auth.changePassword({ currentPassword, newPassword });
+    } catch (changeErr) {
+      // Erro de cliente (senha atual incorreta, nova senha rejeitada pela plataforma):
+      // retorna 400 com a mensagem real em vez de mascarar como 500.
+      const m = String(changeErr?.message || changeErr || "").toLowerCase();
+      const status = changeErr?.status || changeErr?.statusCode;
+      const isClientError =
+        status === 400 || status === 401 ||
+        m.includes("current password") ||
+        m.includes("incorrect") ||
+        m.includes("invalid") ||
+        m.includes("weak") ||
+        m.includes("same") ||
+        m.includes("password");
+      const msg = extractMessage(changeErr, "Não foi possível alterar a senha. Verifique a senha atual.");
+      return Response.json(
+        { error: isClientError ? msg : "Não foi possível alterar a senha. Verifique a senha atual." },
+        { status: isClientError ? 400 : 500 }
+      );
+    }
 
     // Limpa o flag de troca obrigatória, se estiver ativo
-    const freshUser = await base44.asServiceRole.entities.User.get(user.id);
+    const freshUser = await base44.asServiceRole.entities.User.get(user.id).catch(() => null);
     if (freshUser?.must_change_password) {
       await base44.asServiceRole.entities.User.update(user.id, { must_change_password: false });
     }
@@ -67,15 +94,7 @@ export default async function (req) {
     await logAudit(base44, user, AUDITABLE_ACTIONS.password_reset_completed, "Troca de senha concluída pelo próprio usuário");
     return Response.json({ ok: true });
   } catch (error) {
-    // O erro de changePassword pode ser um objeto da plataforma sem message legível
-    let msg = "Não foi possível alterar a senha. Verifique a senha atual.";
-    if (error?.message && typeof error.message === "string" && !error.message.includes("[object")) {
-      msg = error.message;
-    } else if (error?.data?.message) {
-      msg = error.data.message;
-    } else if (typeof error === "string") {
-      msg = error;
-    }
+    const msg = extractMessage(error, "Não foi possível alterar a senha. Verifique a senha atual.");
     return Response.json({ error: msg }, { status: 500 });
   }
 }
