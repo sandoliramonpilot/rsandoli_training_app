@@ -1,4 +1,4 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
+import { createClientFromRequest } from "npm:@base44/sdk";
 import { isAdminUser, isActiveAccount } from "../../shared/accessSecurity.js";
 
 // Campos editáveis por entidade (para ação update_one)
