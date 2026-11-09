@@ -43,6 +43,7 @@ export default function PainelProgresso() {
   }, []);
 
   // Carrega pilotos (todos para admin; próprio para usuário comum)
+  // Recarrega ao trocar de módulo (AW119/H125): cada perfil tem seus próprios pilotos.
   useEffect(() => {
     base44.entities.Pilot.filter(profileFilter).then((all) => {
       setPilots(all);
@@ -50,13 +51,18 @@ export default function PainelProgresso() {
       const myPilot = all.find((p) => p.user_id === user?.id || (p.email && user?.email && p.email.toLowerCase() === user.email.toLowerCase()));
       setSelectedPilotId(myPilot?.id || (canViewOthers ? null : (all[0]?.id || null)));
     }).catch(() => setPilots([]));
-  }, [user?.id, user?.email, canViewOthers]);
+  }, [user?.id, user?.email, canViewOthers, profileValue]);
 
   const selectedPilot = useMemo(() => (pilots || []).find((p) => p.id === selectedPilotId) || null, [pilots, selectedPilotId]);
 
-  // Carrega registros de progresso e conclusões do piloto selecionado
+  // Carrega registros de progresso e conclusões do piloto selecionado.
+  // Recarrega ao trocar de módulo: o profileFilter mudou e os content_ids são
+  // distintos por perfil, então registros do AW119 não valem para o H125.
   useEffect(() => {
     if (!selectedPilot) { setRecords(null); setCompletions(null); return; }
+    // Reinicia o estado para não exibir registros do perfil anterior durante o carregamento.
+    setRecords(null);
+    setCompletions(null);
     const targetUserId = selectedPilot.user_id || user?.id;
     Promise.all([
       base44.entities.ProgressRecord.filter({ ...profileFilter, user_id: targetUserId }).catch(() => []),
@@ -65,7 +71,7 @@ export default function PainelProgresso() {
       setRecords(recs);
       setCompletions(comps);
     });
-  }, [selectedPilot, user?.id]);
+  }, [selectedPilot, user?.id, profileValue]);
 
   // Índice de registros por content_id
   const recordsByContentId = useMemo(() => {
