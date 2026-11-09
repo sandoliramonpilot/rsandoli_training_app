@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { CHECKLIST_PHASES } from "@/lib/checklistData";
+import { CHECKLIST_PHASES, getChecklistPhases } from "@/lib/checklistData";
 import ChecklistPhaseTabs from "@/components/checklist/ChecklistPhaseTabs";
 import ChecklistSectionList from "@/components/checklist/ChecklistSectionList";
 import ChecklistSummaryBar from "@/components/checklist/ChecklistSummaryBar";
@@ -16,13 +16,14 @@ const DRAFT_KEY = "checklist_draft_v2";
 
 export default function Checklist() {
   const { profileFilter, profileValue } = useProfile();
+  const PHASES = getChecklistPhases(profileValue);
   const [view, setView] = useState("new"); // new | history
   const [aircraft, setAircraft] = useState([]);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [setup, setSetup] = useState(null);
-  const [activePhase, setActivePhase] = useState(CHECKLIST_PHASES[0].id);
+  const [activePhase, setActivePhase] = useState(PHASES[0].id);
   const [checkedByPhase, setCheckedByPhase] = useState({});
   const [query, setQuery] = useState("");
   const [showStartFlow, setShowStartFlow] = useState(false);
@@ -30,6 +31,11 @@ export default function Checklist() {
   const [viewingRecord, setViewingRecord] = useState(null);
   const [startedAt, setStartedAt] = useState(null);
   const [offlineNotice, setOfflineNotice] = useState("");
+
+  // Reset da fase ativa quando o perfil da aeronave muda (AW119 ↔ H125).
+  useEffect(() => {
+    setActivePhase(PHASES[0].id);
+  }, [profileValue]);
 
   useEffect(() => {
     Promise.all([
@@ -45,7 +51,7 @@ export default function Checklist() {
         const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
         if (draft) {
           setSetup(draft.setup);
-          setActivePhase(draft.activePhase || CHECKLIST_PHASES[0].id);
+          setActivePhase(draft.activePhase || PHASES[0].id);
           setCheckedByPhase(draft.checkedByPhase || {});
           setStartedAt(draft.startedAt);
         }
@@ -63,9 +69,9 @@ export default function Checklist() {
     setSetup(data);
     setStartedAt(Date.now());
     setCheckedByPhase({});
-    setActivePhase(CHECKLIST_PHASES[0].id);
+    setActivePhase(PHASES[0].id);
     setShowStartFlow(false);
-    persistDraft({ setup: data, startedAt: Date.now(), checkedByPhase: {}, activePhase: CHECKLIST_PHASES[0].id });
+    persistDraft({ setup: data, startedAt: Date.now(), checkedByPhase: {}, activePhase: PHASES[0].id });
   };
 
   const beginNewChecklist = () => {
@@ -74,7 +80,7 @@ export default function Checklist() {
       setSetup(null);
       setCheckedByPhase({});
       setStartedAt(null);
-      setActivePhase(CHECKLIST_PHASES[0].id);
+      setActivePhase(PHASES[0].id);
       localStorage.removeItem(DRAFT_KEY);
     }
     setShowStartFlow(true);
@@ -96,15 +102,15 @@ export default function Checklist() {
 
   const progressByPhase = useMemo(() => {
     const map = {};
-    CHECKLIST_PHASES.forEach((p) => {
+    PHASES.forEach((p) => {
       const total = p.sections.reduce((s, sec) => s + sec.items.length, 0);
       const done = Object.values(checkedByPhase[p.id] || {}).filter(Boolean).length;
       map[p.id] = { total, done };
     });
     return map;
-  }, [checkedByPhase]);
+  }, [checkedByPhase, profileValue]);
 
-  const currentPhase = CHECKLIST_PHASES.find((p) => p.id === activePhase);
+  const currentPhase = PHASES.find((p) => p.id === activePhase);
   const flatSections = useMemo(() => {
     let idx = -1;
     const sections = currentPhase.sections.map((sec) => ({
@@ -116,17 +122,17 @@ export default function Checklist() {
     return sections.map((s) => ({ ...s, items: s.items.filter((i) => i.text.toLowerCase().includes(q)) })).filter((s) => s.items.length > 0);
   }, [currentPhase, query]);
 
-  const isLastPhase = activePhase === CHECKLIST_PHASES[CHECKLIST_PHASES.length - 1].id;
+  const isLastPhase = activePhase === PHASES[PHASES.length - 1].id;
 
   const pendingItems = useMemo(() => {
     const list = [];
-    CHECKLIST_PHASES.forEach((p) => {
+    PHASES.forEach((p) => {
       let idx = -1;
       p.sections.forEach((sec) => {
         sec.items.forEach((text) => {
           const globalIdx = (function () {
             let n = -1;
-            for (const ph of CHECKLIST_PHASES) {
+            for (const ph of PHASES) {
               for (const s of ph.sections) for (const it of s.items) {
                 n++;
                 if (ph.id === p.id && s === sec && it === text) return n;
@@ -142,11 +148,11 @@ export default function Checklist() {
       });
     });
     return list;
-  }, [checkedByPhase]);
+  }, [checkedByPhase, profileValue]);
 
   const finalize = async (justifications) => {
     const phasesProgress = {};
-    CHECKLIST_PHASES.forEach((p) => {
+    PHASES.forEach((p) => {
       let idx = -1;
       const items = p.sections.flatMap((sec) => sec.items.map((text) => ({
         idx: ++idx,

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   SUB_SECTIONS, PROCEDURES, CAS_MESSAGES, CAS_NOTES,
   EFIS_SOURCE, PERMANENT_WARNING, EDITORIAL_STATUS,
@@ -7,6 +8,7 @@ import {
 import ProcedureDetail from "@/components/qrhEfis/ProcedureDetail";
 import CasDatabase from "@/components/qrhEfis/CasDatabase";
 import BackToDashboard from "@/components/BackToDashboard";
+import { useProfile } from "@/lib/ProfileContext";
 import {
   Search, ChevronLeft, Star, AlertTriangle, MessageSquare,
   BookOpen, FileText, GraduationCap, ClipboardList, Eye,
@@ -32,6 +34,26 @@ const SECTION_ICONS = {
 const FAV_KEY = "qrh_efis_favorites";
 
 export default function QRHEfis() {
+  const { profileValue } = useProfile();
+
+  // QRH-EFIS é exclusivo do módulo AW119.
+  if (profileValue !== "AW119") {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <Monitor className="w-12 h-12 text-slate-600 mb-4" />
+        <p className="text-lg font-medium text-slate-300">Módulo não disponível</p>
+        <p className="text-sm text-slate-500 mt-1 max-w-sm">
+          O QRH-EFIS está disponível apenas no módulo AW119.
+        </p>
+        <Link to="/" className="mt-6 text-amber-400 hover:text-amber-300 text-sm font-medium">Voltar ao painel</Link>
+      </div>
+    );
+  }
+
+  return <QRHEfisContent />;
+}
+
+function QRHEfisContent() {
   const [activeSection, setActiveSection] = useState("visao-geral");
   const [selectedProcId, setSelectedProcId] = useState(null);
   const [query, setQuery] = useState("");

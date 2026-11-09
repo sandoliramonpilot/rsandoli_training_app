@@ -1,4 +1,6 @@
 // Checklists operacionais AW119Kx — traduzidos do RFMS (Genesys EFIS), PT-BR
+import { H125_CHECKLIST_PHASES } from "@/lib/h125ChecklistData";
+
 export const MISSION_TYPES = [
   { id: "instrucao", label: "Instrução" },
   { id: "treinamento", label: "Treinamento" },
@@ -446,3 +448,10 @@ export const MISSION_LABELS = MISSION_TYPES.reduce((acc, m) => {
   acc[m.id] = m.label;
   return acc;
 }, {});
+
+// Resolve as fases de checklist conforme o perfil da aeronave ativo.
+// AW119 mantém o conteúdo existente; H125 usa fases com descrições próprias.
+export function getChecklistPhases(profileValue) {
+  if (profileValue === "H125") return H125_CHECKLIST_PHASES;
+  return CHECKLIST_PHASES;
+}

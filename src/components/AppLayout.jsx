@@ -6,6 +6,7 @@ import OfflineIndicator from "@/components/OfflineIndicator";
 import ProfileSwitcher from "@/components/ProfileSwitcher";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
+import { useProfile } from "@/lib/ProfileContext";
 import { can, canManageUsers, getAccessLevel } from "@/lib/accessControl";
 
 const navSections = [
@@ -119,11 +120,14 @@ function isActive(location, path) {
 function SidebarContent({ location, onNavigate }) {
   const [searchOpen, setSearchOpen] = React.useState(false);
   const { user, logout } = useAuth();
+  const { profileValue } = useProfile();
   const visibleSections = React.useMemo(() => {
     return navSections
       .map((s) => ({
         ...s,
         items: s.items.filter((i) => {
+          // QRH-EFIS é exclusivo do módulo AW119.
+          if (i.moduleId === "qrh_efis" && profileValue !== "AW119") return false;
           if (i.moduleId === "aw119_training") {
       return can(user, "aw119_training", "visualizar") || can(user, "h125_training", "visualizar");
     }
@@ -131,7 +135,7 @@ function SidebarContent({ location, onNavigate }) {
   }),
 }))
       .filter((s) => s.items.length > 0);
-  }, [user]);
+  }, [user, profileValue]);
   const showUsersMenu = canManageUsers(user);
   const showGestao = can(user, "gestao", "visualizar");
   const showMarcos = canManageUsers(user);
