@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { LIBRARY_CATEGORIES, DOC_STATUS_LABELS } from "@/lib/libraryData";
+import { LIBRARY_CATEGORIES, LIBRARY_GROUPS, CATEGORY_GROUP, GROUP_LABELS, DOC_STATUS_LABELS } from "@/lib/libraryData";
 import { Search, Upload, FileText, Star, Loader2, X, Download, BookOpen, Link2, Presentation } from "lucide-react";
 import UploadModal from "@/components/library/UploadModal";
 import PdfViewer from "@/components/library/PdfViewer";
@@ -19,6 +19,8 @@ const LEGACY_LABELS = {
 };
 
 const catLabel = (id) => LIBRARY_CATEGORIES.find((c) => c.id === id)?.name || LEGACY_LABELS[id] || id;
+const groupOf = (catId) => CATEGORY_GROUP[catId] || null;
+const isGroupId = (v) => GROUP_LABELS[v] != null;
 
 export default function Biblioteca() {
   const { profileFilter } = useProfile();
@@ -84,6 +86,7 @@ export default function Biblioteca() {
     let list = docs;
     if (activeCat === "favorites") list = list.filter((d) => favorites.includes(d.id));
     else if (activeCat === "offline") list = list.filter((d) => offlineDocs.some((o) => o.id === d.id));
+    else if (isGroupId(activeCat)) list = list.filter((d) => groupOf(d.category) === activeCat);
     else if (activeCat !== "all") list = list.filter((d) => d.category === activeCat);
 
     if (statusFilter !== "all") list = list.filter((d) => (d.status || "active") === statusFilter);
@@ -189,14 +192,42 @@ export default function Biblioteca() {
         />
       </div>
 
-      {/* Categorias */}
-      <div className="flex flex-wrap gap-2">
-        <CatPill label="Todos" active={activeCat === "all"} onClick={() => setActiveCat("all")} count={docs.length} />
-        <CatPill label="★ Favoritos" active={activeCat === "favorites"} onClick={() => setActiveCat("favorites")} count={favorites.length} />
-        <CatPill label=" Offline" active={activeCat === "offline"} onClick={() => setActiveCat("offline")} count={offlineDocs.length} />
-        {LIBRARY_CATEGORIES.map((c) => (
-          <CatPill key={c.id} label={c.name} active={activeCat === c.id} onClick={() => setActiveCat(c.id)} count={docs.filter((d) => d.category === c.id).length} />
-        ))}
+      {/* Categorias — três grupos */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <CatPill label="Todos" active={activeCat === "all"} onClick={() => setActiveCat("all")} count={docs.length} />
+          <CatPill label="★ Favoritos" active={activeCat === "favorites"} onClick={() => setActiveCat("favorites")} count={favorites.length} />
+          <CatPill label="⤓ Offline" active={activeCat === "offline"} onClick={() => setActiveCat("offline")} count={offlineDocs.length} />
+          {LIBRARY_GROUPS.map((g) => (
+            <CatPill
+              key={g.id}
+              label={g.name}
+              active={activeCat === g.id}
+              onClick={() => setActiveCat(g.id)}
+              count={docs.filter((d) => groupOf(d.category) === g.id).length}
+            />
+          ))}
+        </div>
+        {/* Sub-categorias do grupo selecionado */}
+        {isGroupId(activeCat) && (() => {
+          const group = LIBRARY_GROUPS.find((g) => g.id === activeCat);
+          if (!group) return null;
+          return (
+            <div className="flex flex-wrap gap-2 pl-1">
+              <span className="text-[11px] uppercase tracking-widest text-slate-500 self-center mr-1">{group.name}:</span>
+              {group.categories.map((c) => (
+                <CatPill
+                  key={c.id}
+                  label={c.name}
+                  active={activeCat === c.id}
+                  onClick={() => setActiveCat(c.id)}
+                  count={docs.filter((d) => d.category === c.id).length}
+                  subtle
+                />
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Filtros e ordenação */}
@@ -292,16 +323,20 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary);
 }
 
-function CatPill({ label, active, onClick, count }) {
+function CatPill({ label, active, onClick, count, subtle }) {
   return (
     <button
       onClick={onClick}
       className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors border ${
-        active ? "bg-amber-500 text-slate-900 border-amber-500" : "bg-[#1A1D25] text-slate-300 border-slate-700/60 hover:border-amber-500/40"
+        active
+          ? "bg-amber-500 text-slate-900 border-amber-500"
+          : subtle
+            ? "bg-[#12141A] text-slate-400 border-slate-800 hover:border-amber-500/40 hover:text-slate-200"
+            : "bg-[#1A1D25] text-slate-300 border-slate-700/60 hover:border-amber-500/40"
       }`}
     >
       {label}
-      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${active ? "bg-slate-900/20" : "bg-slate-700/40"}`}>{count}</span>
+      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${active ? "bg-slate-900/20" : subtle ? "bg-slate-800/60" : "bg-slate-700/40"}`}>{count}</span>
     </button>
   );
 }

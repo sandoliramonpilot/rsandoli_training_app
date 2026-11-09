@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { LIBRARY_CATEGORIES, DOC_STATUS } from "@/lib/libraryData";
+import { LIBRARY_GROUPS, DOC_STATUS } from "@/lib/libraryData";
 import { Loader2, X, Link2, Download } from "lucide-react";
 import { useProfile } from "@/lib/ProfileContext";
 
@@ -9,7 +9,7 @@ const inputCls = "w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-7
 export default function DownloadUrlModal({ aircraft, onClose, onDone }) {
   const [form, setForm] = useState({
     title: "",
-    category: LIBRARY_CATEGORIES[0].id,
+    category: LIBRARY_GROUPS[0].categories[0].id,
     description: "",
     keyword: "",
     tags: "",
@@ -108,7 +108,11 @@ export default function DownloadUrlModal({ aircraft, onClose, onDone }) {
             <Field label="Título do documento *"><input required value={form.title} onChange={set("title")} className={inputCls} placeholder="Ex: Treinamento AW119Kx — Sistemas" /></Field>
             <Field label="Categoria *">
               <select value={form.category} onChange={set("category")} className={inputCls}>
-                {LIBRARY_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {LIBRARY_GROUPS.map((g) => (
+                  <optgroup key={g.id} label={g.name}>
+                    {g.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </optgroup>
+                ))}
               </select>
             </Field>
             <Field label="Número ou código do documento"><input value={form.doc_number} onChange={set("doc_number")} className={inputCls} /></Field>

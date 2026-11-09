@@ -1,19 +1,64 @@
-// Categorias da Biblioteca Técnica — REVISÃO 01
-export const LIBRARY_CATEGORIES = [
-  { id: "flight_manual", name: "Flight Manual", icon: "BookOpen", color: "from-sky-500 to-blue-600" },
-  { id: "rfm", name: "RFM", icon: "FileText", color: "from-emerald-500 to-teal-600" },
-  { id: "rfms", name: "RFMS", icon: "FileText", color: "from-teal-500 to-cyan-600" },
-  { id: "trgc", name: "TRGC", icon: "ClipboardList", color: "from-amber-500 to-orange-600" },
-  { id: "genesys", name: "Genesys", icon: "Monitor", color: "from-blue-500 to-indigo-600" },
-  { id: "garmin", name: "Garmin", icon: "Monitor", color: "from-indigo-500 to-violet-600" },
-  { id: "fcom", name: "FCOM", icon: "FileText", color: "from-rose-500 to-red-600" },
-  { id: "sop", name: "SOP", icon: "ListChecks", color: "from-violet-500 to-purple-600" },
-  { id: "boletins_operacionais", name: "Boletins Operacionais", icon: "Megaphone", color: "from-amber-500 to-yellow-600" },
-  { id: "cartas_procedimentos", name: "Cartas e Procedimentos Aeronáuticos", icon: "Map", color: "from-cyan-500 to-sky-600" },
-  { id: "diversos", name: "Diversos", icon: "FolderOpen", color: "from-slate-500 to-slate-600" },
+// Categorias da Biblioteca Técnica — REVISÃO 02
+// Estrutura em três grupos aplicável a ambos os módulos (AW119 e H125):
+//   1. Manuais
+//   2. Materiais de Estudo
+//   3. Legislação e Normas Aplicáveis
+
+export const LIBRARY_GROUPS = [
+  {
+    id: "manuais",
+    name: "Manuais",
+    icon: "BookOpen",
+    color: "from-sky-500 to-blue-600",
+    description: "Manuais oficiais da aeronave e sistemas.",
+    categories: [
+      { id: "flight_manual", name: "Flight Manual", icon: "BookOpen" },
+      { id: "rfm", name: "RFM", icon: "FileText" },
+      { id: "rfms", name: "RFMS", icon: "FileText" },
+      { id: "fcom", name: "FCOM", icon: "FileText" },
+    ],
+  },
+  {
+    id: "materiais_estudo",
+    name: "Materiais de Estudo",
+    icon: "GraduationCap",
+    color: "from-amber-500 to-orange-600",
+    description: "Material didático, procedimentos e publicações operacionais.",
+    categories: [
+      { id: "trgc", name: "TRGC", icon: "ClipboardList" },
+      { id: "genesys", name: "Genesys", icon: "Monitor" },
+      { id: "garmin", name: "Garmin", icon: "Monitor" },
+      { id: "sop", name: "SOP", icon: "ListChecks" },
+      { id: "boletins_operacionais", name: "Boletins Operacionais", icon: "Megaphone" },
+      { id: "cartas_procedimentos", name: "Cartas e Procedimentos Aeronáuticos", icon: "Map" },
+      { id: "diversos", name: "Diversos", icon: "FolderOpen" },
+    ],
+  },
+  {
+    id: "legislacao_normas",
+    name: "Legislação e Normas Aplicáveis",
+    icon: "Scale",
+    color: "from-emerald-500 to-teal-600",
+    description: "Publicações regulatórias e normas aplicáveis.",
+    categories: [
+      { id: "anac", name: "Publicações ANAC", icon: "Landmark" },
+      { id: "icao", name: "Publicações ICAO", icon: "Globe" },
+      { id: "faa", name: "Publicações FAA", icon: "Globe" },
+    ],
+  },
 ];
 
+// Lista plana derivada (compatibilidade com consumidores existentes).
+export const LIBRARY_CATEGORIES = LIBRARY_GROUPS.flatMap((g) => g.categories);
+
 export const CATEGORY_LABELS = Object.fromEntries(LIBRARY_CATEGORIES.map((c) => [c.id, c.name]));
+
+// Mapa categoria -> grupo (para exibição e filtragem por grupo).
+export const CATEGORY_GROUP = Object.fromEntries(
+  LIBRARY_GROUPS.flatMap((g) => g.categories.map((c) => [c.id, g.id]))
+);
+
+export const GROUP_LABELS = Object.fromEntries(LIBRARY_GROUPS.map((g) => [g.id, g.name]));
 
 // Status dos documentos
 export const DOC_STATUS = [
