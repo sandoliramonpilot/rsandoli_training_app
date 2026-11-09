@@ -46,9 +46,10 @@ const navSections = [
     ],
   },
   {
-    label: "Conhecimento",
+    label: "Biblioteca",
     items: [
-      { label: "Biblioteca", path: "/biblioteca", icon: Library, moduleId: "biblioteca" },
+      { label: "Manuais", path: "/biblioteca?grupo=manuais", icon: Library, moduleId: "biblioteca" },
+      { label: "Materiais de Estudo", path: "/biblioteca?grupo=materiais_estudo", icon: GraduationCap, moduleId: "biblioteca" },
       { label: "Legislação", path: "/biblioteca?grupo=legislacao_normas", icon: Scale, moduleId: "biblioteca" },
     ],
   },
@@ -114,9 +115,20 @@ function Logo() {
 }
 
 function isActive(location, path) {
-  const cleanPath = path.split("?")[0];
+  const [cleanPath, query] = path.split("?");
   const loc = location.pathname;
-  return loc === cleanPath || (cleanPath !== "/" && loc.startsWith(cleanPath));
+  const pathMatches = loc === cleanPath || (cleanPath !== "/" && loc.startsWith(cleanPath));
+  if (!pathMatches) return false;
+  // Itens da Biblioteca usam ?grupo=... — só destacam quando o grupo coincide.
+  const itemGrupo = query ? new URLSearchParams(query).get("grupo") : null;
+  if (itemGrupo) {
+    return new URLSearchParams(location.search).get("grupo") === itemGrupo;
+  }
+  // /biblioteca sem grupo: não destaca quando a URL atual tem um grupo.
+  if (cleanPath === "/biblioteca" && new URLSearchParams(location.search).get("grupo")) {
+    return false;
+  }
+  return true;
 }
 
 function SidebarContent({ location, onNavigate }) {
