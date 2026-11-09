@@ -6,7 +6,7 @@ import {
   ACCESS_LEVELS, ACCOUNT_STATUSES, ACCESS_LEVEL_LABELS, ACCOUNT_STATUS_LABELS,
 } from "@/lib/accessControl";
 import { AIRCRAFT_PROFILES, PROFILE_LABELS } from "@/lib/aircraftProfile";
-import { Loader2, Search, ShieldCheck, Save, X, Plane, Plus, UserPlus } from "lucide-react";
+import { Loader2, Search, ShieldCheck, Save, X, Plane } from "lucide-react";
 
 export default function Usuarios() {
   const { user } = useAuth();
@@ -18,7 +18,6 @@ export default function Usuarios() {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
-  const [criando, setCriando] = useState(false);
 
   const podeGerenciar = canManageUsers(user);
 
@@ -115,20 +114,12 @@ export default function Usuarios() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-5">
-      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Administração</p>
-          <h1 className="text-2xl font-bold text-slate-100 mt-1">Usuários e acessos</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Edite nível de acesso, status da conta e módulos de aeronave liberados.
-          </p>
-        </div>
-        <button
-          onClick={() => { setCriando(true); setErro(""); setSucesso(""); }}
-          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-slate-900 text-sm font-semibold hover:bg-amber-400"
-        >
-          <Plus className="w-4 h-4" /> Novo usuário
-        </button>
+      <header>
+        <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Administração</p>
+        <h1 className="text-2xl font-bold text-slate-100 mt-1">Usuários e acessos</h1>
+        <p className="text-sm text-slate-400 mt-1">
+          Edite nível de acesso, status da conta e módulos de aeronave liberados.
+        </p>
       </header>
 
       <div className="relative">
@@ -163,6 +154,7 @@ export default function Usuarios() {
           {filtrados.map((u) => {
             const perfis = perfisDe(u);
             const aberto = editando === u.id;
+
             return (
               <div key={u.id}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4">
@@ -187,6 +179,7 @@ export default function Usuarios() {
                       )}
                     </div>
                   </div>
+
                   <button
                     onClick={() => (aberto ? cancelar() : abrirEdicao(u))}
                     className="shrink-0 px-3 py-1.5 rounded-lg border border-slate-700/60 text-xs text-slate-300 hover:border-amber-500/50"
@@ -210,6 +203,7 @@ export default function Usuarios() {
                           ))}
                         </select>
                       </div>
+
                       <div>
                         <label className="text-xs text-slate-400 mb-1.5 block">Status da conta</label>
                         <select
@@ -276,186 +270,6 @@ export default function Usuarios() {
           })}
         </div>
       )}
-
-      {criando && (
-        <NewUserModal
-          onClose={() => setCriando(false)}
-          onSaved={async (msg) => {
-            setCriando(false);
-            setSucesso(msg);
-            await carregar();
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-/* ---------------------- MODAL DE CRIAÇÃO ---------------------- */
-function NewUserModal({ onClose, onSaved }) {
-  const [salvando, setSalvando] = useState(false);
-  const [erro, setErro] = useState("");
-  const [form, setForm] = useState({
-    full_name: "",
-    email: "",
-    access_level: "operacional",
-    account_status: "ativa",
-    aircraft_profiles: [],
-  });
-
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  const alternarAeronave = (aeronave) => {
-    setForm((f) => {
-      const proximo = f.aircraft_profiles.includes(aeronave)
-        ? f.aircraft_profiles.filter((p) => p !== aeronave)
-        : [...new Set([...f.aircraft_profiles, aeronave])];
-      return { ...f, aircraft_profiles: proximo };
-    });
-  };
-
-  const criar = async (e) => {
-    e.preventDefault();
-    setErro("");
-
-    if (!form.full_name.trim() || !form.email.trim()) {
-      setErro("Preencha nome completo e e-mail.");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      setErro("Informe um e-mail válido.");
-      return;
-    }
-
-    setSalvando(true);
-    try {
-      await base44.entities.User.create({
-        full_name: form.full_name.trim(),
-        email: form.email.trim().toLowerCase(),
-        access_level: form.access_level,
-        account_status: form.account_status,
-        aircraft_profiles: form.aircraft_profiles,
-      });
-      onSaved(`Usuário ${form.full_name.trim()} criado com sucesso.`);
-    } catch (err) {
-      setErro(err?.message || "Falha ao criar usuário. Verifique as permissões do backend.");
-    } finally {
-      setSalvando(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 w-full max-w-lg my-8">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700/60">
-          <h2 className="font-semibold text-slate-100 inline-flex items-center gap-2">
-            <UserPlus className="w-4 h-4 text-amber-400" /> Novo usuário
-          </h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-200">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={criar} className="p-6 space-y-4">
-          {erro && (
-            <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
-              {erro}
-            </p>
-          )}
-
-          <div>
-            <label className="text-xs text-slate-400 mb-1.5 block">Nome completo *</label>
-            <input
-              value={form.full_name}
-              onChange={(e) => set("full_name", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200"
-              placeholder="Ex.: João da Silva"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs text-slate-400 mb-1.5 block">E-mail *</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => set("email", e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200"
-              placeholder="nome@empresa.com"
-            />
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-slate-400 mb-1.5 block">Nível de acesso *</label>
-              <select
-                value={form.access_level}
-                onChange={(e) => set("access_level", e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200"
-              >
-                {ACCESS_LEVELS.map((l) => (
-                  <option key={l.id} value={l.id}>{l.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-slate-400 mb-1.5 block">Status inicial</label>
-              <select
-                value={form.account_status}
-                onChange={(e) => set("account_status", e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200"
-              >
-                {ACCOUNT_STATUSES.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs text-slate-400 mb-1.5 block">
-              Módulos de aeronave liberados
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {AIRCRAFT_PROFILES.map((a) => {
-                const ativo = form.aircraft_profiles.includes(a);
-                return (
-                  <button
-                    key={a}
-                    type="button"
-                    onClick={() => alternarAeronave(a)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                      ativo
-                        ? "bg-amber-500 text-slate-900 border-amber-500"
-                        : "bg-transparent text-slate-400 border-slate-700/60 hover:border-slate-500"
-                    }`}
-                  >
-                    <Plane className="w-3.5 h-3.5" />
-                    {PROFILE_LABELS[a] || a}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-slate-700/60 text-sm text-slate-300 hover:border-slate-500"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={salvando}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-slate-900 text-sm font-semibold hover:bg-amber-400 disabled:opacity-50"
-            >
-              {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              {salvando ? "Criando..." : "Criar usuário"}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }
