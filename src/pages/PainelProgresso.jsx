@@ -5,9 +5,11 @@ import { useAuth } from "@/lib/AuthContext";
 import { getAccessLevel } from "@/lib/accessControl";
 import { safeParse, collectExpiries, expiryStatus } from "@/lib/pilotUtils";
 import {
-  CONTENT_TREE, TOTAL_LESSONS, STATUS_META, STATUS_ORDER,
+  getContentTree, getTotalLessons, STATUS_META, STATUS_ORDER,
   computeModuleProgress, fmtStudyTime,
 } from "@/lib/progressData";
+import { PROFILE_LABELS } from "@/lib/aircraftProfile";
+import { Plane } from "lucide-react";
 import ModuleCard from "@/components/progress/ModuleCard";
 import BackToDashboard from "@/components/BackToDashboard";
 import { useProfile } from "@/lib/ProfileContext";
@@ -28,6 +30,10 @@ export default function PainelProgresso() {
 
   const actorLevel = getAccessLevel(user);
   const canViewOthers = actorLevel === "admin_geral" || actorLevel === "administrador";
+
+  // Conteúdo de treinamento e total de aulas correspondentes ao perfil ativo.
+  const contentTree = getContentTree(profileValue);
+  const totalLessons = getTotalLessons(profileValue);
 
   useEffect(() => {
     // Histórico de simulados do navegador
@@ -74,9 +80,9 @@ export default function PainelProgresso() {
     const completedLessons = recs.filter((r) => r.status === "concluido").length;
     const inProgressLessons = recs.filter((r) => r.status === "em_andamento").length;
     const reviewLessons = recs.filter((r) => r.status === "revisao_recomendada").length;
-    const pendingLessons = TOTAL_LESSONS - completedLessons - inProgressLessons - reviewLessons;
+    const pendingLessons = totalLessons - completedLessons - inProgressLessons - reviewLessons;
     const totalTime = recs.reduce((s, r) => s + (r.time_spent_seconds || 0), 0);
-    const overallPct = TOTAL_LESSONS ? Math.round((completedLessons / TOTAL_LESSONS) * 100) : 0;
+    const overallPct = totalLessons ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
     // Último conteúdo acessado (não concluído)
     const accessed = recs
@@ -141,7 +147,7 @@ export default function PainelProgresso() {
       errorContent, certsNearExpiry, recurringPending, pendingTrainings, reviewRecs,
       certsCount: certs.length, cmaStatus: cma?.expiry || null,
     };
-  }, [records, completions, simHistory, selectedPilot]);
+  }, [records, completions, simHistory, selectedPilot, totalLessons]);
 
   const handleLessonAction = async (lesson, newStatus, module, topic) => {
     if (!selectedPilot) return;
@@ -198,7 +204,12 @@ export default function PainelProgresso() {
             Acompanhamento individual de treinamento, desempenho e certificações.
           </p>
         </div>
-        <BackToDashboard />
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+            <Plane className="w-3.5 h-3.5" /> {PROFILE_LABELS[profileValue] || "—"}
+          </span>
+          <BackToDashboard />
+        </div>
       </header>
 
       {/* Seletor de piloto (admin) */}
@@ -258,7 +269,7 @@ export default function PainelProgresso() {
       {/* Cards de visão geral */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <OverviewCard icon={TrendingUp} label="Progresso geral" value={`${metrics.overallPct}%`} accent="text-amber-400" />
-        <OverviewCard icon={CheckCircle2} label="Aulas concluídas" value={`${metrics.completedLessons}/${TOTAL_LESSONS}`} accent="text-emerald-400" />
+        <OverviewCard icon={CheckCircle2} label="Aulas concluídas" value={`${metrics.completedLessons}/${totalLessons}`} accent="text-emerald-400" />
         <OverviewCard icon={Clock} label="Tempo de estudo" value={fmtStudyTime(metrics.totalTime)} accent="text-sky-400" />
         <OverviewCard icon={Award} label="Média geral" value={metrics.avgScore ? `${metrics.avgScore}%` : "—"} accent="text-violet-400" />
       </div>
@@ -282,7 +293,7 @@ export default function PainelProgresso() {
           <GraduationCap className="w-5 h-5 text-amber-400" /> Progresso por Módulo
         </h2>
         <div className="space-y-3">
-          {CONTENT_TREE.map((m) => (
+          {contentTree.map((m) => (
             <ModuleCard
               key={m.id}
               module={m}

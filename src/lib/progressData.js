@@ -1,6 +1,8 @@
 // Árvore de conteúdo do Dashboard de Progresso — derivada das disciplinas da Academy.
 // Estrutura: Módulo → Tópicos → Aulas
+// Separada por perfil de aeronave: AW119 (Academy) e H125 (H125 TRAINING).
 import { ACADEMY_DISCIPLINES } from "./academyData";
+import { H125_TRAINING } from "./h125TrainingData";
 
 export const CONTENT_TREE = ACADEMY_DISCIPLINES.map((d) => {
   const topics = [];
@@ -61,6 +63,65 @@ export const LESSON_INDEX = (() => {
   });
   return idx;
 })();
+
+// ----- H125: árvore derivada de H125_TRAINING (modules → chapters → items) -----
+// Cada módulo vira um módulo do dashboard; cada capítulo vira um tópico;
+// cada item do capítulo vira uma aula. Os content_ids usam o prefixo do
+// module.id, então nunca colidem com os ids do AW119.
+export const H125_CONTENT_TREE = (H125_TRAINING.modules || []).map((m) => {
+  const topics = (m.chapters || []).map((c) => {
+    const topicId = `${m.id}__${c.id}`;
+    return {
+      id: topicId,
+      title: c.title,
+      lessons: (c.items || []).map((it) => ({ id: `${topicId}__${it}`, title: it })),
+    };
+  });
+  return {
+    id: m.id,
+    title: m.title,
+    description: m.objective,
+    icon: m.icon,
+    accent: "text-amber-400",
+    topics,
+  };
+});
+
+export const H125_ALL_LESSONS = H125_CONTENT_TREE.flatMap((m) =>
+  m.topics.flatMap((t) => t.lessons)
+);
+
+export const H125_TOTAL_LESSONS = H125_ALL_LESSONS.length;
+
+export const H125_LESSON_INDEX = (() => {
+  const idx = {};
+  H125_CONTENT_TREE.forEach((m) => {
+    m.topics.forEach((t) => {
+      t.lessons.forEach((l) => {
+        idx[l.id] = { module: m, topic: t, lesson: l };
+      });
+    });
+  });
+  return idx;
+})();
+
+// ----- Resolvedores por perfil de aeronave -----
+// Retorna a árvore e o total de aulas correspondentes ao perfil ativo.
+// Perfis desconhecidos caem no AW119 (árvore padrão).
+export function getContentTree(profileValue) {
+  if (profileValue === "H125") return H125_CONTENT_TREE;
+  return CONTENT_TREE;
+}
+
+export function getTotalLessons(profileValue) {
+  if (profileValue === "H125") return H125_TOTAL_LESSONS;
+  return TOTAL_LESSONS;
+}
+
+export function getLessonIndex(profileValue) {
+  if (profileValue === "H125") return H125_LESSON_INDEX;
+  return LESSON_INDEX;
+}
 
 // Status possíveis e seus metadados visuais
 export const STATUS_META = {
