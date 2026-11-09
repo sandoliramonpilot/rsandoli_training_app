@@ -228,3 +228,30 @@ export const QUESTION_BANK = [
     reference: "POP AW119Kx — Painel de Controle de Reversão (ADU)",
   },
 ];
+import { H125_QUESTION_BANK, H125_DIFFICULTY, H125_SUBJECTS, H125_SYSTEMS } from "./h125QuestionData";
+
+export const QUESTION_BANK_BY_AIRCRAFT = {
+  AW119: {
+    bank: QUESTION_BANK,
+    difficulty: DIFFICULTY,
+    subjects: SUBJECTS,
+    systems: SYSTEMS,
+  },
+  H125: {
+    bank: H125_QUESTION_BANK,
+    difficulty: H125_DIFFICULTY,
+    subjects: H125_SUBJECTS,
+    systems: H125_SYSTEMS,
+  },
+};
+
+export function getQuestionBank(aeronave) {
+  return (
+    QUESTION_BANK_BY_AIRCRAFT[aeronave] ?? {
+      bank: [],
+      difficulty: {},
+      subjects: [],
+      systems: [],
+    }
+  );
+}
