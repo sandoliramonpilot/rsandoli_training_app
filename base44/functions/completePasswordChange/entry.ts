@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
+import { createClientFromRequest } from "npm:@base44/sdk";
 import { AUDITABLE_ACTIONS, isActiveAccount } from "../../shared/accessSecurity.js";
 
 // Realiza a troca de senha no backend e só então limpa o flag administrativo
