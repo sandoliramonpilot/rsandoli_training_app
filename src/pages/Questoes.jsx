@@ -1,9 +1,11 @@
-import { useTrainingDocs, criarTrainingDoc } from "@/hooks/useTrainingDocs";
 import React, { useMemo, useState } from "react";
-import { QUESTION_BANK, DIFFICULTY, SUBJECTS, SYSTEMS } from "@/lib/questionData";
+import { getQuestionBank } from "@/lib/questionData";
+import { useProfile } from "@/lib/ProfileContext";
 import { Search, HelpCircle, BookOpen, ChevronDown, ChevronUp, Filter } from "lucide-react";
 
 export default function Questoes() {
+  const { profileValue } = useProfile();
+  const { bank: QUESTION_BANK, difficulty: DIFFICULTY, subjects: SUBJECTS, systems: SYSTEMS } = getQuestionBank(profileValue);
   const [query, setQuery] = useState("");
   const [system, setSystem] = useState("all");
   const [subject, setSubject] = useState("all");
@@ -19,7 +21,7 @@ export default function Questoes() {
     const s = query.trim().toLowerCase();
     if (s) list = list.filter((q) => `${q.question} ${q.explanation} ${q.reference}`.toLowerCase().includes(s));
     return list;
-  }, [query, system, subject, difficulty]);
+  }, [query, system, subject, difficulty, QUESTION_BANK]);
 
   const toggleAnswer = (q, idx) => {
     setExpanded(q.id);
