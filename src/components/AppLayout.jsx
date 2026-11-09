@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw,   FileBarChart, CalendarDays, TrendingUp, Megaphone, HeartPulse } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw,   FileBarChart, CalendarDays, TrendingUp, Megaphone, HeartPulse, Scale } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import ProfileSwitcher from "@/components/ProfileSwitcher";
@@ -49,7 +49,7 @@ const navSections = [
     label: "Conhecimento",
     items: [
       { label: "Biblioteca", path: "/biblioteca", icon: Library, moduleId: "biblioteca" },
-      { label: "Legislação", path: "/Legislação", icon: Library, moduleId: "Legislação" },
+      { label: "Legislação", path: "/biblioteca?grupo=legislacao_normas", icon: Scale, moduleId: "biblioteca" },
     ],
   },
 ];
@@ -114,7 +114,9 @@ function Logo() {
 }
 
 function isActive(location, path) {
-  return location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
+  const cleanPath = path.split("?")[0];
+  const loc = location.pathname;
+  return loc === cleanPath || (cleanPath !== "/" && loc.startsWith(cleanPath));
 }
 
 function SidebarContent({ location, onNavigate }) {

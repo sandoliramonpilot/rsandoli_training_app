@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { LIBRARY_CATEGORIES, LIBRARY_GROUPS, CATEGORY_GROUP, GROUP_LABELS, DOC_STATUS_LABELS } from "@/lib/libraryData";
 import { Search, Upload, FileText, Star, Loader2, X, Download, BookOpen, Link2, Presentation } from "lucide-react";
@@ -24,9 +25,11 @@ const isGroupId = (v) => GROUP_LABELS[v] != null;
 
 export default function Biblioteca() {
   const { profileFilter } = useProfile();
+  const [searchParams] = useSearchParams();
+  const initialGroup = searchParams.get("grupo");
   const [docs, setDocs] = useState(null);
   const [aircraft, setAircraft] = useState([]);
-  const [activeCat, setActiveCat] = useState("all");
+  const [activeCat, setActiveCat] = useState(initialGroup && GROUP_LABELS[initialGroup] != null ? initialGroup : "all");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [tagFilter, setTagFilter] = useState("");
@@ -68,6 +71,12 @@ export default function Biblioteca() {
     setUser(a);
   };
   useEffect(() => { load(); }, [profileFilter]);
+
+  // Sincroniza o grupo quando o usuário chega via link "Legislação" estando já na Biblioteca.
+  useEffect(() => {
+    const g = searchParams.get("grupo");
+    if (g && GROUP_LABELS[g] != null) setActiveCat(g);
+  }, [searchParams]);
 
   const toggleFav = (id) => {
     setFavorites((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
