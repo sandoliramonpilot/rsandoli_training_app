@@ -6,7 +6,8 @@ import {
   ACCESS_LEVELS, ACCOUNT_STATUSES, ACCESS_LEVEL_LABELS, ACCOUNT_STATUS_LABELS,
 } from "@/lib/accessControl";
 import { AIRCRAFT_PROFILES, PROFILE_LABELS } from "@/lib/aircraftProfile";
-import { Loader2, Search, ShieldCheck, Save, X, Plane } from "lucide-react";
+import NewUserForm from "@/components/usuarios/NewUserForm";
+import { Loader2, Search, ShieldCheck, Save, X, Plane, UserPlus } from "lucide-react";
 
 export default function Usuarios() {
   const { user } = useAuth();
@@ -18,8 +19,10 @@ export default function Usuarios() {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
+  const [showNewUser, setShowNewUser] = useState(false);
 
   const podeGerenciar = canManageUsers(user);
+  const actorLevel = getAccessLevel(user);
 
   const carregar = async () => {
     setCarregando(true);
@@ -115,11 +118,21 @@ export default function Usuarios() {
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <header>
-        <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Administração</p>
-        <h1 className="text-2xl font-bold text-slate-100 mt-1">Usuários e acessos</h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Edite nível de acesso, status da conta e módulos de aeronave liberados.
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Administração</p>
+            <h1 className="text-2xl font-bold text-slate-100 mt-1">Usuários e acessos</h1>
+            <p className="text-sm text-slate-400 mt-1">
+              Edite nível de acesso, status da conta e módulos de aeronave liberados.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowNewUser(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-slate-900 text-sm font-semibold hover:bg-amber-400"
+          >
+            <UserPlus className="w-4 h-4" /> Novo Usuário
+          </button>
+        </div>
       </header>
 
       <div className="relative">
@@ -269,6 +282,18 @@ export default function Usuarios() {
             );
           })}
         </div>
+      )}
+
+      {showNewUser && (
+        <NewUserForm
+          actorLevel={actorLevel}
+          onClose={() => setShowNewUser(false)}
+          onSaved={async (msg) => {
+            setSucesso(msg || "Usuário criado.");
+            setShowNewUser(false);
+            await carregar();
+          }}
+        />
       )}
     </div>
   );
