@@ -243,38 +243,26 @@
 [data-theme="light"] .text-purple-400 { color: hsl(265 60% 38%); }
 [data-theme="light"] .text-orange-300,
 [data-theme="light"] .text-orange-400 { color: hsl(21 100% 33%); }
+
 /* ============================================================
-   TEMA CLARO / SOL — botões e itens não selecionados
-   Garante contraste visível, com destaque menor que o ativo.
+   TEMA CLARO / SOL — botões de aba e itens não selecionados
+   Contraste visível com destaque menor que o item ativo.
    ============================================================ */
 
-[data-theme="light"] .border-slate-700\/60,
-[data-theme="light"] .border-slate-700\/40,
-[data-theme="light"] .border-slate-700\/30 {
-  border-color: hsl(var(--border)) !important;
-}
-
-[data-theme="light"] .bg-transparent {
-  background-color: transparent !important;
-}
-
-[data-theme="light"] button:not(:disabled):not([aria-pressed="true"]):not(.bg-amber-500):not(.bg-teal-500) {
-  color: hsl(var(--muted-foreground));
-}
-
-[data-theme="light"] button:not(:disabled):not([aria-pressed="true"]):not(.bg-amber-500):not(.bg-teal-500):hover {
+[data-theme="light"] [role="tab"]:not([aria-selected="true"]) {
   color: hsl(var(--foreground));
-  border-color: hsl(var(--foreground) / 0.3);
+  background-color: hsl(var(--card));
+  border-color: hsl(210 14% 72%);
 }
 
-[data-theme="light"] .opacity-40,
-[data-theme="light"] .opacity-50 {
-  opacity: 1 !important;
-  color: hsl(var(--muted-foreground));
+[data-theme="light"] [role="tab"]:not([aria-selected="true"]):hover {
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--secondary));
+  border-color: hsl(210 14% 60%);
 }
 
-[data-theme="light"] .text-slate-600\/50,
-[data-theme="light"] .text-slate-500\/50,
-[data-theme="light"] .text-slate-400\/50 {
-  color: hsl(var(--muted-foreground)) !important;
+[data-theme="light"] [role="tab"][aria-selected="true"] {
+  color: hsl(var(--primary-foreground));
+  background-color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
 }
