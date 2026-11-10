@@ -1,0 +1,85 @@
+{
+  "name": "ChecklistValidation",
+  "type": "object",
+  "properties": {
+    "variant": {
+      "type": "string",
+      "enum": [
+        "B2",
+        "B3e"
+      ],
+      "title": "Variante H125"
+    },
+    "phase_id": {
+      "type": "string",
+      "title": "ID est\u00e1vel da fase (pre_voo | pre_acionamento | acionamento | pos_acionamento | decolagem | corte_motor)"
+    },
+    "phase_name": {
+      "type": "string",
+      "title": "Nome da fase (snapshot)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "title": "Status da valida\u00e7\u00e3o"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "title": "Respons\u00e1vel pela valida\u00e7\u00e3o"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data e hora da valida\u00e7\u00e3o"
+    },
+    "justification": {
+      "type": "string",
+      "title": "Justificativa da decis\u00e3o"
+    },
+    "approval_log": {
+      "type": "string",
+      "title": "Hist\u00f3rico de valida\u00e7\u00e3o (JSON)"
+    }
+  },
+  "required": [
+    "variant",
+    "phase_id",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
