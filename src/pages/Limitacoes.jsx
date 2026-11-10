@@ -1,5 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { LIMITACOES, DIDATIC_NOTICE, PARAM_STATUS, LIMIT_KIND, PENDING_VALIDATION } from "@/lib/limitacoesData";
+import { H125_LIMITACOES_VARIANTS, PENDING_VALIDATION_H125 } from "@/lib/limitacoesH125Data";
+import { useProfile } from "@/lib/ProfileContext";
 import BackToDashboard from "@/components/BackToDashboard";
 import {
   Gauge, Plane, Cog, Settings, ChevronRight, ChevronDown, ChevronLeft,
@@ -24,11 +26,24 @@ const KIND_CLASSES = {
 };
 
 export default function Limitacoes() {
-  const [activeModule, setActiveModule] = useState(LIMITACOES.modules[0].id);
+  const { profileValue, h125SubVariant, trocarSubvarianteH125 } = useProfile();
+  const isH125 = profileValue === "H125";
+  const [h125Variant, setH125Variant] = useState(
+    h125SubVariant === "b3e_arriel2d" ? "B3" : "B2"
+  );
+  const dataSet = isH125 ? H125_LIMITACOES_VARIANTS[h125Variant] : LIMITACOES;
+
+  const [activeModule, setActiveModule] = useState(dataSet.modules[0].id);
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [search, setSearch] = useState("");
 
-  const mod = LIMITACOES.modules.find((m) => m.id === activeModule) || LIMITACOES.modules[0];
+  const mod = dataSet.modules.find((m) => m.id === activeModule) || dataSet.modules[0];
+
+  // Reseta o módulo ativo quando a variante/perfil muda
+  useEffect(() => {
+    setActiveModule(dataSet.modules[0].id);
+    setSelectedChapter(null);
+  }, [h125Variant, profileValue]);
 
   // Busca unificada: filtra capítulos do módulo ativo por texto
   const filteredChapters = useMemo(() => {
@@ -51,7 +66,7 @@ export default function Limitacoes() {
     if (!search.trim()) return [];
     const q = search.trim().toLowerCase();
     const results = [];
-    for (const m of LIMITACOES.modules) {
+    for (const m of dataSet.modules) {
       for (const ch of m.chapters) {
         const matches = ch.parameters?.filter(
           (p) =>
@@ -80,7 +95,7 @@ export default function Limitacoes() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">
             Limitações
           </h1>
-          <p className="text-slate-400 mt-2 text-sm max-w-2xl">{LIMITACOES.subtitle}</p>
+          <p className="text-slate-400 mt-2 text-sm max-w-2xl">{dataSet.subtitle}</p>
         </div>
         <BackToDashboard />
       </header>
@@ -93,10 +108,10 @@ export default function Limitacoes() {
               <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
                 <BookOpen className="w-3.5 h-3.5" /> Ground School
               </span>
-              <span className="text-[11px] text-slate-500 uppercase tracking-wider">Leonardo AW119Kx Koala — PT6B-37A / IDU-680</span>
+              <span className="text-[11px] text-slate-500 uppercase tracking-wider">{isH125 ? "Airbus H125 / AS350 Écureuil" : "Leonardo AW119Kx Koala — PT6B-37A / IDU-680"}</span>
             </div>
             <h2 className="text-2xl font-bold tracking-tight text-slate-100">LIMITAÇÕES E PARÂMETROS</h2>
-            <p className="text-slate-400 mt-2 text-sm max-w-2xl">{DIDATIC_NOTICE}</p>
+            <p className="text-slate-400 mt-2 text-sm max-w-2xl">{isH125 ? PENDING_VALIDATION_H125 : DIDATIC_NOTICE}</p>
           </div>
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
             <Gauge className="w-10 h-10 text-slate-900" />
@@ -117,7 +132,7 @@ export default function Limitacoes() {
           );
         })}
         <span className="text-slate-600 border-l border-slate-700 pl-3">
-          Valores verificados: RFM — Rotorcraft Flight Manual (Pub. 502051481)
+          {isH125 ? "Fonte: PDF de Limitações AS350 (pendente de validação contra RFM)" : "Valores verificados: RFM — Rotorcraft Flight Manual (Pub. 502051481)"}
         </span>
       </div>
 
@@ -169,9 +184,37 @@ export default function Limitacoes() {
         </div>
       )}
 
+      {/* Seletor de variante H125 */}
+      {isH125 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 text-sm text-slate-400">
+            <Plane className="w-4 h-4 text-amber-400" /> Variante:
+          </div>
+          <div className="inline-flex bg-[#1A1D25] border border-slate-700/60 rounded-lg p-1">
+            {["B2", "B3"].map((v) => {
+              const active = h125Variant === v;
+              return (
+                <button
+                  key={v}
+                  onClick={() => {
+                    setH125Variant(v);
+                    trocarSubvarianteH125(v === "B3" ? "b3e_arriel2d" : "b2_vemd");
+                  }}
+                  className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    active ? "bg-amber-500 text-slate-900" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {H125_LIMITACOES_VARIANTS[v].label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Module tabs */}
       <div className="flex flex-wrap gap-2">
-        {LIMITACOES.modules.map((m) => {
+        {dataSet.modules.map((m) => {
           const Icon = MODULE_ICONS[m.icon] || BookOpen;
           const active = m.id === activeModule;
           return (
@@ -246,12 +289,12 @@ export default function Limitacoes() {
           <div className="min-w-0">
             <h3 className="font-semibold text-sm text-slate-100">Fonte original</h3>
             <p className="text-xs text-slate-500 mt-1">
-              Conteúdo organizado a partir do PDF "Limitações e Parâmetros" do Departamento de Instrução Técnica.
-              Valores de torque, ITT de partida e N1 verificados contra o RFM — Rotorcraft Flight Manual (Pub. 502051481).
-              Itens marcados como Pendente aguardam validação técnica contra a documentação oficial aplicável à configuração.
+              {isH125
+                ? "Material transcrito do PDF de Limitações do AS350 (Cmte Deccache). Todos os valores estão marcados como Pendente e aguardam validação técnica contra o RFM oficial aplicável à variante."
+                : "Conteúdo organizado a partir do PDF \"Limitações e Parâmetros\" do Departamento de Instrução Técnica. Valores de torque, ITT de partida e N1 verificados contra o RFM — Rotorcraft Flight Manual (Pub. 502051481). Itens marcados como Pendente aguardam validação técnica contra a documentação oficial aplicável à configuração."}
             </p>
             <a
-              href={LIMITACOES.sourcePdf}
+              href={dataSet.sourcePdf}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mt-2"

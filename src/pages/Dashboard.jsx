@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { QRH_CATEGORIES } from "@/lib/qrhData";
 import AlertsPanel from "@/components/dashboard/AlertsPanel";
-import { Plane, BookOpen, Clock, TrendingUp, AlertTriangle, Plus, CheckCircle2, Wrench, Siren, Library, GraduationCap, ChevronRight, Award, ClipboardCheck, Users, HelpCircle } from "lucide-react";
+import { Plane, BookOpen, Clock, TrendingUp, AlertTriangle, Plus, CheckCircle2, Wrench, Siren, Library, GraduationCap, ChevronRight, Award, ClipboardCheck, Users, HelpCircle, Gauge } from "lucide-react";
 import { useProfile } from "@/lib/ProfileContext";
 
 function fmtHours(min) {
@@ -103,9 +103,10 @@ export default function Dashboard() {
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <QuickLink to="/checklist" icon={ClipboardCheck} label="Checklists" sub="Fases de voo" accent="from-sky-500 to-blue-500" />
         <QuickLink to="/qrh" icon={Siren} label="QRH" sub="Emergências" accent="from-rose-500 to-red-500" />
+        <QuickLink to="/limitacoes" icon={Gauge} label="Limitações" sub="Consulta rápida" accent="from-amber-500 to-orange-500" />
         <QuickLink to="/pilotos" icon={Users} label="Pilotos" sub="Cadastro e vencimentos" accent="from-teal-500 to-emerald-500" />
         <QuickLink to="/simulados" icon={HelpCircle} label="Simulados" sub="Avaliações" accent="from-violet-500 to-purple-500" />
       </div>
