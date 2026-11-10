@@ -133,6 +133,56 @@
 [data-theme="light"] .hover\:text-black:hover,
 [data-theme="light"] .hover\:text-slate-300:hover { color: hsl(var(--foreground)); }
 
+/* ============================================================
+   TEMA CLARO / SOL — campos de formulário
+   Garante texto preto em inputs, selects, textareas e options.
+   ============================================================ */
+
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  color: hsl(var(--foreground)) !important;
+  background-color: hsl(var(--card)) !important;
+  border-color: hsl(var(--border)) !important;
+  caret-color: hsl(var(--foreground));
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: hsl(var(--muted-foreground)) !important;
+  opacity: 1;
+}
+
+[data-theme="light"] select option,
+[data-theme="light"] select option:checked,
+[data-theme="light"] select option:hover {
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus {
+  color: hsl(var(--foreground)) !important;
+  background-color: hsl(var(--background)) !important;
+}
+
+[data-theme="light"] input:disabled,
+[data-theme="light"] select:disabled,
+[data-theme="light"] textarea:disabled {
+  color: hsl(var(--muted-foreground)) !important;
+  opacity: 0.7;
+}
+
+/* Autofill do Chrome/Safari força fundo e texto próprios */
+[data-theme="light"] input:-webkit-autofill,
+[data-theme="light"] input:-webkit-autofill:hover,
+[data-theme="light"] input:-webkit-autofill:focus {
+  -webkit-text-fill-color: hsl(var(--foreground)) !important;
+  -webkit-box-shadow: 0 0 0 1000px hsl(var(--card)) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 [data-theme="light"] .border-slate-700,
 [data-theme="light"] .border-slate-700\/60,
 [data-theme="light"] .border-slate-700\/50,
