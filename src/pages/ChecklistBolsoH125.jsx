@@ -5,6 +5,7 @@ import { H125_SUBVARIANTS } from "@/lib/h125Variants";
 import {
   H125_POCKET_SOURCE,
   H125_POCKET_GROUPS,
+  H125_POCKET_VALIDATION,
   h125PocketVariant,
 } from "@/lib/h125PocketChecklistData";
 import ProcedureCard from "@/components/checklist/ProcedureCard";
@@ -80,13 +81,23 @@ export default function ChecklistBolsoH125() {
       </header>
 
       {/* Aviso de validação pendente */}
-      <div className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-        <p className="leading-relaxed">
-          Material transcrito da fonte fornecida, <strong>pendente de validação técnica</strong>. Não substitui o
-          manual oficial do fabricante, que deve permanecer a bordo conforme exigências da ANAC. Itens marcados
-          como “pendente de transcrição” estão aguardando conferência com o PDF de origem.
-        </p>
+      <div className="space-y-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            Material transcrito da fonte fornecida, <strong>pendente de validação técnica aeronáutica</strong>. Não substitui o
+            manual oficial do fabricante, que deve permanecer a bordo conforme exigências da ANAC. Itens marcados
+            como “pendente de transcrição” estão aguardando conferência com o PDF de origem.
+          </p>
+        </div>
+        {H125_POCKET_VALIDATION?.crossCheckedPublicRefs && (
+          <p className="text-xs text-amber-300/80 pl-7">
+            Revisão de consistência em {H125_POCKET_VALIDATION.reviewedAt}: valores de cabeçalho (pesos, VNE, teto, motor)
+            conferidos com referências públicas do fabricante. {H125_POCKET_VALIDATION.technicalSignOffPending
+              ? "Validação técnica final ainda pendente: conferência por piloto/instrutor contra o RFM/POH vigente."
+              : ""}
+          </p>
+        )}
       </div>
 
       {/* Seletor de sub-variante */}
