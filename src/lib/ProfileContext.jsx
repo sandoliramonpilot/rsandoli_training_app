@@ -7,6 +7,11 @@ import {
   setSelectedProfile,
   profileQueryFilter,
 } from '@/lib/aircraftProfile';
+import {
+  getStoredH125Subvariant,
+  setStoredH125Subvariant,
+  DEFAULT_H125_SUBVARIANT,
+} from '@/lib/h125Variants';
 
 const ProfileContext = createContext(null);
 
@@ -32,8 +37,14 @@ function resolveUserProfiles(user) {
 export function ProfileProvider({ children }) {
   const { user } = useAuth();
   const [aircraft, setAircraft] = useState(null);
+  const [h125SubVariant, setH125SubVariantState] = useState(() => getStoredH125Subvariant());
 
   const modulosPermitidos = useMemo(() => resolveUserProfiles(user), [user]);
+
+  const trocarSubvarianteH125 = (novo) => {
+    setStoredH125Subvariant(novo);
+    setH125SubVariantState(novo);
+  };
 
   useEffect(() => {
     if (!user) {
@@ -65,9 +76,11 @@ export function ProfileProvider({ children }) {
       aircraft,
       modulosPermitidos,
       trocarAeronave,
+      h125SubVariant,
+      trocarSubvarianteH125,
       temMultiplosPerfis: modulosPermitidos.length > 1,
     }),
-    [profileValue, profileFilter, aircraft, modulosPermitidos]
+    [profileValue, profileFilter, aircraft, modulosPermitidos, h125SubVariant]
   );
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
