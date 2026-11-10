@@ -20,25 +20,11 @@ export default function ChecklistBolsoH125() {
   const [group, setGroup] = useState("emergencias");
   const [query, setQuery] = useState("");
 
-  // Só faz sentido no módulo H125.
-  if (profileValue && profileValue !== "H125") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center px-6">
-        <Plane className="w-10 h-10 text-slate-600 mb-3" />
-        <p className="text-sm text-slate-400">
-          O Checklist de Bolso é exclusivo do módulo H125 (AS350 B2/B3e).
-        </p>
-        <p className="text-xs text-slate-500 mt-1">Selecione o perfil H125 no seletor de aeronave para acessar.</p>
-      </div>
-    );
-  }
-
   const variantKey = VARIANT_MAP[h125SubVariant] || "B2";
   const variant = h125PocketVariant(variantKey);
   const items = variant[group] || [];
 
   const grouped = useMemo(() => {
-    // mantém a ordem dos hooks —early return fica abaixo
     const q = query.trim().toLowerCase();
     if (group === "limites") {
       const list = q
@@ -62,6 +48,19 @@ export default function ChecklistBolsoH125() {
     });
     return { type: "procedures", byCat, count: filtered.length };
   }, [items, group, query]);
+
+  // Só faz sentido no módulo H125 (após os hooks).
+  if (profileValue && profileValue !== "H125") {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center px-6">
+        <Plane className="w-10 h-10 text-slate-600 mb-3" />
+        <p className="text-sm text-slate-400">
+          O Checklist de Bolso é exclusivo do módulo H125 (AS350 B2/B3e).
+        </p>
+        <p className="text-xs text-slate-500 mt-1">Selecione o perfil H125 no seletor de aeronave para acessar.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
