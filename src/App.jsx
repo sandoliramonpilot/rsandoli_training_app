@@ -14,7 +14,6 @@ import Dashboard from '@/pages/Dashboard';
 import FlightLog from '@/pages/FlightLog';
 import Aircraft from '@/pages/Aircraft';
 import Checklist from '@/pages/Checklist';
-import ChecklistBolsoH125 from '@/pages/ChecklistBolsoH125';
 import QRH from '@/pages/QRH';
 import QRHEfis from '@/pages/QRHEfis';
 import Biblioteca from '@/pages/Biblioteca';
@@ -109,7 +108,6 @@ const AuthenticatedApp = () => {
         <Route path="/flight-log" element={<RequireModule moduleId="diario_bordo"><FlightLog /></RequireModule>} />
         <Route path="/aircraft" element={<Aircraft />} />
         <Route path="/checklist" element={<RequireModule moduleId="checklists"><Checklist /></RequireModule>} />
-        <Route path="/checklist-bolso-h125" element={<ChecklistBolsoH125 />} />
         <Route path="/qrh" element={<QRH />} />
         <Route path="/qrh-efis" element={<QRHEfis />} />
         <Route path="/biblioteca" element={<Biblioteca />} />

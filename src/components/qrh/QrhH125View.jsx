@@ -1,29 +1,37 @@
-import React, { useMemo, useState } from "react";
-import { Siren, ClipboardCheck, Gauge, Search, AlertTriangle, FileText, Plane, Loader2 } from "lucide-react";
+import React, { useMemo, useState, useEffect } from "react";
+import {
+  Siren, ClipboardCheck, Gauge, Search, AlertTriangle, FileText, Plane,
+  ShieldCheck, Clock, BadgeCheck, XCircle,
+} from "lucide-react";
 import { useProfile } from "@/lib/ProfileContext";
 import { H125_SUBVARIANTS } from "@/lib/h125Variants";
 import {
-  H125_POCKET_SOURCE,
-  H125_POCKET_GROUPS,
-  H125_POCKET_VALIDATION,
-  h125PocketVariant,
-} from "@/lib/h125PocketChecklistData";
+  QRH_H125_VARIANT_KEYS,
+  QRH_H125_GROUPS,
+  getQrhH125Data,
+  VALIDATION_STATUS_META,
+} from "@/lib/qrhH125Data";
 import ProcedureCard from "@/components/checklist/ProcedureCard";
 import BackToDashboard from "@/components/BackToDashboard";
 
-const VARIANT_MAP = { b2_vemd: "B2", b3e_arriel2d: "B3e" };
-const VARIANT_KEY_TO_ID = { B2: "b2_vemd", B3e: "b3e_arriel2d" };
-
 const GROUP_ICONS = { emergencias: Siren, normais: ClipboardCheck, limites: Gauge };
 
-export default function ChecklistBolsoH125() {
+/**
+ * Visualização do QRH para o módulo H125 (AS350 B2 / B3e).
+ * validationMap: { [procedure_key]: { status, reviewed_by, reviewed_at } }
+ * canValidate: boolean — exibe controles de validação administrativa
+ */
+export default function QrhH125View({ validationMap = {}, canValidate = false, onOpenValidation }) {
   const { profileValue, h125SubVariant, trocarSubvarianteH125 } = useProfile();
   const [group, setGroup] = useState("emergencias");
   const [query, setQuery] = useState("");
 
-  const variantKey = VARIANT_MAP[h125SubVariant] || "B2";
-  const variant = h125PocketVariant(variantKey);
-  const items = variant[group] || [];
+  const variantKey = QRH_H125_VARIANT_KEYS[h125SubVariant] || "B2";
+  const data = useMemo(() => getQrhH125Data(variantKey), [variantKey]);
+  const items = data[group] || [];
+
+  // Reseta a busca ao trocar de variante
+  useEffect(() => { setQuery(""); }, [variantKey]);
 
   const grouped = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -50,37 +58,45 @@ export default function ChecklistBolsoH125() {
     return { type: "procedures", byCat, count: filtered.length };
   }, [items, group, query]);
 
-  // Só faz sentido no módulo H125 (após os hooks).
-  if (profileValue && profileValue !== "H125") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center px-6">
-        <Plane className="w-10 h-10 text-slate-600 mb-3" />
-        <p className="text-sm text-slate-400">
-          O Checklist de Bolso é exclusivo do módulo H125 (AS350 B2/B3e).
-        </p>
-        <p className="text-xs text-slate-500 mt-1">Selecione o perfil H125 no seletor de aeronave para acessar.</p>
-      </div>
-    );
-  }
+  // Resumo de validação da variante ativa
+  const variantSummary = useMemo(() => {
+    const all = [...data.emergencias, ...data.normais];
+    let approved = 0, pending = 0, rejected = 0;
+    all.forEach((p) => {
+      const st = validationMap[p.procedure_key]?.status || "pending";
+      if (st === "approved") approved++;
+      else if (st === "rejected") rejected++;
+      else pending++;
+    });
+    return { total: all.length, approved, pending, rejected };
+  }, [data, validationMap]);
 
   return (
     <div className="space-y-5">
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Operações · H125</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">
-            Checklist de Bolso
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-rose-300 to-rose-500 bg-clip-text text-transparent">
+            QRH · H125
           </h1>
           <p className="text-slate-400 mt-2 text-sm">
-            Transcrição de referência rápida para {variant.label}. Consulte sempre o manual oficial a bordo.
+            Procedimentos de referência rápida para {data.label}. Consulte sempre o manual oficial a bordo.
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {canValidate && (
+            <button
+              onClick={onOpenValidation}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-colors"
+            >
+              <ShieldCheck className="w-4 h-4" /> Validação
+            </button>
+          )}
           <BackToDashboard />
         </div>
       </header>
 
-      {/* Aviso de validação pendente */}
+      {/* Aviso de validação técnica pendente */}
       <div className="space-y-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
         <div className="flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
@@ -90,24 +106,16 @@ export default function ChecklistBolsoH125() {
             como “pendente de transcrição” estão aguardando conferência com o PDF de origem.
           </p>
         </div>
-        {H125_POCKET_VALIDATION?.crossCheckedPublicRefs && (
-          <p className="text-xs text-amber-300/80 pl-7">
-            Revisão de consistência em {H125_POCKET_VALIDATION.reviewedAt}: valores de cabeçalho (pesos, VNE, teto, motor)
-            conferidos com referências públicas do fabricante. {H125_POCKET_VALIDATION.technicalSignOffPending
-              ? "Validação técnica final ainda pendente: conferência por piloto/instrutor contra o RFM/POH vigente."
-              : ""}
-          </p>
-        )}
       </div>
 
-      {/* Seletor de sub-variante */}
+      {/* Seletor de sub-variante + resumo de validação */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <Plane className="w-4 h-4 text-amber-400" /> Variante:
         </div>
         <div className="inline-flex bg-[#1A1D25] border border-slate-700/60 rounded-lg p-1">
           {H125_SUBVARIANTS.map((v) => {
-            const active = (VARIANT_MAP[v.id] || "B2") === variantKey;
+            const active = (QRH_H125_VARIANT_KEYS[v.id] || "B2") === variantKey;
             return (
               <button
                 key={v.id}
@@ -123,18 +131,24 @@ export default function ChecklistBolsoH125() {
           })}
         </div>
         <a
-          href={variant.pdfUrl}
+          href={data.pdfUrl}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-300 transition-colors"
         >
           <FileText className="w-3.5 h-3.5" /> PDF de origem
         </a>
+
+        <div className="flex items-center gap-2 ml-auto text-xs">
+          <ValidationBadge status="approved" count={variantSummary.approved} />
+          <ValidationBadge status="pending" count={variantSummary.pending} />
+          <ValidationBadge status="rejected" count={variantSummary.rejected} />
+        </div>
       </div>
 
       {/* Abas de grupo */}
       <div className="flex flex-wrap items-center gap-2">
-        {H125_POCKET_GROUPS.map((g) => {
+        {QRH_H125_GROUPS.map((g) => {
           const Icon = GROUP_ICONS[g.id] || Siren;
           const active = group === g.id;
           return (
@@ -175,17 +189,50 @@ export default function ChecklistBolsoH125() {
         <div className="space-y-6">
           {Object.entries(grouped.byCat).map(([cat, procs]) => (
             <section key={cat}>
-              <h3 className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2.5 px-1">
-                {cat}
-              </h3>
+              <h3 className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2.5 px-1">{cat}</h3>
               <div className="grid gap-3 md:grid-cols-2">
                 {procs.map((p, i) => (
-                  <ProcedureCard key={`${cat}-${p.n}-${i}`} proc={p} />
+                  <ProcedureCardWithStatus
+                    key={`${cat}-${p.n}-${i}`}
+                    proc={p}
+                    status={validationMap[p.procedure_key]?.status || "pending"}
+                    reviewedBy={validationMap[p.procedure_key]?.reviewed_by}
+                    reviewedAt={validationMap[p.procedure_key]?.reviewed_at}
+                  />
                 ))}
               </div>
             </section>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+function ValidationBadge({ status, count }) {
+  const meta = VALIDATION_STATUS_META[status];
+  const Icon = status === "approved" ? BadgeCheck : status === "rejected" ? XCircle : Clock;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${meta.badge}`}>
+      <Icon className="w-3 h-3" /> {meta.label}: {count}
+    </span>
+  );
+}
+
+function ProcedureCardWithStatus({ proc, status, reviewedBy, reviewedAt }) {
+  const meta = VALIDATION_STATUS_META[status] || VALIDATION_STATUS_META.pending;
+  return (
+    <div className="relative">
+      <ProcedureCard proc={proc} />
+      <div className="absolute top-2 right-2 flex items-center gap-1.5">
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${meta.badge}`}>
+          {meta.label}
+        </span>
+      </div>
+      {reviewedBy && status !== "pending" && (
+        <p className="absolute bottom-1.5 right-3 text-[10px] text-slate-500">
+          {reviewedBy}{reviewedAt ? ` · ${new Date(reviewedAt).toLocaleDateString("pt-BR")}` : ""}
+        </p>
       )}
     </div>
   );

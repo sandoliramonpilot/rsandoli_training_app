@@ -22,7 +22,6 @@ const navSections = [
     label: "Operações",
     items: [
       { label: "Checklists", path: "/checklist", icon: ClipboardCheck, moduleId: "checklists" },
-      { label: "Checklist de Bolso H125", path: "/checklist-bolso-h125", icon: ClipboardCheck, moduleId: "checklists", h125Only: true },
       { label: "QRH", path: "/qrh", icon: Siren, moduleId: "qrh" },
       { label: "QRH-EFIS", path: "/qrh-efis", icon: Monitor, moduleId: "qrh_efis" },
       { label: "Pilotos", path: "/pilotos", icon: Users, moduleId: "pilotos" },

@@ -1,8 +1,43 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { QRH_CATEGORIES, QRH_PROCEDURES, CRITICALITY_CONFIG } from "@/lib/qrhData";
 import { Search, Star, StarOff, AlertTriangle, ShieldAlert, Info, ChevronRight, X, Clock } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
+import { useAuth } from "@/lib/AuthContext";
+import { getAccessLevel } from "@/lib/accessControl";
+import QrhH125View from "@/components/qrh/QrhH125View";
+import QrhValidationPanel from "@/components/qrh/QrhValidationPanel";
+import { QRH_H125_VARIANT_KEYS } from "@/lib/qrhH125Data";
+import { useQrhValidation } from "@/lib/useQrhValidation";
 
 export default function QRH() {
+  const { profileValue } = useProfile();
+  if (profileValue === "H125") return <QrhH125 />;
+  return <QrhAw119 />;
+}
+
+function QrhH125() {
+  const { user } = useAuth();
+  const { h125SubVariant } = useProfile();
+  const [validationOpen, setValidationOpen] = useState(false);
+  const variantKey = QRH_H125_VARIANT_KEYS[h125SubVariant] || "B2";
+  const { validationMap } = useQrhValidation(variantKey);
+  const canValidate = getAccessLevel(user) === "admin_geral";
+
+  return (
+    <>
+      <QrhH125View
+        validationMap={validationMap}
+        canValidate={canValidate}
+        onOpenValidation={() => setValidationOpen(true)}
+      />
+      {validationOpen && canValidate && (
+        <QrhValidationPanel variantId={h125SubVariant} onClose={() => setValidationOpen(false)} />
+      )}
+    </>
+  );
+}
+
+function QrhAw119() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
