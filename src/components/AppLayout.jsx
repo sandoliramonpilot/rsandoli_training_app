@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video, ShieldAlert, RotateCcw,   FileBarChart, CalendarDays, TrendingUp, Megaphone, HeartPulse, Scale } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video,   ShieldAlert, ShieldCheck, RotateCcw,   FileBarChart, CalendarDays, TrendingUp, Megaphone, HeartPulse, Scale } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import ProfileSwitcher from "@/components/ProfileSwitcher";
@@ -286,6 +286,21 @@ function SidebarContent({ location, onNavigate }) {
                 >
                   <ClipboardCheck style={{ width: 18, height: 18 }} />
                   Aprovações de Checklist
+                </Link>
+              )}
+              {showUsersMenu && (
+                <Link
+                  to="/matriz-permissoes"
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                    isActive(location, "/matriz-permissoes")
+                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/20"
+                      : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+                  )}
+                >
+                  <ShieldCheck style={{ width: 18, height: 18 }} />
+                  Matriz de Permissões
                 </Link>
               )}
             </div>

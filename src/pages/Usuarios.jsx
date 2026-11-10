@@ -7,6 +7,7 @@ import {
 } from "@/lib/accessControl";
 import { AIRCRAFT_PROFILES, PROFILE_LABELS } from "@/lib/aircraftProfile";
 import NewUserForm from "@/components/usuarios/NewUserForm";
+import VerifyCodeModal from "@/components/VerifyCodeModal";
 import { Loader2, Search, ShieldCheck, Save, X, Plane, UserPlus } from "lucide-react";
 
 export default function Usuarios() {
@@ -20,6 +21,8 @@ export default function Usuarios() {
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [showNewUser, setShowNewUser] = useState(false);
+  const [editandoUser, setEditandoUser] = useState(null);
+  const [codeOperation, setCodeOperation] = useState(null);
 
   const podeGerenciar = canManageUsers(user);
   const actorLevel = getAccessLevel(user);
@@ -51,6 +54,7 @@ export default function Usuarios() {
 
   const abrirEdicao = (u) => {
     setEditando(u.id);
+    setEditandoUser(u);
     setForm({
       access_level: getAccessLevel(u),
       account_status: getAccountStatus(u),
@@ -62,7 +66,9 @@ export default function Usuarios() {
 
   const cancelar = () => {
     setEditando(null);
+    setEditandoUser(null);
     setForm(null);
+    setCodeOperation(null);
   };
 
   const alternarAeronave = (aeronave) => {
@@ -75,23 +81,65 @@ export default function Usuarios() {
     });
   };
 
+  const detectarOperacaoSensivel = () => {
+    if (!editandoUser) return [];
+    const targetLevel = getAccessLevel(editandoUser);
+    const currentStatus = getAccountStatus(editandoUser);
+    const ops = [];
+    if (form.access_level !== targetLevel) ops.push("change_access_level");
+    if (
+      form.account_status !== currentStatus &&
+      (form.account_status === "desativada" || (targetLevel === "admin_geral" && form.account_status !== "ativa"))
+    ) {
+      ops.push("change_account_status");
+    }
+    return ops;
+  };
+
   const salvar = async () => {
     if (!editando || !form) return;
-    setSalvando(true);
     setErro("");
     setSucesso("");
+    const ops = detectarOperacaoSensivel();
+    if (ops.length > 1) {
+      setErro("Altere uma categoria sensível por vez (nível de acesso ou situação da conta).");
+      return;
+    }
+    if (ops.length === 1) {
+      setCodeOperation(ops[0]);
+      return;
+    }
+    await executarUpdate();
+  };
+
+  const executarUpdate = async (code) => {
+    setSalvando(true);
+    setErro("");
     try {
-      await base44.entities.User.update(editando, {
+      const res = await base44.functions.invoke("manageUsers", {
+        action: "update",
+        user_id: editando,
         access_level: form.access_level,
         account_status: form.account_status,
-        aircraft_profiles: form.aircraft_profiles,
+        aircraft_profiles: form.aircraft_profiles.length ? form.aircraft_profiles : null,
+        code: code || undefined,
       });
-      setSucesso("Usuário atualizado.");
-      setEditando(null);
-      setForm(null);
-      await carregar();
+      if (res.data?.ok) {
+        setSucesso("Usuário atualizado com verificação server-side.");
+        setEditando(null);
+        setEditandoUser(null);
+        setForm(null);
+        setCodeOperation(null);
+        await carregar();
+        return null;
+      }
+      const msg = res.data?.error || "Falha ao atualizar.";
+      setErro(msg);
+      return msg;
     } catch (e) {
-      setErro(e?.message || "Falha ao salvar. Verifique as permissões do backend.");
+      const msg = e?.response?.data?.error || e?.message || "Falha ao atualizar.";
+      setErro(msg);
+      return msg;
     } finally {
       setSalvando(false);
     }
@@ -282,6 +330,14 @@ export default function Usuarios() {
             );
           })}
         </div>
+      )}
+
+      {codeOperation && (
+        <VerifyCodeModal
+          operation={codeOperation}
+          onVerified={executarUpdate}
+          onClose={() => setCodeOperation(null)}
+        />
       )}
 
       {showNewUser && (

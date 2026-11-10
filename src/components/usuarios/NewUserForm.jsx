@@ -4,6 +4,7 @@ import {
   ACCESS_LEVELS, ACCESS_LEVEL_LABELS, ACCOUNT_STATUSES, ACCOUNT_STATUS_LABELS,
   PERMISSION_MODULES, PERMISSION_ACTIONS, DEFAULT_PERMISSIONS_BY_LEVEL,
 } from "@/lib/accessControl";
+import { AIRCRAFT_PROFILES, PROFILE_LABELS } from "@/lib/aircraftProfile";
 import {
   X, Loader2, AlertTriangle, Check, ChevronLeft, ChevronRight, UserPlus,
   ShieldCheck, Link2, FileText, Upload, Plane, Users,
@@ -32,6 +33,7 @@ export default function NewUserForm({ actorLevel, onClose, onSaved, onError }) {
     canac: "", cpf: "", job_title: "", unit: "", photo_uri: "", admin_notes: "",
     access_level: "", account_status: "convite_pendente", activation_method: "convite",
     must_change_password: true, require_code: false, send_invite: true,
+    aircraft_profiles: [],
   });
   const [perms, setPerms] = useState({});
 
@@ -117,6 +119,7 @@ export default function NewUserForm({ actorLevel, onClose, onSaved, onError }) {
         access_level: f.access_level,
         must_change_password: f.activation_method === "temp_password" ? true : f.must_change_password,
         custom_permissions: f.access_level === "admin_geral" ? null : perms,
+        aircraft_profiles: f.aircraft_profiles.length ? f.aircraft_profiles : undefined,
         photo_uri: f.photo_uri || undefined,
       });
       onSaved(res.data?.message || "Usuário criado com sucesso.");
@@ -257,6 +260,33 @@ function Step2({ f, set, levelOptions, requireCodeAuto, perms, setPerms, actorLe
         </Field>
       </div>
 
+      <div>
+        <label className="text-xs text-slate-400 mb-1.5 block">Módulos de aeronave liberados</label>
+        <div className="flex flex-wrap gap-2">
+          {AIRCRAFT_PROFILES.map((a) => {
+            const ativo = f.aircraft_profiles.includes(a);
+            return (
+              <button
+                key={a}
+                type="button"
+                onClick={() => set("aircraft_profiles", ativo ? f.aircraft_profiles.filter((p) => p !== a) : [...new Set([...f.aircraft_profiles, a])])}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  ativo
+                    ? "bg-amber-500 text-slate-900 border-amber-500"
+                    : "bg-transparent text-slate-400 border-slate-700/60 hover:border-slate-500"
+                }`}
+              >
+                <Plane className="w-3.5 h-3.5" />
+                {PROFILE_LABELS[a] || a}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-slate-600 mt-2">
+          Selecione AW119, H125 ou ambos. O usuário só acessa os treinamentos dos perfis marcados.
+        </p>
+      </div>
+
       <div className="px-4 py-3 rounded-lg bg-slate-700/20 border border-slate-700/40 text-sm text-slate-300 flex items-center gap-2">
         <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
         {requireCodeAuto ? "Autenticação por código será obrigatória para este perfil administrativo." : "Autenticação por código é configurável para este perfil."}
@@ -354,6 +384,7 @@ function Step4({ f, perms, linkDecision, pilotMatches }) {
     ["Situação inicial", ACCOUNT_STATUS_LABELS[f.account_status] || "—"],
     ["Método de ativação", f.activation_method === "convite" ? "Convite por e-mail" : "Senha temporária"],
     ["Troca de senha obrigatória", f.must_change_password ? "Sim" : "Não"],
+    ["Módulos de aeronave", f.aircraft_profiles.length ? f.aircraft_profiles.join(", ") : "Padrão do nível"],
   ];
   const linkLabel = linkDecision === "link_existing" ? "Vincular a piloto existente" :
     linkDecision === "review" ? "Revisão necessária (múltiplas correspondências)" : "Criar novo piloto (incompleto)";
