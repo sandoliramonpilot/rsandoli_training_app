@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { CHECKLIST_PHASES, getChecklistPhases } from "@/lib/checklistData";
 import {
@@ -8,6 +9,7 @@ import {
 } from "@/lib/h125OperationalChecklistData";
 import { useChecklistValidation } from "@/lib/useChecklistValidation";
 import ChecklistValidationPanel from "@/components/checklist/ChecklistValidationPanel";
+import ChecklistReviewMode from "@/components/checklist/ChecklistReviewMode";
 import ChecklistPhaseTabs from "@/components/checklist/ChecklistPhaseTabs";
 import ChecklistSectionList from "@/components/checklist/ChecklistSectionList";
 import ChecklistSummaryBar from "@/components/checklist/ChecklistSummaryBar";
@@ -31,7 +33,7 @@ const VALIDATION_META = {
 };
 
 export default function Checklist() {
-  const { profileFilter, profileValue, h125SubVariant, trocarSubvarianteH125 } = useProfile();
+  const { profileFilter, profileValue, h125SubVariant, trocarSubvarianteH125, modulosPermitidos, trocarAeronave } = useProfile();
   const { user } = useAuth();
 
   // H125: resolve a variante operacional (B2/B3e) e as fases correspondentes
@@ -58,12 +60,39 @@ export default function Checklist() {
   const [startedAt, setStartedAt] = useState(null);
   const [offlineNotice, setOfflineNotice] = useState("");
   const [showValidation, setShowValidation] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const reviewFase = searchParams.get("fase");
+  const reviewModelo = searchParams.get("modelo");
+  const reviewVariante = searchParams.get("variante");
 
   // Reset da fase ativa quando o perfil da aeronave ou variante muda
   useEffect(() => {
     setActivePhase(PHASES[0]?.id);
     setDiscrepanciesByPhase({});
   }, [profileValue, h125VariantKey]);
+
+  // Deep-link: alternar perfil/variante/fase a partir de parâmetros de URL (painel de aprovações)
+  useEffect(() => {
+    if (!reviewModelo) return;
+    if (reviewModelo !== profileValue && modulosPermitidos.includes(reviewModelo)) {
+      trocarAeronave(reviewModelo);
+    }
+  }, [reviewModelo, profileValue, modulosPermitidos, trocarAeronave]);
+
+  useEffect(() => {
+    if (!reviewVariante || profileValue !== "H125") return;
+    const variantMap = { B2: "b2_vemd", B3e: "b3e_arriel2d" };
+    const target = variantMap[reviewVariante];
+    if (target && target !== h125SubVariant) {
+      trocarSubvarianteH125(target);
+    }
+  }, [reviewVariante, profileValue, h125SubVariant, trocarSubvarianteH125]);
+
+  useEffect(() => {
+    if (reviewFase && PHASES.find((p) => p.id === reviewFase)) {
+      setActivePhase(reviewFase);
+    }
+  }, [reviewFase, PHASES]);
 
   useEffect(() => {
     Promise.all([
@@ -105,6 +134,7 @@ export default function Checklist() {
   };
 
   const beginNewChecklist = () => {
+    setSearchParams({});
     if (setup) {
       setSetup(null);
       setCheckedByPhase({});
@@ -180,6 +210,7 @@ export default function Checklist() {
 
   const finalize = async (justifications) => {
     const phasesProgress = {};
+    if (isH125) phasesProgress.__variant = h125VariantKey;
     PHASES.forEach((p) => {
       let idx = -1;
       const items = p.sections.flatMap((sec) => sec.items.map((text) => ({
@@ -371,6 +402,16 @@ export default function Checklist() {
         <ChecklistHistoryList records={records} onView={setViewingRecord} onDuplicate={duplicateRecord} onToggleFavorite={toggleFavorite} />
       ) : showStartFlow ? (
         <StartChecklistFlow aircraft={aircraft} onCancel={() => setShowStartFlow(false)} onStart={startSetup} />
+      ) : !setup && reviewFase ? (
+        <ChecklistReviewMode
+          phases={PHASES}
+          activePhase={activePhase}
+          onSelectPhase={selectPhase}
+          isH125={isH125}
+          validationMap={validationMap}
+          canValidate={canValidate}
+          onOpenValidation={() => setShowValidation(true)}
+        />
       ) : !setup ? (
         <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 px-6 py-14 text-center">
           {aircraft.length === 0 ? (
@@ -395,6 +436,7 @@ export default function Checklist() {
           </div>
 
           <ChecklistPhaseTabs
+            phases={PHASES}
             activeId={activePhase}
             progressByPhase={progressByPhase}
             onSelect={selectPhase}

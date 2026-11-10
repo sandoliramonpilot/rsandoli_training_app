@@ -2,10 +2,11 @@ import React from "react";
 import { CHECKLIST_PHASES } from "@/lib/checklistData";
 import { CheckCircle2 } from "lucide-react";
 
-export default function ChecklistPhaseTabs({ activeId, progressByPhase, onSelect }) {
+export default function ChecklistPhaseTabs({ phases, activeId, progressByPhase, onSelect }) {
+  const tabs = phases || CHECKLIST_PHASES;
   return (
     <div className="flex flex-wrap gap-2">
-      {CHECKLIST_PHASES.map((p) => {
+      {tabs.map((p) => {
         const prog = progressByPhase[p.id];
         const done = prog && prog.done === prog.total && prog.total > 0;
         return (

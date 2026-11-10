@@ -36,6 +36,7 @@ import MeuPerfil from '@/pages/MeuPerfil';
 import Escalas from '@/pages/Escalas';
 import PainelProgresso from '@/pages/PainelProgresso';
 import MarcosProjeto from '@/pages/MarcosProjeto';
+import AprovacoesChecklist from '@/pages/admin/AprovacoesChecklist';
 import Oat from '@/pages/Oat';
 import RequireModule from '@/components/RequireModule';
 import Login from '@/pages/Login';
@@ -135,6 +136,7 @@ const AuthenticatedApp = () => {
         <Route path="/perfil" element={<MeuPerfil />} />
         <Route path="/painel-progresso" element={<PainelProgresso />} />
         <Route path="/marcos-projeto" element={<MarcosProjeto />} />
+        <Route path="/aprovacoes-checklist" element={<RequireModule moduleId="usuarios"><AprovacoesChecklist /></RequireModule>} />
         <Route path="/configuracoes" element={<Configuracoes />} />
       </Route>
 
