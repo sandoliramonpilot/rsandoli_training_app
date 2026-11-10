@@ -118,7 +118,7 @@
 [data-theme="light"] .hover\:bg-slate-800\/50:hover,
 [data-theme="light"] .hover\:bg-slate-800:hover { background-color: hsl(var(--secondary)); }
 
-[data-theme="light"] .text-white,
+[data-theme="light"] .text-black,
 [data-theme="light"] .text-slate-50,
 [data-theme="light"] .text-slate-100,
 [data-theme="light"] .text-slate-200 { color: hsl(var(--foreground)); }
@@ -130,7 +130,7 @@
 [data-theme="light"] .placeholder\:text-slate-600::placeholder,
 [data-theme="light"] .placeholder\:text-slate-500::placeholder { color: hsl(var(--muted-foreground)); }
 
-[data-theme="light"] .hover\:text-white:hover,
+[data-theme="light"] .hover\:text-black:hover,
 [data-theme="light"] .hover\:text-slate-300:hover { color: hsl(var(--foreground)); }
 
 [data-theme="light"] .border-slate-700,
