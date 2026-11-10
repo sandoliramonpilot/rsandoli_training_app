@@ -171,7 +171,7 @@
 [data-theme="light"] select:disabled,
 [data-theme="light"] textarea:disabled {
   color: hsl(var(--muted-foreground)) !important;
-  opacity: 0.7;
+  opacity: 1;
 }
 
 /* Autofill do Chrome/Safari força fundo e texto próprios */
