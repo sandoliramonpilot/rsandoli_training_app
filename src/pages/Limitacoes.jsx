@@ -4,6 +4,7 @@ import { H125_LIMITACOES_VARIANTS, PENDING_VALIDATION_H125 } from "@/lib/limitac
 import { useProfile } from "@/lib/ProfileContext";
 import BackToDashboard from "@/components/BackToDashboard";
 import AcademyUploadSection from "@/components/academy/AcademyUploadSection";
+import AcademyHeroBanner from "@/components/academy/AcademyHeroBanner";
 import {
   Gauge, Plane, Cog, Settings, ChevronRight, ChevronDown, ChevronLeft,
   BookOpen, AlertTriangle, CheckCircle2, FileCheck2, ArrowLeft, ExternalLink,
@@ -102,23 +103,15 @@ export default function Limitacoes() {
       </header>
 
       {/* Premium banner */}
-      <div className="bg-gradient-to-br from-[#1A1D25] to-[#12141A] rounded-2xl border border-amber-500/20 shadow-lg overflow-hidden">
-        <div className="p-6 md:p-8 flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                <BookOpen className="w-3.5 h-3.5" /> Ground School
-              </span>
-              <span className="text-[11px] text-slate-500 uppercase tracking-wider">{isH125 ? "Airbus H125 / AS350 Écureuil" : "Leonardo AW119Kx Koala — PT6B-37A / IDU-680"}</span>
-            </div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-100">LIMITAÇÕES E PARÂMETROS</h2>
-            <p className="text-slate-400 mt-2 text-sm max-w-2xl">{isH125 ? PENDING_VALIDATION_H125 : DIDATIC_NOTICE}</p>
-          </div>
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
-            <Gauge className="w-10 h-10 text-slate-900" />
-          </div>
-        </div>
-      </div>
+      <AcademyHeroBanner
+        badgeIcon={BookOpen}
+        badgeText="Ground School"
+        subtitleLabel={isH125 ? "Airbus H125 / AS350 Écureuil" : "Leonardo AW119Kx Koala — PT6B-37A / IDU-680"}
+        title="LIMITAÇÕES E PARÂMETROS"
+        description={isH125 ? PENDING_VALIDATION_H125 : DIDATIC_NOTICE}
+        icon={Gauge}
+        accent="amber"
+      />
 
       {/* Legenda de status */}
       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">

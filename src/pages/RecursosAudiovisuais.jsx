@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import BackToDashboard from "@/components/BackToDashboard";
 import AcademyUploadSection from "@/components/academy/AcademyUploadSection";
+import AcademyHeroBanner from "@/components/academy/AcademyHeroBanner";
 import { ImageIcon, Video, GraduationCap, Clapperboard } from "lucide-react";
 
 const SUBMODULES = [
@@ -44,23 +45,15 @@ export default function RecursosAudiovisuais() {
         <BackToDashboard />
       </header>
 
-      <div className="bg-gradient-to-br from-[#1A1D25] to-[#12141A] rounded-2xl border border-amber-500/20 shadow-lg overflow-hidden">
-        <div className="p-6 md:p-8 flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                <GraduationCap className="w-3.5 h-3.5" /> Premium
-              </span>
-              <span className="text-[11px] text-slate-500 uppercase tracking-wider">Leonardo AW119Kx Koala</span>
-            </div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-100">RECURSOS AUDIOVISUAIS</h2>
-            <p className="text-slate-400 mt-2 text-sm max-w-2xl">Mídia, diagramas, imagens técnicas e vídeos instrucionais de apoio ao treinamento.</p>
-          </div>
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
-            <Clapperboard className="w-10 h-10 text-slate-900" />
-          </div>
-        </div>
-      </div>
+      <AcademyHeroBanner
+        badgeIcon={GraduationCap}
+        badgeText="Premium"
+        subtitleLabel="Leonardo AW119Kx Koala"
+        title="RECURSOS AUDIOVISUAIS"
+        description="Mídia, diagramas, imagens técnicas e vídeos instrucionais de apoio ao treinamento."
+        icon={Clapperboard}
+        accent="sky"
+      />
 
       {/* Sub-module tabs */}
       <div className="flex flex-wrap gap-2">

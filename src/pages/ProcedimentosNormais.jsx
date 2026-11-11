@@ -40,17 +40,17 @@ export default function ProcedimentosNormais() {
       </header>
 
       {/* Premium banner */}
-      <div className="bg-gradient-to-br from-[#1A1D25] to-[#12141A] rounded-2xl border border-amber-500/20 shadow-lg overflow-hidden">
+      <div className="bg-white rounded-2xl border border-amber-200 shadow-lg overflow-hidden">
         <div className="p-6 md:p-8 flex items-start justify-between gap-4 flex-wrap">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                 <Crown className="w-3.5 h-3.5" /> Ground School
               </span>
               <span className="text-[11px] text-slate-500 uppercase tracking-wider">Leonardo AW119Kx Koala — PT6B-37A / IDU-680</span>
             </div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-100">PROCEDIMENTOS NORMAIS</h2>
-            <p className="text-slate-400 mt-2 text-sm max-w-2xl">{DIDATIC_NOTICE}</p>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">PROCEDIMENTOS NORMAIS</h2>
+            <p className="text-slate-600 mt-2 text-sm max-w-2xl">{DIDATIC_NOTICE}</p>
           </div>
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
             <BookOpen className="w-10 h-10 text-slate-900" />
