@@ -102,7 +102,7 @@ export default function Aircraft() {
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-sky-600 font-semibold">Frota</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1">Aeronaves</h1>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">Aeronaves</h1>
           <p className="text-slate-500 mt-2 text-sm">{aircraft.length} helicóptero(s) cadastrado(s)</p>
         </div>
         <div className="flex items-center gap-2">
