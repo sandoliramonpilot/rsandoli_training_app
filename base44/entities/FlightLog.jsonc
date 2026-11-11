@@ -121,9 +121,10 @@
       "title": "IFR",
       "default": false
     },
-    "fuel_uplift_liters": {
-      "type": "number",
-      "title": "Combust\u00edvel INICIAL (Kg/L)"
+    "fuel_initial_kg_l": {
+  "type": "number",
+  "title": "Inicial (Kg/L)"
+  }
     },
     "notes": {
       "type": "string",
