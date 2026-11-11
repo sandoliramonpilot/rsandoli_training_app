@@ -44,24 +44,22 @@ const emptyForm = {
   copilot_role: "",
   departure_location: "",
   arrival_location: "",
-
   engine_start_time: "",
   takeoff_time: "",
   landing_time: "",
   engine_shutdown_time: "",
-
   flight_hour_initial: "",
   flight_hour_final: "",
   engine_hour_initial: "",
   engine_hour_final: "",
-
   flight_time_minutes: 0,
   day_time_minutes: 0,
   night_time_minutes: 0,
   ifr_time_minutes: 0,
   flight_type: "private",
   landings: 1,
-  fuel_uplift_liters: "",
+  fuel_initial_kg_l: "",
+  fuel_initial_unit: "l",
   notes: "",
 };
 
@@ -140,7 +138,8 @@ export default function FlightLog() {
       ifr_time_minutes: f.ifr_time_minutes || 0,
       flight_type: f.flight_type || "private",
       landings: f.landings ?? 1,
-      fuel_uplift_liters: f.fuel_uplift_liters ?? "",
+      fuel_initial_kg_l: f.fuel_initial_kg_l ?? f.fuel_uplift_liters ?? "",
+      fuel_initial_unit: f.fuel_initial_unit || "l",
       notes: f.notes || "",
     });
     setShowForm(true);
@@ -380,7 +379,8 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSubmi
       day_time_minutes: day,
       night_time_minutes: night,
       ifr_time_minutes: ifr,
-      fuel_uplift_kilo: form.fuel_uplift_liters === "" ? null : Number(form.fuel_uplift_liters),
+      fuel_initial_kg_l: form.fuel_initial_kg_l === "" ? null : Number(form.fuel_initial_kg_l),
+      fuel_initial_unit: form.fuel_initial_kg_l === "" ? null : form.fuel_initial_unit,
       pilot_role: hasPilot ? form.pilot_role : null,
       copilot_role: hasCopilot ? form.copilot_role : null,
     };
@@ -480,8 +480,27 @@ function FlightForm({ form, aircraft, editing, saving, onField, onClose, onSubmi
             <Field label="Pousos">
               <input type="number" min="0" value={form.landings} onChange={(e) => onField("landings", e.target.value)} className={inputCls} />
             </Field>
-            <Field label="Combustível abastecido (L)">
-              <input type="number" step="0.1" value={form.fuel_uplift_liters} onChange={(e) => onField("fuel_uplift_liters", e.target.value)} className={inputCls} placeholder="Opcional" />
+            <Field label="Combustível inicial (Kg/L)">
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  inputMode="decimal"
+                  value={form.fuel_initial_kg_l}
+                  onChange={(e) => onField("fuel_initial_kg_l", e.target.value)}
+                  className={inputCls}
+                  placeholder="Opcional"
+                />
+                <select
+                  value={form.fuel_initial_unit}
+                  onChange={(e) => onField("fuel_initial_unit", e.target.value)}
+                  className="w-24 px-2 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
+                >
+                  <option value="l">L</option>
+                  <option value="kg">Kg</option>
+                </select>
+              </div>
             </Field>
           </div>
 
