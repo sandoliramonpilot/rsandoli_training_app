@@ -122,9 +122,15 @@
       "default": false
     },
     "fuel_initial_kg_l": {
-  "type": "number",
-  "title": "Inicial (Kg/L)"
-  }
+      "type": "number",
+      "title": "Inicial (Kg/L)"
+    },
+    "fuel_initial_unit": {
+      "type": "string",
+      "enum": ["kg", "l"],
+      "default": "l",
+      "title": "Unidade do combustível inicial"
+    }
     },
     "notes": {
       "type": "string",
