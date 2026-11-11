@@ -20,6 +20,7 @@ const APPROVAL = {
 
 const emptyForm = {
   registration: "",
+  callsign: "",
   model: "",
   manufacturer: "",
   operator_name: "",
@@ -50,6 +51,7 @@ export default function Aircraft() {
     setEditing(a);
     setForm({
       registration: a.registration || "",
+      callsign: a.callsign || "",
       model: a.model || "",
       manufacturer: a.manufacturer || "",
       operator_name: a.operator_name || "",
@@ -142,7 +144,12 @@ export default function Aircraft() {
                 )}
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="inline-block text-lg font-bold tracking-tight text-slate-900 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1">{a.registration || "—"}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-block text-lg font-bold tracking-tight text-black bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1">{a.registration || "—"}</span>
+                      {a.callsign && (
+                        <span className="inline-block text-sm font-semibold tracking-tight text-black bg-amber-100 border border-amber-300 rounded-lg px-2.5 py-1">{a.callsign}</span>
+                      )}
+                    </div>
                     <p className="text-sm text-slate-500 mt-2">{a.model || "—"}</p>
                     {a.operator_name && <p className="text-xs text-slate-600 mt-0.5 font-medium">Operador: {a.operator_name}</p>}
                     {a.manufacturer && <p className="text-xs text-slate-400 mt-0.5">{a.manufacturer}{a.year ? ` · ${a.year}` : ""}</p>}
@@ -204,6 +211,9 @@ function AircraftForm({ form, editing, saving, onField, onClose, onSave }) {
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Matrícula *">
               <input required value={form.registration} onChange={(e) => onField("registration", e.target.value.toUpperCase())} className={inputCls} placeholder="PR-ABC" />
+            </Field>
+            <Field label="Designativo de Chamada">
+              <input value={form.callsign} onChange={(e) => onField("callsign", e.target.value)} className={inputCls} placeholder="Ex: Arcanjo 16" />
             </Field>
             <Field label="Modelo *">
               <input required value={form.model} onChange={(e) => onField("model", e.target.value)} className={inputCls} placeholder="Robinson R44" />

@@ -17,6 +17,11 @@
       "title": "Matr\u00edcula",
       "description": "Ex: PR-ABC, PT-HXYZ"
     },
+    "callsign": {
+      "type": "string",
+      "title": "Designativo de Chamada",
+      "description": "Ex: Arcanjo 16"
+    },
     "model": {
       "type": "string",
       "title": "Modelo",
