@@ -22,6 +22,7 @@ const emptyForm = {
   registration: "",
   model: "",
   manufacturer: "",
+  operator_name: "",
   year: "",
   total_hours: 0,
   total_mnt_hours: 0,
@@ -51,6 +52,7 @@ export default function Aircraft() {
       registration: a.registration || "",
       model: a.model || "",
       manufacturer: a.manufacturer || "",
+      operator_name: a.operator_name || "",
       year: a.year ?? "",
       total_hours: a.total_hours ?? 0,
       total_mnt_hours: a.total_mnt_hours ?? 0,
@@ -140,8 +142,9 @@ export default function Aircraft() {
                 )}
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-lg font-bold tracking-tight text-slate-900">{a.registration || "—"}</p>
-                    <p className="text-sm text-slate-500">{a.model || "—"}</p>
+                    <span className="inline-block text-lg font-bold tracking-tight text-slate-900 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1">{a.registration || "—"}</span>
+                    <p className="text-sm text-slate-500 mt-2">{a.model || "—"}</p>
+                    {a.operator_name && <p className="text-xs text-slate-600 mt-0.5 font-medium">Operador: {a.operator_name}</p>}
                     {a.manufacturer && <p className="text-xs text-slate-400 mt-0.5">{a.manufacturer}{a.year ? ` · ${a.year}` : ""}</p>}
                   </div>
                   <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border ${st.color}`}>
@@ -207,6 +210,9 @@ function AircraftForm({ form, editing, saving, onField, onClose, onSave }) {
             </Field>
             <Field label="Fabricante">
               <input value={form.manufacturer} onChange={(e) => onField("manufacturer", e.target.value)} className={inputCls} placeholder="Robinson" />
+            </Field>
+            <Field label="Operador">
+              <input value={form.operator_name} onChange={(e) => onField("operator_name", e.target.value)} className={inputCls} placeholder="Nome do operador" />
             </Field>
             <Field label="Ano">
               <input type="number" value={form.year} onChange={(e) => onField("year", e.target.value)} className={inputCls} placeholder="2020" />

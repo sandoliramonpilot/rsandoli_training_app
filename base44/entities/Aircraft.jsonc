@@ -26,6 +26,11 @@
       "type": "string",
       "title": "Fabricante"
     },
+    "operator_name": {
+      "type": "string",
+      "title": "Operador",
+      "description": "Nome do operador da aeronave"
+    },
     "year": {
       "type": "integer",
       "title": "Ano"
