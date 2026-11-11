@@ -55,6 +55,30 @@ function pick(obj, fields) {
   return out;
 }
 
+// Validação de URI de documento: rejeita esquemas perigosos (javascript:, data:,
+// vbscript:, etc.) que poderiam ser usados em ataques XSS armazenados contra
+// administradores que abrem o documento a partir do Controle de Aprovações.
+// Aceita apenas URIs de armazenamento do app, http(s) ou caminhos relativos.
+function sanitizeDocUri(value) {
+  if (value == null) return value;
+  const str = String(value);
+  // Sem esquema (caminho relativo) é aceito.
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(str)) return str;
+  // Esquemas explícitos permitidos.
+  if (/^(https?|storage|private-files|file):/i.test(str)) return str;
+  // Qualquer outro esquema (javascript:, data:, vbscript:, ...) é rejeitado.
+  return null;
+}
+
+function applyDocUriSanitizer(payload) {
+  if (!payload) return;
+  if ("document_uri" in payload) {
+    const safe = sanitizeDocUri(payload.document_uri);
+    if (safe === null) delete payload.document_uri;
+    else payload.document_uri = safe;
+  }
+}
+
 // situation "valid"/"near_expiry" só resulta de cálculo/conferência server-side;
 // usuário comum não pode nascer a licença como "Válida".
 function sanitizeSituation(situation, isAdmin) {
@@ -122,6 +146,7 @@ export default async function (req) {
       if (!self && payload.aircraftProfile && !hasProfileAccess(userProfiles, payload.aircraftProfile)) {
         return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       }
+      applyDocUriSanitizer(payload);
       payload.pilot_id = pilot.id;
       payload.pilot_name = pilot.full_name || null;
       payload.situation = sanitizeSituation(payload.situation, isAdmin);
@@ -159,6 +184,7 @@ export default async function (req) {
       if (!recSelf && "aircraftProfile" in patch && !hasProfileAccess(userProfiles, patch.aircraftProfile)) {
         return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       }
+      applyDocUriSanitizer(patch);
       if ("situation" in patch) patch.situation = sanitizeSituation(patch.situation, isAdmin);
       // Usuário comum nunca toca nos campos de revisão via esta ação.
       for (const f of REVIEW_FIELDS) delete patch[f];

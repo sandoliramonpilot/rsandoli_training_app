@@ -545,12 +545,26 @@ function DetailDialog({ item, decision, setDecision, justification, setJustifica
                 href="#"
                 onClick={async (e) => {
                   e.preventDefault();
+                  // Validação de esquema: só abrimos URIs de armazenamento privadas do app.
+                  // Rejeita esquemas perigosos como javascript:, data:, vbscript:.
+                  const uri = String(item.doc_uri || "");
+                  const isSafeUri =
+                    /^(https?:|storage:\/\/|private-files:\/\/|media\.base44\.com|static\.wixstatic\.com)/i.test(uri) ||
+                    !/^[a-z][a-z0-9+.-]*:/i.test(uri);
+                  if (!isSafeUri) {
+                    alert("Documento indisponível: URI inválida ou não suportada.");
+                    return;
+                  }
                   try {
                     const { CreateFileSignedUrl } = base44.integrations.Core;
-                    const { signed_url } = await CreateFileSignedUrl({ file_uri: item.doc_uri });
-                    window.open(signed_url, "_blank");
+                    const { signed_url } = await CreateFileSignedUrl({ file_uri: uri });
+                    if (typeof signed_url === "string" && /^https?:\/\//i.test(signed_url)) {
+                      window.open(signed_url, "_blank", "noopener,noreferrer");
+                    } else {
+                      alert("Não foi possível gerar um link seguro para o documento.");
+                    }
                   } catch (err) {
-                    window.open(item.doc_uri, "_blank");
+                    alert("Documento indisponível: não foi possível gerar o link assinado.");
                   }
                 }}
                 className="inline-flex items-center gap-2 text-sm text-amber-300 hover:text-amber-200"
