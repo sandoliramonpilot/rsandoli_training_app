@@ -18,6 +18,13 @@ const SUBMODULES = [
     mediaMode: "video",
     description: "Vídeos de treinamento, animações e materiais audiovisuais de instrução.",
   },
+  {
+    id: "fotos",
+    title: "FOTOS",
+    icon: ImageIcon,
+    mediaMode: "image",
+    description: "Fotografias operacionais, de aeronaves e de campo para apoio ao treinamento.",
+  },
 ];
 
 export default function RecursosAudiovisuais() {

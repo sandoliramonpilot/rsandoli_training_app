@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { TREINAMENTOS_GERAIS, PENDING_CONTENT, DIDATIC_NOTICE } from "@/lib/trainingData";
 import BackToDashboard from "@/components/BackToDashboard";
+import AcademyUploadSection from "@/components/academy/AcademyUploadSection";
 import {
   Fuel, Droplets, Zap, Radio, LayoutDashboard, Cog, Settings, Wind, Joystick,
   ChevronDown, ChevronRight, AlertTriangle, BookOpen,
@@ -33,8 +34,8 @@ export default function TreinamentosGerais() {
         <BackToDashboard />
       </header>
 
-      <div className="px-4 py-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-200 text-xs flex items-start gap-2">
-        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+      <div className="px-4 py-3 rounded-xl bg-sky-50 border border-sky-200 text-slate-800 text-xs flex items-start gap-2">
+        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-sky-500" />
         <span>{DIDATIC_NOTICE}</span>
       </div>
 
@@ -60,7 +61,7 @@ export default function TreinamentosGerais() {
               {isOpen && (
                 <div className="px-5 pb-4 space-y-3">
                   {m.note && (
-                    <div className="px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/20 text-amber-300/80 text-xs">
+                    <div className="px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-slate-800 text-xs">
                       {m.note}
                     </div>
                   )}
@@ -71,6 +72,12 @@ export default function TreinamentosGerais() {
                       </li>
                     ))}
                   </ul>
+                  <AcademyUploadSection
+                    discipline="treinamentos_gerais"
+                    chapter={m.id}
+                    moduleId="treinamentos_gerais"
+                    hideNotice
+                  />
                   <div className="px-3 py-2 rounded-lg bg-slate-700/20 border border-slate-700/30 text-slate-500 text-xs italic">
                     {PENDING_CONTENT}
                   </div>

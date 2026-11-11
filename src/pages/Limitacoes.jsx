@@ -3,6 +3,7 @@ import { LIMITACOES, DIDATIC_NOTICE, PARAM_STATUS, LIMIT_KIND, PENDING_VALIDATIO
 import { H125_LIMITACOES_VARIANTS, PENDING_VALIDATION_H125 } from "@/lib/limitacoesH125Data";
 import { useProfile } from "@/lib/ProfileContext";
 import BackToDashboard from "@/components/BackToDashboard";
+import AcademyUploadSection from "@/components/academy/AcademyUploadSection";
 import {
   Gauge, Plane, Cog, Settings, ChevronRight, ChevronDown, ChevronLeft,
   BookOpen, AlertTriangle, CheckCircle2, FileCheck2, ArrowLeft, ExternalLink,
@@ -410,13 +411,21 @@ function ChapterDetail({ chapter, onBack }) {
           {chapter.notes.map((note, i) => (
             <div
               key={i}
-              className="px-4 py-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-amber-200/80 text-xs leading-relaxed"
+              className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-slate-800 text-xs leading-relaxed"
             >
               {note}
             </div>
           ))}
         </div>
       )}
+
+      <AcademyUploadSection
+        discipline="limitacoes"
+        chapter={chapter.id}
+        moduleId="limitacoes"
+        title="Documentos do capítulo"
+        hideNotice
+      />
     </div>
   );
 }

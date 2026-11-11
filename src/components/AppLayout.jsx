@@ -41,7 +41,7 @@ const navSections = [
       { label: "Questões", path: "/questoes", icon: HelpCircle, moduleId: "questoes" },
       { label: "Simulados", path: "/simulados", icon: BarChart3, moduleId: "simulados" },
       { label: "Treinamento Recorrente", path: "/treinamento-recorrente", icon: RotateCcw, moduleId: "treinamento_recorrente" },
-      { label: "Recursos Visuais", path: "/recursos-visuais", icon: Image, moduleId: "recursos_visuais" },
+      { label: "Recursos Audiovisuais", path: "/recursos-audiovisuais", icon: Image, moduleId: "recursos_visuais" },
       { label: "Briefing de Emergência", path: "/briefing-emergencia", icon: ShieldAlert, moduleId: "briefing_emergencia" },
     ],
   },

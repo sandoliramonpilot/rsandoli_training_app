@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { PROC_NORMAIS, DIDATIC_NOTICE, RESSALVA_NAO_OFICIAL } from "@/lib/procedimentosNormaisData";
 import BackToDashboard from "@/components/BackToDashboard";
+import AcademyUploadSection from "@/components/academy/AcademyUploadSection";
 import {
   Plane, Monitor, AlertTriangle, Cog, Settings, Navigation,
   ChevronRight, ChevronDown, BookOpen, Crown, ExternalLink,
@@ -130,6 +131,12 @@ export default function ProcedimentosNormais() {
                   {ch.blocks.map((b, i) => (
                     <BlockRenderer key={i} block={b} />
                   ))}
+                  <AcademyUploadSection
+                    discipline="proc_normais"
+                    chapter={ch.id}
+                    moduleId="procedimentos_normais"
+                    hideNotice
+                  />
                 </div>
               )}
             </div>
@@ -138,8 +145,8 @@ export default function ProcedimentosNormais() {
       </div>
 
       {/* Ressalva footer */}
-      <div className="px-4 py-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-amber-200/70 text-xs flex items-start gap-2">
-        <Info className="w-4 h-4 shrink-0 mt-0.5" />
+      <div className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-slate-800 text-xs flex items-start gap-2">
+        <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
         <span>{RESSALVA_NAO_OFICIAL}</span>
       </div>
     </div>
@@ -208,16 +215,16 @@ function BlockRenderer({ block }) {
 
     case "note":
       return (
-        <div className="px-4 py-3 rounded-xl bg-sky-500/5 border border-sky-500/20 text-sky-200/80 text-xs flex items-start gap-2 leading-relaxed">
-          <Info className="w-4 h-4 shrink-0 mt-0.5" />
+        <div className="px-4 py-3 rounded-xl bg-sky-50 border border-sky-200 text-slate-800 text-xs flex items-start gap-2 leading-relaxed">
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-sky-500" />
           <span>{block.content}</span>
         </div>
       );
 
     case "warning":
       return (
-        <div className="px-4 py-3 rounded-xl bg-rose-500/5 border border-rose-500/20 text-rose-200/80 text-xs flex items-start gap-2 leading-relaxed">
-          <AlertOctagon className="w-4 h-4 shrink-0 mt-0.5" />
+        <div className="px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-slate-800 text-xs flex items-start gap-2 leading-relaxed">
+          <AlertOctagon className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
           <span>{block.content}</span>
         </div>
       );

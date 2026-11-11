@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { getQuestionBank } from "@/lib/questionData";
 import { useProfile } from "@/lib/ProfileContext";
+import AcademyUploadSection from "@/components/academy/AcademyUploadSection";
 import { Search, HelpCircle, BookOpen, ChevronDown, ChevronUp, Filter } from "lucide-react";
 
 export default function Questoes() {
@@ -135,6 +136,14 @@ export default function Questoes() {
           })}
         </div>
       )}
+      <AcademyUploadSection
+        discipline="questoes"
+        chapter="banco_geral"
+        moduleId="questoes"
+        title="Documentos de apoio"
+        description="Materiais complementares ao banco de questões."
+        hideNotice
+      />
     </div>
   );
 }

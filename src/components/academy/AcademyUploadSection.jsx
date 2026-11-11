@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
-import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
-import MediaThumb from "@/components/academy/MediaThumb";
 import DocumentListItem from "@/components/academy/DocumentListItem";
 import { DIDATIC_NOTICE } from "@/lib/trainingData";
 import { Upload, Loader2, X, ShieldAlert, Inbox } from "lucide-react";
@@ -16,9 +14,11 @@ const MEDIA_MODES = {
   document: {
     accept: ".pdf,.ppsx,.pptx,.doc,.docx",
     extensions: ["pdf", "ppsx", "pptx", "doc", "docx"],
-    selectLabel: "Selecionar arquivo",
+    selectLabel: "Selecionar arquivo(s)",
     linkLabel: "Anexar documento (.pdf, .ppsx, .doc, .docx)",
     invalidMsg: "Formato não suportado. Use PDF, PPSX, PPTX, DOC ou DOCX.",
+    emptyLabel: "Nenhum documento anexado ainda.",
+    listLabel: "Documentos anexados",
   },
   image: {
     accept: ".jpg,.jpeg,.png,.heic,.gif,.pdf,.ppsx",
@@ -26,13 +26,17 @@ const MEDIA_MODES = {
     selectLabel: "Selecionar imagem/PDF",
     linkLabel: "Anexar imagem ou PDF (.jpg, .png, .heic, .gif, .pdf, .ppsx)",
     invalidMsg: "Formato não suportado. Use JPG, PNG, HEIC, GIF, PDF ou PPSX.",
+    emptyLabel: "Nenhuma imagem anexada ainda.",
+    listLabel: "Imagens e documentos",
   },
   video: {
     accept: ".mp4,.mov,.avi,.mkv,.webm,.wmv",
     extensions: ["mp4", "mov", "avi", "mkv", "webm", "wmv"],
-    selectLabel: "Selecionar vídeo",
+    selectLabel: "Selecionar vídeo(s)",
     linkLabel: "Anexar vídeo (.mp4, .mov, .avi, .mkv, .webm, .wmv)",
     invalidMsg: "Formato não suportado. Use MP4, MOV, AVI, MKV, WEBM ou WMV.",
+    emptyLabel: "Nenhum vídeo anexado ainda.",
+    listLabel: "Vídeos",
   },
 };
 
@@ -52,6 +56,7 @@ export default function AcademyUploadSection({
   description,
   moduleId,
   mediaMode = "document",
+  hideNotice = false,
 }) {
   const { user } = useAuth();
   const { profileFilter, profileValue } = useProfile();
@@ -61,6 +66,7 @@ export default function AcademyUploadSection({
   const [uploading, setUploading] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [uploadTitle, setUploadTitle] = useState("");
+  const [progress, setProgress] = useState("");
   const fileInputRef = useRef(null);
 
   const chapterKey = chapter || discipline;
@@ -76,28 +82,35 @@ export default function AcademyUploadSection({
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const ext = file.name.split(".").pop()?.toLowerCase();
-    if (!mode.extensions.includes(ext)) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const invalid = files.find(
+      (f) => !mode.extensions.includes(f.name.split(".").pop()?.toLowerCase())
+    );
+    if (invalid) {
       alert(mode.invalidMsg);
       return;
     }
     setUploading(true);
     try {
-      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
-      await base44.entities.TrainingDocument.create({
-        title: uploadTitle || file.name.replace(/\.[^/.]+$/, ""),
-        discipline,
-        chapter: chapterKey,
-        aircraftProfile: profileValue,
-        file_type: mapFileType(ext),
-        file_uri,
-        file_name: file.name,
-        file_size: file.size,
-        uploaded_by: user?.full_name || user?.email || "",
-        approval_status: "pending_review",
-      });
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setProgress(`Enviando ${i + 1} de ${files.length}…`);
+        const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+        const baseName = uploadTitle || file.name.replace(/\.[^/.]+$/, "");
+        await base44.entities.TrainingDocument.create({
+          title: files.length > 1 ? `${baseName} (${i + 1})` : baseName,
+          discipline,
+          chapter: chapterKey,
+          aircraftProfile: profileValue,
+          file_type: mapFileType(file.name.split(".").pop().toLowerCase()),
+          file_uri,
+          file_name: file.name,
+          file_size: file.size,
+          uploaded_by: user?.full_name || user?.email || "",
+          approval_status: "pending_review",
+        });
+      }
       setUploadTitle("");
       setIsUploadOpen(false);
       await loadDocs();
@@ -105,6 +118,7 @@ export default function AcademyUploadSection({
       alert("Erro ao enviar arquivo: " + (err.message || "tente novamente."));
     } finally {
       setUploading(false);
+      setProgress("");
       e.target.value = "";
     }
   };
@@ -119,18 +133,18 @@ export default function AcademyUploadSection({
       )}
 
       <div className="px-5 py-4 space-y-4">
-        {/* Didactic notice */}
-        <div className="px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/20 text-amber-300/80 text-xs flex items-start gap-2">
-          <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-          <span>{DIDATIC_NOTICE}</span>
-        </div>
+        {/* Didactic notice (light, dark text) */}
+        {!hideNotice && (
+          <div className="px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-slate-800 text-xs flex items-start gap-2">
+            <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-500" />
+            <span>{DIDATIC_NOTICE}</span>
+          </div>
+        )}
 
         {/* Documents */}
         {docs.length > 0 ? (
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-wider text-slate-500 font-medium">
-              {mediaMode === "image" ? "Imagens e documentos" : mediaMode === "video" ? "Vídeos" : "Documentos anexados"}
-            </p>
+            <p className="text-xs uppercase tracking-wider text-slate-500 font-medium">{mode.listLabel}</p>
             {docs.map((d) => (
               <DocumentListItem key={d.id} doc={d} canEdit={canEdit} onUpdated={loadDocs} />
             ))}
@@ -138,18 +152,16 @@ export default function AcademyUploadSection({
         ) : (
           <div className="text-center py-6">
             <Inbox className="w-8 h-8 text-slate-700 mx-auto mb-2" />
-            <p className="text-sm text-slate-600">
-              {mediaMode === "image" ? "Nenhuma imagem anexada ainda." : mediaMode === "video" ? "Nenhum vídeo anexado ainda." : "Nenhum documento anexado ainda."}
-            </p>
+            <p className="text-sm text-slate-600">{mode.emptyLabel}</p>
           </div>
         )}
 
-        {/* Upload (admin) */}
+        {/* Upload (admin) — multiple files */}
         {canEdit && (
           <div className="pt-2 border-t border-slate-700/40">
             {uploading ? (
               <div className="flex items-center gap-2 text-sm text-slate-400 py-2">
-                <Loader2 className="w-4 h-4 animate-spin text-amber-400" /> Enviando arquivo…
+                <Loader2 className="w-4 h-4 animate-spin text-amber-400" /> {progress || "Enviando arquivo…"}
               </div>
             ) : isUploadOpen ? (
               <div className="space-y-2 py-1">
@@ -161,7 +173,7 @@ export default function AcademyUploadSection({
                   className="w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500"
                 />
                 <div className="flex items-center gap-2">
-                  <input ref={fileInputRef} type="file" accept={mode.accept} onChange={handleUpload} className="hidden" />
+                  <input ref={fileInputRef} type="file" accept={mode.accept} multiple onChange={handleUpload} className="hidden" />
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}

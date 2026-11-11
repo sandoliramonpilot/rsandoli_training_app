@@ -47,8 +47,8 @@ export default function ProcedimentosEmergencia() {
     const file = e.target.files?.[0];
     if (!file || !uploadChapter) return;
     const ext = file.name.split(".").pop()?.toLowerCase();
-    if (!["pdf", "ppsx", "pptx"].includes(ext)) {
-      alert("Formato não suportado. Use PDF, PPSX ou PPTX.");
+    if (!["pdf", "ppsx", "pptx", "doc", "docx"].includes(ext)) {
+      alert("Formato não suportado. Use PDF, PPSX, PPTX, DOC ou DOCX.");
       return;
     }
     setUploading(true);
@@ -58,7 +58,7 @@ export default function ProcedimentosEmergencia() {
         title: uploadTitle || file.name.replace(/\.[^/.]+$/, ""),
         discipline: "proc_emergencia",
         chapter: uploadChapter,
-        file_type: ext === "pdf" ? "pdf" : ext === "ppsx" ? "ppsx" : "pptx",
+        file_type: ["pdf", "ppsx", "pptx"].includes(ext) ? ext : "other",
         file_uri,
         file_name: file.name,
         file_size: file.size,
@@ -111,8 +111,8 @@ export default function ProcedimentosEmergencia() {
       </div>
 
       {/* Didactic notice + source PDF */}
-      <div className="px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2">
-        <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+      <div className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-slate-800 text-xs flex items-start gap-2">
+        <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
         <span>
           <strong>Aviso didático:</strong> {DIDATIC_NOTICE}
         </span>
@@ -309,13 +309,13 @@ function ContentCard({ module, docs, canEdit, uploading, isUploadOpen, uploadTit
                   className="w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500"
                 />
                 <div className="flex items-center gap-2">
-                  <input ref={fileInputRef} type="file" accept=".pdf,.ppsx,.pptx" onChange={onFileSelect} className="hidden" />
+                  <input ref={fileInputRef} type="file" accept=".pdf,.ppsx,.pptx,.doc,.docx" onChange={onFileSelect} className="hidden" />
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500 text-slate-900 text-xs font-medium hover:bg-amber-400 transition-colors"
                   >
-                    <Upload className="w-3.5 h-3.5" /> Selecionar PDF/PPSX
+                    <Upload className="w-3.5 h-3.5" /> Selecionar arquivo
                   </button>
                   <button onClick={onCancelUpload} className="text-xs text-slate-500 hover:text-slate-300">
                     <X className="w-4 h-4" />
@@ -327,7 +327,7 @@ function ContentCard({ module, docs, canEdit, uploading, isUploadOpen, uploadTit
                 onClick={onUploadClick}
                 className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-amber-400 transition-colors py-1"
               >
-                <Upload className="w-3.5 h-3.5" /> Anexar documento (.pdf, .ppsx)
+                <Upload className="w-3.5 h-3.5" /> Anexar documento (.pdf, .ppsx, .doc, .docx)
               </button>
             )}
           </div>
@@ -454,13 +454,13 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
                     className="w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500"
                   />
                   <div className="flex items-center gap-2">
-                    <input ref={fileInputRef} type="file" accept=".pdf,.ppsx,.pptx" onChange={onFileSelect} className="hidden" />
+                    <input ref={fileInputRef} type="file" accept=".pdf,.ppsx,.pptx,.doc,.docx" onChange={onFileSelect} className="hidden" />
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500 text-slate-900 text-xs font-medium hover:bg-amber-400 transition-colors"
                     >
-                      <Upload className="w-3.5 h-3.5" /> Selecionar PDF/PPSX
+                      <Upload className="w-3.5 h-3.5" /> Selecionar arquivo
                     </button>
                     <button onClick={onCancelUpload} className="text-xs text-slate-500 hover:text-slate-300">
                       <X className="w-4 h-4" />
@@ -472,7 +472,7 @@ function ChapterCard({ chapter, isOpen, onToggle, docs, canEdit, uploading, isUp
                   onClick={onUploadClick}
                   className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-amber-400 transition-colors py-1"
                 >
-                  <Upload className="w-3.5 h-3.5" /> Anexar documento (.pdf, .ppsx)
+                  <Upload className="w-3.5 h-3.5" /> Anexar documento (.pdf, .ppsx, .doc, .docx)
                 </button>
               )}
             </div>

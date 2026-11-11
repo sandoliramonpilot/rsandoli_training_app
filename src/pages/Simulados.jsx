@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { QUESTION_BANK, DIFFICULTY, SUBJECTS, SYSTEMS } from "@/lib/questionData";
+import AcademyUploadSection from "@/components/academy/AcademyUploadSection";
 import { Play, Timer, CheckCircle2, XCircle, History, BarChart3, RotateCcw, ChevronLeft, ChevronRight, Trophy } from "lucide-react";
 
 function shuffle(arr) {
@@ -250,6 +251,14 @@ export default function Simulados() {
           </div>
         </div>
       </div>
+
+      <AcademyUploadSection
+        discipline="simulados"
+        chapter="simulados"
+        moduleId="simulados"
+        title="Documentos de apoio"
+        hideNotice
+      />
     </div>
   );
 }
