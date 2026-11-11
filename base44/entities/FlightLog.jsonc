@@ -121,16 +121,9 @@
       "title": "IFR",
       "default": false
     },
-    "fuel_initial_kg_l": {
+    "fuel_uplift_liters": {
       "type": "number",
-      "title": "Inicial (Kg/L)"
-    },
-    "fuel_initial_unit": {
-      "type": "string",
-      "enum": ["kg", "l"],
-      "default": "l",
-      "title": "Unidade do combustível inicial"
-    }
+      "title": "Combust\u00edvel INICIAL (Kg/L)"
     },
     "notes": {
       "type": "string",
@@ -145,7 +138,20 @@
     "arrival_location"
   ],
   "rls": {
-    "create": null,
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
     "read": {
       "$or": [
         {
