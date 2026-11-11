@@ -39,6 +39,13 @@ export function profileQueryFilter(profile) {
   return { aircraftProfile: p };
 }
 
+/** Filtro de query que inclui documentos do perfil ativo E compartilhados ("shared"). */
+export function libraryProfileFilter(profile) {
+  const p = profile || getSelectedProfile();
+  if (!AIRCRAFT_PROFILES.includes(p)) return { aircraftProfile: { $in: [DEFAULT_PROFILE, "shared"] } };
+  return { aircraftProfile: { $in: [p, "shared"] } };
+}
+
 /** Rótulos amigáveis para exibição. */
 export const PROFILE_LABELS = {
   AW119: "AW119",

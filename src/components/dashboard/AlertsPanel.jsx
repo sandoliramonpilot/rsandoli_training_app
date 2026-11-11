@@ -7,6 +7,7 @@ import {
   HeartPulse, Award, FileText, CalendarClock, XCircle,
 } from "lucide-react";
 import { useProfile } from "@/lib/ProfileContext";
+import { libraryProfileFilter } from "@/lib/aircraftProfile";
 
 const HORIZON_DAYS = 90;
 
@@ -29,13 +30,13 @@ const THRESHOLDS = [
 ];
 
 export default function AlertsPanel() {
-  const { profileFilter } = useProfile();
+  const { profileFilter, profileValue } = useProfile();
   const [alerts, setAlerts] = useState(null);
 
   useEffect(() => {
     Promise.all([
       base44.entities.Pilot.filter(profileFilter).catch(() => []),
-      base44.entities.LibraryDocument.filter(profileFilter).catch(() => []),
+      base44.entities.LibraryDocument.filter(libraryProfileFilter(profileValue)).catch(() => []),
     ]).then(([pilots, docs]) => {
       const items = [];
 

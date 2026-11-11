@@ -1,8 +1,9 @@
 import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { LIBRARY_GROUPS, DOC_STATUS } from "@/lib/libraryData";
+import { LIBRARY_GROUPS, DOC_STATUS, isSharedCategory } from "@/lib/libraryData";
 import { Upload, Loader2, X } from "lucide-react";
 import { useProfile } from "@/lib/ProfileContext";
+import { libraryProfileFilter } from "@/lib/aircraftProfile";
 
 const inputCls = "w-full px-3 py-2 rounded-lg bg-[#12141A] border border-slate-700/60 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50";
 const MAX_SIZE = 25 * 1024 * 1024; // 25 MB
@@ -31,8 +32,8 @@ export default function UploadModal({ aircraft, onClose, onDone }) {
   const fileRef = useRef(null);
 
   const loadExisting = async () => {
-    const d = await base44.entities.LibraryDocument.filter(profileFilter, { sort: "-created_date", limit: 200 }).then(r => r.items).catch(() => []);
-    setExistingDocs(d);
+  const d = await base44.entities.LibraryDocument.filter(libraryProfileFilter(profileValue), { sort: "-created_date", limit: 200 }).then(r => r.items).catch(() => []);
+  setExistingDocs(d);
   };
   React.useEffect(() => { loadExisting(); }, []);
 
@@ -86,6 +87,9 @@ export default function UploadModal({ aircraft, onClose, onDone }) {
         approval_status: "pending_review",
       };
 
+      // Categorias de Legislação são compartilhadas entre todas as aeronaves.
+      payload.aircraftProfile = isSharedCategory(form.category) ? "shared" : (editing?.aircraftProfile || profileValue);
+
       if (editing) {
         // Controle de versões: preserva o histórico da versão anterior
         const prevVersions = editing.versions ? JSON.parse(editing.versions) : [];
@@ -101,7 +105,7 @@ export default function UploadModal({ aircraft, onClose, onDone }) {
         payload.review_justification = null;
         await base44.entities.LibraryDocument.update(editing.id, payload);
       } else {
-        await base44.entities.LibraryDocument.create({ ...payload, aircraftProfile: profileValue });
+        await base44.entities.LibraryDocument.create(payload);
       }
       onDone();
       onClose();

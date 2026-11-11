@@ -5,6 +5,7 @@ import { QRH_CATEGORIES } from "@/lib/qrhData";
 import AlertsPanel from "@/components/dashboard/AlertsPanel";
 import { Plane, BookOpen, Clock, TrendingUp, AlertTriangle, Plus, CheckCircle2, Wrench, Siren, Library, GraduationCap, ChevronRight, Award, ClipboardCheck, Users, HelpCircle, Gauge } from "lucide-react";
 import { useProfile } from "@/lib/ProfileContext";
+import { libraryProfileFilter } from "@/lib/aircraftProfile";
 
 function fmtHours(min) {
   if (!min) return "0h";
@@ -24,7 +25,7 @@ const PHASE_LABELS = {
 };
 
 export default function Dashboard() {
-  const { profileFilter } = useProfile();
+  const { profileFilter, profileValue } = useProfile();
   const [flights, setFlights] = useState(null);
   const [aircraft, setAircraft] = useState(null);
   const [checklists, setChecklists] = useState(null);
@@ -37,7 +38,7 @@ export default function Dashboard() {
     base44.entities.FlightLog.filter(profileFilter, { sort: "-date", limit: 200 }).then(r => r.items).catch(() => []),
     base44.entities.Aircraft.filter(profileFilter).catch(() => []),
     base44.entities.ChecklistRecord.filter(profileFilter, { sort: "-date", limit: 50 }).then(r => r.items).catch(() => []),
-    base44.entities.LibraryDocument.filter(profileFilter, { sort: "-created_date", limit: 5 }).then(r => r.items).catch(() => []),
+    base44.entities.LibraryDocument.filter(libraryProfileFilter(profileValue), { sort: "-created_date", limit: 5 }).then(r => r.items).catch(() => []),
     base44.entities.Pilot.filter(profileFilter).catch(() => [])]
     ).then(([f, a, c, d, p]) => {
       setFlights(f);setAircraft(a);setChecklists(c);setDocs(d);setPilots(p);

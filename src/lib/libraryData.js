@@ -60,6 +60,12 @@ export const CATEGORY_GROUP = Object.fromEntries(
 
 export const GROUP_LABELS = Object.fromEntries(LIBRARY_GROUPS.map((g) => [g.id, g.name]));
 
+// Categorias cujo conteúdo é compartilhado entre todas as aeronaves.
+// Hoje, todo o grupo "Legislação e Normas Aplicáveis" é compartilhado.
+export const SHARED_GROUP_ID = "legislacao_normas";
+export const SHARED_CATEGORY_IDS = LIBRARY_GROUPS.find((g) => g.id === SHARED_GROUP_ID)?.categories.map((c) => c.id) || [];
+export const isSharedCategory = (catId) => SHARED_CATEGORY_IDS.includes(catId);
+
 // Status dos documentos
 export const DOC_STATUS = [
   { id: "active", label: "Vigente" },

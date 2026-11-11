@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { LIBRARY_GROUPS, DOC_STATUS } from "@/lib/libraryData";
+import { LIBRARY_GROUPS, DOC_STATUS, isSharedCategory } from "@/lib/libraryData";
 import { Loader2, X, Link2, Download } from "lucide-react";
 import { useProfile } from "@/lib/ProfileContext";
 
@@ -57,7 +57,7 @@ export default function DownloadUrlModal({ aircraft, onClose, onDone }) {
       setPhase("Salvando na biblioteca…");
       const ac = aircraft.find((a) => a.id === form.aircraft_id);
       const payload = {
-        aircraftProfile: profileValue,
+        aircraftProfile: isSharedCategory(form.category) ? "shared" : profileValue,
         title: form.title,
         category: form.category,
         description: form.description || null,

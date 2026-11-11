@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { LIBRARY_CATEGORIES, LIBRARY_GROUPS, CATEGORY_GROUP, GROUP_LABELS, DOC_STATUS_LABELS } from "@/lib/libraryData";
+import { LIBRARY_CATEGORIES, LIBRARY_GROUPS, CATEGORY_GROUP, GROUP_LABELS, DOC_STATUS_LABELS, SHARED_CATEGORY_IDS } from "@/lib/libraryData";
+import { libraryProfileFilter } from "@/lib/aircraftProfile";
 import { Search, Upload, FileText, Star, Loader2, X, Download, BookOpen, Link2, Presentation } from "lucide-react";
 import UploadModal from "@/components/library/UploadModal";
 import PdfViewer from "@/components/library/PdfViewer";
@@ -24,7 +25,7 @@ const groupOf = (catId) => CATEGORY_GROUP[catId] || null;
 const isGroupId = (v) => GROUP_LABELS[v] != null;
 
 export default function Biblioteca() {
-  const { profileFilter } = useProfile();
+  const { profileFilter, profileValue } = useProfile();
   const [searchParams] = useSearchParams();
   const initialGroup = searchParams.get("grupo");
   const [docs, setDocs] = useState(null);
@@ -62,7 +63,7 @@ export default function Biblioteca() {
 
   const load = async () => {
     const [d, a] = await Promise.all([
-      base44.entities.LibraryDocument.filter(profileFilter, { sort: "-created_date", limit: 200 }).then(r => r.items).catch(() => []),
+      base44.entities.LibraryDocument.filter(libraryProfileFilter(profileValue), { sort: "-created_date", limit: 200 }).then(r => r.items).catch(() => []),
       base44.entities.Aircraft.filter(profileFilter).catch(() => []),
       base44.auth.me().catch(() => null),
     ]);
