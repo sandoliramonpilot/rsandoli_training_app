@@ -123,7 +123,7 @@
     },
     "fuel_uplift_liters": {
       "type": "number",
-      "title": "Combust\u00edvel abastecido (L)"
+      "title": "Combust\u00edvel INICIAL (Kg/L)"
     },
     "notes": {
       "type": "string",
