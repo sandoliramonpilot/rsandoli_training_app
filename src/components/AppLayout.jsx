@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video,   ShieldAlert, ShieldCheck, RotateCcw,   FileBarChart, CalendarDays, TrendingUp, Megaphone, HeartPulse, Scale } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Siren, GraduationCap, BookOpen, Library, Users, Search, X, Menu, Plane, HelpCircle, BarChart3, UserCog, UserCircle, LogOut, Crown, Monitor, Settings, ChevronDown, ChevronRight, Fuel, Droplets, Zap, Radio, Joystick, Gauge, FileText, Image, Video,   ShieldAlert, ShieldCheck, RotateCcw,   FileBarChart, CalendarDays, TrendingUp, Megaphone, HeartPulse, Scale, ListChecks } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import ProfileSwitcher from "@/components/ProfileSwitcher";
@@ -155,6 +155,7 @@ function SidebarContent({ location, onNavigate }) {
   const showGestao = can(user, "gestao", "visualizar");
   const showMarcos = canManageUsers(user);
   const showAprovacoesChecklist = getAccessLevel(user) === "admin_geral";
+  const showControleAprovacoes = getAccessLevel(user) === "admin_geral";
 
   return (
     <>
@@ -286,6 +287,21 @@ function SidebarContent({ location, onNavigate }) {
                 >
                   <ClipboardCheck style={{ width: 18, height: 18 }} />
                   Aprovações de Checklist
+                </Link>
+              )}
+              {showControleAprovacoes && (
+                <Link
+                  to="/controle-aprovacoes"
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                    isActive(location, "/controle-aprovacoes")
+                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/20"
+                      : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+                  )}
+                >
+                  <ListChecks style={{ width: 18, height: 18 }} />
+                  Controle de Aprovações
                 </Link>
               )}
               {showUsersMenu && (

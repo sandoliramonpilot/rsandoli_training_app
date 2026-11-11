@@ -1,0 +1,84 @@
+{
+  "name": "ApprovalDecision",
+  "type": "object",
+  "properties": {
+    "source_entity": {
+      "type": "string",
+      "title": "Entidade de origem"
+    },
+    "source_key": {
+      "type": "string",
+      "title": "Chave da fonte (snapshot)"
+    },
+    "source_record_id": {
+      "type": "string",
+      "title": "ID do registro de origem"
+    },
+    "record_title": {
+      "type": "string",
+      "title": "T\u00edtulo / identifica\u00e7\u00e3o (snapshot)"
+    },
+    "module_label": {
+      "type": "string",
+      "title": "M\u00f3dulo (snapshot)"
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "rejected",
+        "correction_requested",
+        "suspended",
+        "unsuspended"
+      ],
+      "title": "Decis\u00e3o"
+    },
+    "justification": {
+      "type": "string",
+      "title": "Justificativa"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "title": "ID do respons\u00e1vel"
+    },
+    "reviewed_by_name": {
+      "type": "string",
+      "title": "Nome do respons\u00e1vel"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Data e hora da decis\u00e3o"
+    },
+    "previous_status": {
+      "type": "string",
+      "title": "Status anterior"
+    },
+    "new_status": {
+      "type": "string",
+      "title": "Novo status aplicado"
+    }
+  },
+  "required": [
+    "source_entity",
+    "source_record_id",
+    "decision",
+    "reviewed_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "data.reviewed_by": {
+        "$in": [
+          "__rls_deny__"
+        ]
+      }
+    },
+    "update": false,
+    "delete": false
+  }
+}
