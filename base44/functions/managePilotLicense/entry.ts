@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
-import { isAdminUser, isActiveAccount } from "../../shared/accessSecurity.js";
+import { DENY_MESSAGE, getUserProfiles, hasProfileAccess, inProfileScope, isActiveAccount, isAdminUser } from "../../shared/accessSecurity.js";
 
 // Função backend autoritativa para PilotLicense. Toda criação/edição/exclusão/
 // conferência passa por aqui: o cliente nunca grava approval_status, campos de
@@ -72,8 +72,8 @@ export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    if (!(await isActiveAccount(base44, user))) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
+    if (!user) return Response.json({ error: DENY_MESSAGE }, { status: 401 });
+    if (!(await isActiveAccount(base44, user))) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
@@ -85,6 +85,9 @@ export default async function (req) {
     // levelOf só vale como camada adicional, depois de isAdmin confirmar o papel.
     const isAdmin = isAdminUser(user);
     const isGeral = isAdmin && levelOf(user) === "admin_geral";
+    // Perfis de aeronave autorizados para o chamador (null = admin_geral, sem restrição).
+    // Usado para restringir administradores aos perfis que gerenciam.
+    const userProfiles = await getUserProfiles(base44, user);
 
     const pilot = await getPilot(base44, body.pilot_id);
     const self = isSelfOf(user, pilot);
@@ -93,21 +96,32 @@ export default async function (req) {
     if (action === "list") {
       if (!pilot) return Response.json({ error: "Piloto não informado." }, { status: 400 });
       if (!self && !isAdmin) {
-        return Response.json({ error: "Acesso negado." }, { status: 403 });
+        return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       }
       const filter = { pilot_id: body.pilot_id };
-      if (body.aircraftProfile) filter.aircraftProfile = body.aircraftProfile;
+      if (body.aircraftProfile) {
+        if (!self && !hasProfileAccess(userProfiles, body.aircraftProfile)) {
+          return Response.json({ error: DENY_MESSAGE }, { status: 403 });
+        }
+        filter.aircraftProfile = body.aircraftProfile;
+      }
       const records = await base44.asServiceRole.entities.PilotLicense.filter(filter).catch(() => []);
-      return Response.json({ items: records || [] });
+      // Administrador não-geral só vê licenças dos perfis que gerencia.
+      const scoped = (records || []).filter((r) => self || inProfileScope(userProfiles, r));
+      return Response.json({ items: scoped });
     }
 
     // ---------- CREATE ----------
     if (action === "create") {
       if (!pilot) return Response.json({ error: "Piloto não informado." }, { status: 400 });
       if (!self && !isAdmin) {
-        return Response.json({ error: "Você não pode criar licenças para este piloto." }, { status: 403 });
+        return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       }
       const payload = pick(body.payload || {}, WRITABLE_FIELDS);
+      // Administrador só cria licenças para perfis de aeronave que gerencia.
+      if (!self && payload.aircraftProfile && !hasProfileAccess(userProfiles, payload.aircraftProfile)) {
+        return Response.json({ error: DENY_MESSAGE }, { status: 403 });
+      }
       payload.pilot_id = pilot.id;
       payload.pilot_name = pilot.full_name || null;
       payload.situation = sanitizeSituation(payload.situation, isAdmin);
@@ -127,7 +141,11 @@ export default async function (req) {
       const recPilot = await getPilot(base44, record.pilot_id);
       const recSelf = isSelfOf(user, recPilot) || self;
       if (!recSelf && !isAdmin) {
-        return Response.json({ error: "Você não pode editar esta licença." }, { status: 403 });
+        return Response.json({ error: DENY_MESSAGE }, { status: 403 });
+      }
+      // Administrador só edita licenças dos perfis que gerencia.
+      if (!recSelf && !inProfileScope(userProfiles, record)) {
+        return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       }
       // Piloto só edita rascunhos; editar reverte para "draft" e exige nova conferência
       // (igual ao approveTechnicalValidations). Administradores mantêm o estado atual.
@@ -137,6 +155,10 @@ export default async function (req) {
         }
       }
       const patch = pick(body.patch || {}, WRITABLE_FIELDS);
+      // Administrador não pode mover a licença para um perfil que não gerencia.
+      if (!recSelf && "aircraftProfile" in patch && !hasProfileAccess(userProfiles, patch.aircraftProfile)) {
+        return Response.json({ error: DENY_MESSAGE }, { status: 403 });
+      }
       if ("situation" in patch) patch.situation = sanitizeSituation(patch.situation, isAdmin);
       // Usuário comum nunca toca nos campos de revisão via esta ação.
       for (const f of REVIEW_FIELDS) delete patch[f];
@@ -158,7 +180,8 @@ export default async function (req) {
       if (!body.id) return Response.json({ error: "ID não informado." }, { status: 400 });
       const record = await base44.asServiceRole.entities.PilotLicense.get(body.id).catch((e) => (e.status === 404 ? null : Promise.reject(e)));
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
-      if (!isGeral) return Response.json({ error: "Somente o Administrador Geral pode excluir licenças." }, { status: 403 });
+      if (!isGeral) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
+      if (!inProfileScope(userProfiles, record)) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       await base44.asServiceRole.entities.PilotLicense.delete(body.id);
       const recPilot = await getPilot(base44, record.pilot_id);
       await logAudit(base44, user, recPilot, "Licença — exclusão", `Licença excluída: ${record.license_type_label || record.license_type || ""}`);
@@ -173,7 +196,10 @@ export default async function (req) {
       const recPilot = await getPilot(base44, record.pilot_id);
       const recSelf = isSelfOf(user, recPilot) || self;
       if (!recSelf && !isAdmin) {
-        return Response.json({ error: "Você não pode enviar esta licença." }, { status: 403 });
+        return Response.json({ error: DENY_MESSAGE }, { status: 403 });
+      }
+      if (!recSelf && !inProfileScope(userProfiles, record)) {
+        return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       }
       if (record.approval_status !== "draft") {
         return Response.json({ error: "Somente rascunhos podem ser enviados para conferência." }, { status: 400 });
@@ -191,9 +217,10 @@ export default async function (req) {
     // ---------- APPROVE ----------
     if (action === "approve") {
       if (!body.id) return Response.json({ error: "ID não informado." }, { status: 400 });
-      if (!isAdmin) return Response.json({ error: "Você não pode aprovar licenças." }, { status: 403 });
+      if (!isAdmin) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       const record = await base44.asServiceRole.entities.PilotLicense.get(body.id).catch((e) => (e.status === 404 ? null : Promise.reject(e)));
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
+      if (!inProfileScope(userProfiles, record)) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       if (record.approval_status !== "pending_review") {
         return Response.json({ error: "Registro não está aguardando conferência." }, { status: 400 });
       }
@@ -214,9 +241,10 @@ export default async function (req) {
     // ---------- REJECT ----------
     if (action === "reject") {
       if (!body.id) return Response.json({ error: "ID não informado." }, { status: 400 });
-      if (!isAdmin) return Response.json({ error: "Você não pode rejeitar licenças." }, { status: 403 });
+      if (!isAdmin) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       const record = await base44.asServiceRole.entities.PilotLicense.get(body.id).catch((e) => (e.status === 404 ? null : Promise.reject(e)));
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
+      if (!inProfileScope(userProfiles, record)) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       if (record.approval_status !== "pending_review") {
         return Response.json({ error: "Registro não está aguardando conferência." }, { status: 400 });
       }

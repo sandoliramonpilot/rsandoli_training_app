@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk";
-import { isAdminUser, isActiveAccount } from "../../shared/accessSecurity.js";
+import { DENY_MESSAGE, getUserProfiles, hasProfileAccess, isActiveAccount, isAdminUser } from "../../shared/accessSecurity.js";
 
 // Validacao tecnica das fases do checklist operacional H125 (B2/B3e).
 // O Administrador Geral aprova, reprova ou reabre a validacao por etapa completa.
@@ -19,13 +19,18 @@ async function logAudit(base44, actor, action, details) {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    if (!user) return Response.json({ error: DENY_MESSAGE }, { status: 401 });
     if (!(await isActiveAccount(base44, user))) {
-      return Response.json({ error: "Conta nao esta ativa." }, { status: 403 });
+      return Response.json({ error: DENY_MESSAGE }, { status: 403 });
     }
     if (!isAdminUser(user)) {
-      return Response.json({ error: "Apenas administradores podem gerenciar a validacao do checklist." }, { status: 403 });
+      return Response.json({ error: DENY_MESSAGE }, { status: 403 });
+    }
+    // Validação de perfil: o checklist operacional é exclusivo do H125.
+    const userProfiles = await getUserProfiles(base44, user);
+    if (!hasProfileAccess(userProfiles, "H125")) {
+      return Response.json({ error: DENY_MESSAGE }, { status: 403 });
     }
 
     const body = await req.json().catch(() => ({}));

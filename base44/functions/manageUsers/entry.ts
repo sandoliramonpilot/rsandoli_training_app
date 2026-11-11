@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.59";
-import { AUDITABLE_ACTIONS, canManageLevel, getCodeSecret, hashCode, isActiveAccount, isAdminUser, SENSITIVE_OPERATIONS, setAccountStatusRecord } from "../../shared/accessSecurity.js";
+import { AUDITABLE_ACTIONS, canManageLevel, DENY_MESSAGE, getCodeSecret, hashCode, isActiveAccount, isAdminUser, SENSITIVE_OPERATIONS, setAccountStatusRecord } from "../../shared/accessSecurity.js";
 const ACCOUNT_STATUSES = ["convite_pendente", "ativa", "bloqueada", "suspensa", "desativada"];
 const ACCESS_LEVELS = ["admin_geral", "administrador", "gestor_supervisor", "operacional", "consulta"];
 
@@ -94,15 +94,15 @@ async function verifyAccessCode(base44, user, code, operation) {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    if (!(await isActiveAccount(base44, user))) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
+    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    if (!user) return Response.json({ error: DENY_MESSAGE }, { status: 401 });
+    if (!(await isActiveAccount(base44, user))) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
     const actorLevel = levelOf(user);
     const canManage = isAdminUser(user);
-    if (!canManage) return Response.json({ error: "Forbidden" }, { status: 403 });
+    if (!canManage) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
 
         // ---------- LIST ----------
     if (action === "list") {

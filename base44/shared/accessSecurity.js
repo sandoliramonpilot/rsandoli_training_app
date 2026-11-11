@@ -180,3 +180,52 @@ export async function hashCode(code, userId, secret) {
   const signature = await crypto.subtle.sign("HMAC", key, textEncoder.encode(`${userId}:${code}`));
   return Array.from(new Uint8Array(signature)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
+
+// ============================================================
+// Autorização unificada de backend
+// Mensagem padrão de negação de acesso, aplicada em todas as
+// funções quando usuário, conta, nível ou perfil não autorizam.
+// ============================================================
+export const DENY_MESSAGE = "ACESSO NÃO AUTORIZADO AO USUÁRIO, CONTACTE O ADMINISTRADOR";
+
+// Perfis de aeronave válidos no app (mesmos valores do frontend).
+export const AIRCRAFT_PROFILE_VALUES = ["AW119", "H125"];
+
+// Extrai a lista de perfis de aeronave de um valor (string JSON ou array).
+export function parseProfiles(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  try {
+    const arr = JSON.parse(value);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+// Perfis autorizados para o usuário, lidos do backend (autoritativo).
+// Retorna null para admin_geral (sem restrição — vê todos os perfis)
+// ou um array de perfis que o usuário gerencia.
+export async function getUserProfiles(base44, user) {
+  if (levelOf(user) === "admin_geral") return null;
+  const self = await base44.asServiceRole.entities.User.get(user.id).catch(() => null);
+  return parseProfiles((self || user).aircraft_profiles);
+}
+
+// Verifica se o usuário tem acesso a um perfil de aeronave específico.
+// userProfiles === null significa admin_geral (acesso total).
+// "shared" é acessível por qualquer perfil.
+export function hasProfileAccess(userProfiles, requestedProfile) {
+  if (userProfiles === null) return true;
+  if (!requestedProfile) return true;
+  if (requestedProfile === "shared") return true;
+  return userProfiles.includes(requestedProfile);
+}
+
+// Verifica se o aircraftProfile de um registro está no escopo do usuário.
+export function inProfileScope(userProfiles, record) {
+  if (userProfiles === null) return true;
+  const recProfile = record?.aircraftProfile;
+  if (!recProfile || recProfile === "shared") return true;
+  return userProfiles.includes(recProfile);
+}

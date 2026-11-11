@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk";
-import { AUDITABLE_ACTIONS, generateNumericCode, getCodeSecret, hashCode, isActiveAccount, SENSITIVE_OPERATIONS } from "../../shared/accessSecurity.js";
+import { AUDITABLE_ACTIONS, DENY_MESSAGE, generateNumericCode, getCodeSecret, hashCode, isActiveAccount, SENSITIVE_OPERATIONS } from "../../shared/accessSecurity.js";
 
 const CODE_TTL_MINUTES = 5;
 const MAX_ATTEMPTS = 5;
@@ -40,8 +40,8 @@ async function invalidatePrevious(base44, userId, purpose, operation) {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    if (!user) return Response.json({ error: DENY_MESSAGE }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
@@ -54,7 +54,7 @@ export default async function (req) {
         return Response.json({ error: "Serviço de código indisponível. Contate o administrador." }, { status: 500 });
       }
       if (!(await isActiveAccount(base44, user))) {
-        return Response.json({ error: "Conta não está ativa." }, { status: 403 });
+        return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       }
       const operation = body.operation || null;
       if (purpose === "sensitive_op" && !SENSITIVE_OPERATIONS.includes(operation)) {
@@ -126,7 +126,7 @@ export default async function (req) {
         return Response.json({ error: "Código inválido. Verifique o código informado e tente novamente." }, { status: 400 });
       }
       if (!(await isActiveAccount(base44, user))) {
-        return Response.json({ error: "Conta não está ativa." }, { status: 403 });
+        return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       }
       const operation = body.operation || null;
       if (purpose === "sensitive_op" && !SENSITIVE_OPERATIONS.includes(operation)) {

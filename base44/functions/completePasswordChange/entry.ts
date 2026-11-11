@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.59";
-import { AUDITABLE_ACTIONS, isActiveAccount } from "../../shared/accessSecurity.js";
+import { AUDITABLE_ACTIONS, DENY_MESSAGE, isActiveAccount } from "../../shared/accessSecurity.js";
 
 // Realiza a troca de senha no backend e só então limpa o flag administrativo
 // `must_change_password`. Ao mover a troca para o servidor, garante que o flag
@@ -37,8 +37,8 @@ export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    if (!(await isActiveAccount(base44, user))) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
+    if (!user) return Response.json({ error: DENY_MESSAGE }, { status: 401 });
+    if (!(await isActiveAccount(base44, user))) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
 
     const body = await req.json().catch(() => ({}));
     const currentPassword = String(body.currentPassword || "");

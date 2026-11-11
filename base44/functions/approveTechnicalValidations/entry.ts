@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk";
-import { isAdminUser, isActiveAccount } from "../../shared/accessSecurity.js";
+import { DENY_MESSAGE, getUserProfiles, inProfileScope, isActiveAccount, isAdminUser } from "../../shared/accessSecurity.js";
 
 // Campos editáveis por entidade (para ação update_one)
 const EDITABLE_FIELDS = {
@@ -34,15 +34,18 @@ async function logAudit(base44, actor, action, details) {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    if (!(await isActiveAccount(base44, user))) return Response.json({ error: "Conta não está ativa." }, { status: 403 });
+    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    if (!user) return Response.json({ error: DENY_MESSAGE }, { status: 401 });
+    if (!(await isActiveAccount(base44, user))) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
 
     // Somente administradores de fato: o papel de plataforma (role) é exigido junto
     // com o nível, porque access_level é gravável pelo próprio usuário.
     if (!isAdminUser(user)) {
-      return Response.json({ error: "Apenas administradores podem gerenciar validações técnicas." }, { status: 403 });
+      return Response.json({ error: DENY_MESSAGE }, { status: 403 });
     }
+
+    // Perfis de aeronave autorizados para o chamador (null = admin_geral, sem restrição).
+    const userProfiles = await getUserProfiles(base44, user);
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
@@ -54,7 +57,7 @@ export default async function (req) {
           const records = await base44.asServiceRole.entities[te.entity]
             .filter({ approval_status: "pending_review" })
             .catch(() => []);
-          return records.map((r) => ({
+          return records.filter((r) => inProfileScope(userProfiles, r)).map((r) => ({
             id: r.id,
             entity_key: te.key,
             entity_label: te.typeLabel,
@@ -81,6 +84,7 @@ export default async function (req) {
       if (!body.id) return Response.json({ error: "ID não informado." }, { status: 400 });
       const record = await base44.asServiceRole.entities[te.entity].get(body.id).catch(() => null);
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
+      if (!inProfileScope(userProfiles, record)) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       if (record.approval_status !== "pending_review") {
         return Response.json({ error: "Registro não está aguardando conferência." }, { status: 400 });
       }
@@ -104,6 +108,7 @@ export default async function (req) {
       if (!body.id) return Response.json({ error: "ID não informado." }, { status: 400 });
       const record = await base44.asServiceRole.entities[te.entity].get(body.id).catch(() => null);
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
+      if (!inProfileScope(userProfiles, record)) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       return Response.json({ record, entity_key: te.key, entity_label: te.typeLabel });
     }
 
@@ -114,6 +119,7 @@ export default async function (req) {
       if (!body.id) return Response.json({ error: "ID não informado." }, { status: 400 });
       const record = await base44.asServiceRole.entities[te.entity].get(body.id).catch(() => null);
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
+      if (!inProfileScope(userProfiles, record)) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       if (record.approval_status !== "pending_review") {
         return Response.json({ error: "Registro não está aguardando conferência." }, { status: 400 });
       }
@@ -140,6 +146,7 @@ export default async function (req) {
       if (!body.id) return Response.json({ error: "ID não informado." }, { status: 400 });
       const record = await base44.asServiceRole.entities[te.entity].get(body.id).catch(() => null);
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
+      if (!inProfileScope(userProfiles, record)) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       await base44.asServiceRole.entities[te.entity].delete(body.id);
       await logAudit(base44, user, `Validação técnica — exclusão`, `${te.typeLabel}: ${record[te.labelField] || record[te.fallbackField] || ""} (Piloto: ${record.pilot_name || record.pilot_id || "—"}) — Motivo: ${body.reason || "Não informado"}`);
       return Response.json({ ok: true, message: "Registro excluído." });
@@ -155,6 +162,7 @@ export default async function (req) {
       }
       const record = await base44.asServiceRole.entities[te.entity].get(body.id).catch(() => null);
       if (!record) return Response.json({ error: "Registro não encontrado." }, { status: 404 });
+      if (!inProfileScope(userProfiles, record)) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
       if (record.approval_status !== "pending_review") {
         return Response.json({ error: "Registro não está aguardando conferência." }, { status: 400 });
       }
@@ -178,9 +186,9 @@ export default async function (req) {
       let totalApproved = 0;
       // Processa em lotes para não estourar o limite de conexões
       for (const te of TECH_ENTITIES) {
-        const records = await base44.asServiceRole.entities[te.entity]
+        const records = (await base44.asServiceRole.entities[te.entity]
           .filter({ approval_status: "pending_review" })
-          .catch(() => []);
+          .catch(() => [])).filter((r) => inProfileScope(userProfiles, r));
         counts[te.key] = 0;
         for (const record of records) {
           const log = JSON.parse(record.approval_log || "[]");

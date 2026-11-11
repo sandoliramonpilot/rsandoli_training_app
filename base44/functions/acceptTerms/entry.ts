@@ -1,12 +1,15 @@
 import { createClientFromRequest } from "npm:@base44/sdk";
+import { DENY_MESSAGE, isActiveAccount } from "../../shared/accessSecurity.js";
 
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
 
     // Exige usuário autenticado — o aceite dos termos é registrado após o login
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    if (!user) return Response.json({ error: DENY_MESSAGE }, { status: 401 });
+    // Conta inativa não pode aceitar termos.
+    if (!(await isActiveAccount(base44, user))) return Response.json({ error: DENY_MESSAGE }, { status: 403 });
 
     const body = await req.json().catch(() => ({}));
 
