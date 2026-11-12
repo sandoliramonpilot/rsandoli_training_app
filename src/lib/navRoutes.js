@@ -4,7 +4,7 @@ export const NAV_MODULE_ROUTES = [
   { label: "Diário de Bordo", path: "/flight-log", moduleId: "diario_bordo" },
   { label: "Aeronaves", path: "/aircraft", moduleId: "aeronaves" },
   { label: "Checklists", path: "/checklist", moduleId: "checklists" },
-  { id: "peso_balanceamento", label: "Peso e Balanceamento", path: "/peso-balanceamento", icon: "Scale" },
+  { label: "Peso e Balanceamento", path: "/peso-balanceamento", moduleId: "checklists" },
   { label: "QRH", path: "/qrh", moduleId: "qrh" },
   { label: "Pilotos", path: "/pilotos", moduleId: "pilotos" },
   { label: "Treinamento", path: "/treinamentos", moduleId: "treinamentos" },
