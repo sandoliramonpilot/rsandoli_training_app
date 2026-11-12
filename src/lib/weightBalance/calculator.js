@@ -19,13 +19,13 @@ export function interpolateFuelMoment(kg) {
   return 0;
 }
 
-export function calculateWeightBalance(config, inputs) {
+// Calcula um estado de carregamento (decolagem ou pouso)
+function computeState(config, inputs, fuelLiters) {
   const rows = [];
   let totalWeight = 0;
   let totalMoment = 0;
   let totalLateral = 0;
 
-  // Peso vazio equipado (vem do cadastro da aeronave)
   const eew = Number(inputs.emptyWeight) || 0;
   const eewCg = Number(inputs.emptyCg) || 0;
   if (eew > 0) {
@@ -50,11 +50,11 @@ export function calculateWeightBalance(config, inputs) {
     let moment;
 
     if (st.isFuel) {
-      // Entrada em litros; converte para kg pela densidade do manual
-      weight = raw * config.fuelDensity;
+      weight = fuelLiters * config.fuelDensity;
+      if (weight <= 0) continue;
       moment = interpolateFuelMoment(weight);
     } else {
-      if (st.arm == null) continue; // estação ainda sem braço configurado
+      if (st.arm == null) continue;
       moment = raw * st.arm;
     }
 
@@ -102,5 +102,35 @@ export function calculateWeightBalance(config, inputs) {
     cgOutRearward,
     cgOutLateral,
     ok: !overweight && !cgOutForward && !cgOutRearward && !cgOutLateral,
+  };
+}
+
+export function calculateWeightBalance(config, inputs) {
+  const fuelInitial = Number(inputs.fuel) || 0;
+  const fuelBurned = Number(inputs.fuelBurned) || 0;
+  const fuelLanding = Math.max(0, fuelInitial - fuelBurned);
+
+  const takeoff = computeState(config, inputs, fuelInitial);
+  const landing = computeState(config, inputs, fuelLanding);
+
+  // Compara os dois estados para detectar deslocamento de CG
+  const cgShift = landing.cgLong - takeoff.cgLong;
+  const weightLoss = takeoff.totalWeight - landing.totalWeight;
+
+  // Alerta se algum dos dois estados sair do envelope
+  const anyOutOfLimits = !takeoff.ok || !landing.ok;
+
+  return {
+    takeoff,
+    landing,
+    fuelInitial,
+    fuelBurned,
+    fuelLanding,
+    cgShift,
+    weightLoss,
+    anyOutOfLimits,
+    // Compatibilidade com o código anterior (usa decolagem como principal)
+    ...takeoff,
+    ok: !anyOutOfLimits,
   };
 }
