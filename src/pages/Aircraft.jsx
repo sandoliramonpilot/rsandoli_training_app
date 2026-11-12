@@ -215,7 +215,30 @@ export default function Aircraft() {
                     </div>
                   </div>
                 )}
+                
+                </div>
 
+                {/* Peso e balanceamento */}
+                {(a.empty_weight_kg != null || a.empty_cg_m != null) && (
+                  <div className="mt-3 pt-3 border-t border-slate-100">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Scale className="w-3.5 h-3.5 text-sky-600" />
+                      <p className="text-[11px] font-semibold text-slate-600">Peso e Balanceamento</p>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-slate-500">
+                      {a.empty_weight_kg != null && (
+                        <span>Peso vazio: <strong className="text-slate-700">{a.empty_weight_kg} kg</strong></span>
+                      )}
+                      {a.empty_cg_m != null && (
+                        <span>CG vazio: <strong className="text-slate-700">{a.empty_cg_m} m</strong></span>
+                      )}
+                      {a.empty_weight_date && (
+                        <span>Pesagem: {new Date(a.empty_weight_date).toLocaleDateString("pt-BR")}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+               
                 {a.notes && <p className="mt-3 text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">{a.notes}</p>}
               </div>
             );
@@ -325,7 +348,7 @@ function AircraftForm({ form, editing, saving, onField, onClose, onSave }) {
           </div>
 
           <Field label="Observações">
-            <textarea value={form.notes} onChange={(e) => onField("notes", e.target.value)} rows={3} className={inputCls} placeholder="Notas sobre a aeronave" />
+          <textarea value={form.notes} onChange={(e) => onField("notes", e.target.value)} rows={3} className={inputCls} placeholder="Notas sobre a aeronave" />
           </Field>
 
           <div className="flex justify-end gap-3 pt-2">
