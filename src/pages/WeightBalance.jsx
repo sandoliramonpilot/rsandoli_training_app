@@ -217,7 +217,16 @@ export default function WeightBalance() {
           </button>
         </div>
       </header>
+      import { Download } from "lucide-react";
 
+      <button
+        onClick={() => exportPdf({ config, result, aircraft: selectedAircraft, inputs })}
+        disabled={result.totalWeight <= 0}
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 disabled:opacity-40"
+      >
+        <Download className="w-4 h-4" /> Exportar PDF
+      </button>
+      
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Coluna esquerda: entradas */}
         <div className="lg:col-span-2 space-y-5">
