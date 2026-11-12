@@ -41,6 +41,7 @@ import ControleAprovacoes from '@/pages/admin/ControleAprovacoes';
 import MatrizPermissoes from '@/pages/admin/MatrizPermissoes';
 import Oat from '@/pages/Oat';
 import RequireModule from '@/components/RequireModule';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
