@@ -48,8 +48,9 @@ export default function FinalizeModal({ aircraftReg, user, pendingItems, onClose
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="sticky top-0 bg-[#1A1D25] px-6 py-4 border-b border-slate-700/60 flex items-center justify-between">
-        <h2 className="font-semibold text-white text-lg">Finalizar checklist</h2>
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card text-card-foreground border border-border shadow-2xl">
+        <div className="sticky top-0 bg-[#1A1D25] px-6 py-4 border-b border-slate-700/60 flex items-center justify-between">
+          <h2 className="font-semibold text-white text-lg">Finalizar checklist</h2>
           <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-200"><X className="w-5 h-5" /></button>
         </div>
 
