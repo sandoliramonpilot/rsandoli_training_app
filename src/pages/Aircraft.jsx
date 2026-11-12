@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
 import BackToDashboard from "@/components/BackToDashboard";
-import { Plus, X, Plane, Trash2, Edit3, Wrench, CheckCircle2, AlertTriangle, Hourglass, XCircle } from "lucide-react";
+import { Plus, X, Plane, Trash2, Edit3, Wrench, CheckCircle2, AlertTriangle, Hourglass, XCircle, Scale } from "lucide-react";
 import { useProfile } from "@/lib/ProfileContext";
 
 const STATUS = {
@@ -30,6 +30,9 @@ const emptyForm = {
   color: "",
   status: "available",
   notes: "",
+  empty_weight_kg: "",
+  empty_cg_m: "",
+  empty_weight_date: "",
 };
 
 export default function Aircraft() {
@@ -40,13 +43,16 @@ export default function Aircraft() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+
   const canEdit = can(user, "aeronaves", "editar");
   const canCreate = can(user, "aeronaves", "criar");
 
   const load = async () => setAircraft(await base44.entities.Aircraft.filter(profileFilter).catch(() => []));
+
   useEffect(() => { load(); }, [profileFilter]);
 
   const openNew = () => { setEditing(null); setForm(emptyForm); setShowForm(true); };
+
   const openEdit = (a) => {
     setEditing(a);
     setForm({
@@ -189,6 +195,27 @@ export default function Aircraft() {
                   </div>
                 </div>
 
+                {/* Peso e balanceamento */}
+                {(a.empty_weight_kg != null || a.empty_cg_m != null) && (
+                  <div className="mt-3 pt-3 border-t border-slate-100">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Scale className="w-3.5 h-3.5 text-sky-600" />
+                      <p className="text-[11px] font-semibold text-slate-600">Peso e Balanceamento</p>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-slate-500">
+                      {a.empty_weight_kg != null && (
+                        <span>Peso vazio: <strong className="text-slate-700">{a.empty_weight_kg} kg</strong></span>
+                      )}
+                      {a.empty_cg_m != null && (
+                        <span>CG vazio: <strong className="text-slate-700">{a.empty_cg_m} m</strong></span>
+                      )}
+                      {a.empty_weight_date && (
+                        <span>Pesagem: {new Date(a.empty_weight_date).toLocaleDateString("pt-BR")}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {a.notes && <p className="mt-3 text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">{a.notes}</p>}
               </div>
             );
@@ -213,6 +240,7 @@ function AircraftForm({ form, editing, saving, onField, onClose, onSave }) {
             <X className="w-5 h-5" />
           </button>
         </div>
+
         <form onSubmit={onSave} className="px-6 py-5 space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Matrícula *">
@@ -252,9 +280,54 @@ function AircraftForm({ form, editing, saving, onField, onClose, onSave }) {
               </select>
             </Field>
           </div>
+
+          {/* ===== PESO E BALANCEAMENTO ===== */}
+          <div className="p-4 rounded-lg bg-sky-50 border border-sky-200 space-y-3">
+            <div className="flex items-center gap-1.5">
+              <Scale className="w-4 h-4 text-sky-700" />
+              <p className="text-xs font-semibold text-sky-900">Peso e Balanceamento</p>
+            </div>
+            <p className="text-[11px] text-slate-600">
+              Valores da ficha de pesagem da aeronave. Carregados automaticamente no cálculo de Peso e Balanceamento.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Peso vazio equipado (kg)">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={form.empty_weight_kg}
+                  onChange={(e) => onField("empty_weight_kg", e.target.value)}
+                  className={inputCls}
+                  placeholder="Ex.: 1200"
+                />
+              </Field>
+              <Field label="CG vazio (m)">
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  value={form.empty_cg_m}
+                  onChange={(e) => onField("empty_cg_m", e.target.value)}
+                  className={inputCls}
+                  placeholder="Ex.: 3.560"
+                />
+              </Field>
+            </div>
+            <Field label="Data da pesagem">
+              <input
+                type="date"
+                value={form.empty_weight_date}
+                onChange={(e) => onField("empty_weight_date", e.target.value)}
+                className={inputCls}
+              />
+            </Field>
+          </div>
+
           <Field label="Observações">
             <textarea value={form.notes} onChange={(e) => onField("notes", e.target.value)} rows={3} className={inputCls} placeholder="Notas sobre a aeronave" />
           </Field>
+
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">Cancelar</button>
             <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition-colors">
