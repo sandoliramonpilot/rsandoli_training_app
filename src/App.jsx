@@ -54,6 +54,7 @@ import Contato from '@/pages/Contato';
 import Privacidade from '@/pages/Privacidade';
 import Termos from '@/pages/Termos';
 import Configuracoes from '@/pages/Configuracoes';
+import WeightBalance from '@/pages/WeightBalance';
 import UpdatePrompt from '@/components/UpdatePrompt';
 
 const PUBLIC_TRUST_PATHS = ["/sobre", "/contato", "/privacidade", "/termos"];

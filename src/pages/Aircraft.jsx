@@ -32,55 +32,6 @@ const emptyForm = {
   notes: "",
 };
 
-{/* ===== PESO E BALANCEAMENTO ===== */}
-<div className="grid sm:grid-cols-3 gap-4 p-4 rounded-lg bg-slate-50 border border-slate-200">
-  <div className="sm:col-span-3">
-    <p className="text-xs font-semibold text-slate-700">Peso e Balanceamento</p>
-    <p className="text-[11px] text-slate-500 mt-0.5">
-      Valores da ficha de pesagem. Carregados automaticamente no cálculo de Peso e Balanceamento.
-    </p>
-  </div>
-  <label className="block">
-    <span className="block text-xs font-medium text-slate-600 mb-1.5">
-      Peso vazio equipado (kg)
-    </span>
-    <input
-      type="number"
-      step="0.1"
-      min="0"
-      value={form.empty_weight_kg ?? ""}
-      onChange={(e) => set("empty_weight_kg", e.target.value)}
-      className={inputCls}
-      placeholder="Ex.: 1200"
-    />
-  </label>
-  <label className="block">
-    <span className="block text-xs font-medium text-slate-600 mb-1.5">
-      CG vazio (m)
-    </span>
-    <input
-      type="number"
-      step="0.001"
-      min="0"
-      value={form.empty_cg_m ?? ""}
-      onChange={(e) => set("empty_cg_m", e.target.value)}
-      className={inputCls}
-      placeholder="Ex.: 3.560"
-    />
-  </label>
-  <label className="block">
-    <span className="block text-xs font-medium text-slate-600 mb-1.5">
-      Data da pesagem
-    </span>
-    <input
-      type="date"
-      value={form.empty_weight_date ?? ""}
-      onChange={(e) => set("empty_weight_date", e.target.value)}
-      className={inputCls}
-    />
-  </label>
-</div>
-
 export default function Aircraft() {
   const { user } = useAuth();
   const { profileFilter, profileValue } = useProfile();
@@ -110,9 +61,9 @@ export default function Aircraft() {
       color: a.color || "",
       status: a.status || "available",
       notes: a.notes || "",
-      empty_weight_kg: f.empty_weight_kg ?? "",
-      empty_cg_m: f.empty_cg_m ?? "",
-      empty_weight_date: f.empty_weight_date ?? "",
+      empty_weight_kg: a.empty_weight_kg ?? "",
+      empty_cg_m: a.empty_cg_m ?? "",
+      empty_weight_date: a.empty_weight_date ?? "",
     });
     setShowForm(true);
   };

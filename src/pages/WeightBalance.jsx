@@ -7,7 +7,7 @@ import { can } from "@/lib/accessControl";
 import BackToDashboard from "@/components/BackToDashboard";
 import { getWeightBalanceConfig } from "@/lib/weightBalance";
 import { calculateWeightBalance } from "@/lib/weightBalance/calculator";
-import { Loader2, Scale, Plane, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
+import { Loader2, Scale, Plane, AlertTriangle, CheckCircle2, RotateCcw, Download } from "lucide-react";
 import jsPDF from "jspdf";
 
 async function exportPdf({ config, result, aircraft, inputs }) {
@@ -217,7 +217,6 @@ export default function WeightBalance() {
           </button>
         </div>
       </header>
-      import { Download } from "lucide-react";
 
       <button
         onClick={() => exportPdf({ config, result, aircraft: selectedAircraft, inputs })}
