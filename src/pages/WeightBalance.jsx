@@ -7,12 +7,19 @@ import { can } from "@/lib/accessControl";
 import BackToDashboard from "@/components/BackToDashboard";
 import { getWeightBalanceConfig } from "@/lib/weightBalance";
 import { calculateWeightBalance } from "@/lib/weightBalance/calculator";
-import { Loader2, Scale, Plane, AlertTriangle, CheckCircle2, RotateCcw, Download } from "lucide-react";
+import {
+  Loader2, Scale, Plane, AlertTriangle, CheckCircle2, RotateCcw, Download, Fuel,
+} from "lucide-react";
 import jsPDF from "jspdf";
 
+const inputCls =
+  "w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500";
+
+/* ---------------------- EXPORTAÇÃO PDF ---------------------- */
 async function exportPdf({ config, result, aircraft, inputs }) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   let y = 18;
 
   // Cabeçalho
@@ -26,29 +33,20 @@ async function exportPdf({ config, result, aircraft, inputs }) {
   doc.setTextColor(100);
   doc.text(`${config.label} · Datum: ${config.datum}`, 14, y);
   y += 5;
-  doc.text(
-    `Aeronave: ${aircraft?.registration || "—"} — ${aircraft?.model || "—"}`,
-    14,
-    y
-  );
+  doc.text(`Aeronave: ${aircraft?.registration || "—"} — ${aircraft?.model || "—"}`, 14, y);
   y += 5;
-  doc.text(
-    `Emitido em: ${new Date().toLocaleString("pt-BR")}`,
-    14,
-    y
-  );
+  doc.text(`Emitido em: ${new Date().toLocaleString("pt-BR")}`, 14, y);
   y += 8;
 
-  // Linha separadora
   doc.setDrawColor(200);
   doc.line(14, y, pageW - 14, y);
   y += 6;
 
-  // Tabela de carregamento
+  // Memória de cálculo (decolagem)
   doc.setTextColor(30);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("Memória de cálculo", 14, y);
+  doc.text("Memória de cálculo — decolagem", 14, y);
   y += 6;
 
   const colX = { item: 14, weight: 105, arm: 135, moment: 165 };
@@ -63,7 +61,7 @@ async function exportPdf({ config, result, aircraft, inputs }) {
   y += 4;
 
   doc.setFont("helvetica", "normal");
-  for (const r of result.rows) {
+  for (const r of result.takeoff.rows) {
     if (y > 265) {
       doc.addPage();
       y = 18;
@@ -80,45 +78,79 @@ async function exportPdf({ config, result, aircraft, inputs }) {
   y += 5;
   doc.setFont("helvetica", "bold");
   doc.text("Total", colX.item, y);
-  doc.text(result.totalWeight.toFixed(1), colX.weight, y, { align: "right" });
+  doc.text(result.takeoff.totalWeight.toFixed(1), colX.weight, y, { align: "right" });
   doc.text("—", colX.arm, y, { align: "right" });
-  doc.text(result.totalMoment.toFixed(1), colX.moment, y, { align: "right" });
+  doc.text(result.takeoff.totalMoment.toFixed(1), colX.moment, y, { align: "right" });
   y += 10;
 
-  // Resultado
+  // Resultado decolagem
   doc.setFontSize(10);
-  doc.text("Resultado", 14, y);
+  doc.text("Resultado na decolagem", 14, y);
   y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
 
-  const lines = [
-    `Peso total: ${result.totalWeight.toFixed(1)} kg (limite ${result.maxAllowed} kg)`,
-    `CG longitudinal: ${result.cgLong.toFixed(3)} m (faixa ${result.limits.forward.toFixed(2)} – ${result.limits.rearward.toFixed(2)} m)`,
-    `CG lateral: ${result.cgLat.toFixed(3)} m (faixa ${config.cgLimits.lateral.left.toFixed(2)} – ${config.cgLimits.lateral.right.toFixed(2)} m)`,
-    `Situação: ${result.ok ? "DENTRO DOS LIMITES" : "FORA DOS LIMITES"}`,
+  const takeoffLines = [
+    `Peso total: ${result.takeoff.totalWeight.toFixed(1)} kg (limite ${result.takeoff.maxAllowed} kg)`,
+    `CG longitudinal: ${result.takeoff.cgLong.toFixed(3)} m (faixa ${result.takeoff.limits.forward.toFixed(2)} – ${result.takeoff.limits.rearward.toFixed(2)} m)`,
+    `CG lateral: ${result.takeoff.cgLat.toFixed(3)} m (faixa ${config.cgLimits.lateral.left.toFixed(2)} – ${config.cgLimits.lateral.right.toFixed(2)} m)`,
+    `Situação: ${result.takeoff.ok ? "DENTRO DOS LIMITES" : "FORA DOS LIMITES"}`,
   ];
-  for (const l of lines) {
+  for (const l of takeoffLines) {
     doc.text(l, 14, y);
     y += 5;
   }
 
-  // Alertas
-  if (!result.ok) {
-    y += 3;
+  // Estado no pouso
+  if (result.fuelBurned > 0) {
+    y += 6;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Estado no pouso", 14, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+
+    const landingLines = [
+      `Combustível consumido: ${result.fuelBurned.toFixed(1)} L`,
+      `Combustível restante: ${result.fuelLanding.toFixed(1)} L`,
+      `Peso no pouso: ${result.landing.totalWeight.toFixed(1)} kg`,
+      `CG longitudinal no pouso: ${result.landing.cgLong.toFixed(3)} m`,
+      `Deslocamento do CG: ${result.cgShift >= 0 ? "+" : ""}${result.cgShift.toFixed(3)} m`,
+      `Situação no pouso: ${result.landing.ok ? "DENTRO DOS LIMITES" : "FORA DOS LIMITES"}`,
+    ];
+    for (const l of landingLines) {
+      doc.text(l, 14, y);
+      y += 5;
+    }
+  }
+
+  // Não conformidades
+  if (result.anyOutOfLimits) {
+    y += 4;
     doc.setTextColor(180, 30, 30);
     doc.setFont("helvetica", "bold");
     doc.text("Não conformidades:", 14, y);
     y += 5;
     doc.setFont("helvetica", "normal");
-    if (result.overweight) { doc.text("- Peso acima do máximo permitido", 14, y); y += 4; }
-    if (result.cgOutForward) { doc.text("- CG à frente do limite dianteiro", 14, y); y += 4; }
-    if (result.cgOutRearward) { doc.text("- CG atrás do limite traseiro", 14, y); y += 4; }
-    if (result.cgOutLateral) { doc.text("- CG lateral fora do envelope", 14, y); y += 4; }
+
+    const addLine = (txt) => {
+      if (y > 270) { doc.addPage(); y = 18; }
+      doc.text(txt, 14, y);
+      y += 4;
+    };
+
+    if (result.takeoff.overweight) addLine("- Decolagem: peso acima do máximo permitido");
+    if (result.takeoff.cgOutForward) addLine("- Decolagem: CG à frente do limite dianteiro");
+    if (result.takeoff.cgOutRearward) addLine("- Decolagem: CG atrás do limite traseiro");
+    if (result.takeoff.cgOutLateral) addLine("- Decolagem: CG lateral fora do envelope");
+    if (result.landing.overweight) addLine("- Pouso: peso acima do máximo permitido");
+    if (result.landing.cgOutForward) addLine("- Pouso: CG à frente do limite dianteiro");
+    if (result.landing.cgOutRearward) addLine("- Pouso: CG atrás do limite traseiro");
+    if (result.landing.cgOutLateral) addLine("- Pouso: CG lateral fora do envelope");
   }
 
   // Rodapé
-  const pageH = doc.internal.pageSize.getHeight();
   doc.setTextColor(120);
   doc.setFontSize(7);
   doc.text(
@@ -133,9 +165,7 @@ async function exportPdf({ config, result, aircraft, inputs }) {
   doc.save(filename);
 }
 
-const inputCls =
-  "w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500";
-
+/* ---------------------- PÁGINA ---------------------- */
 export default function WeightBalance() {
   const { user } = useAuth();
   const { profileFilter, profileValue } = useProfile();
@@ -144,11 +174,7 @@ export default function WeightBalance() {
   const [loading, setLoading] = useState(true);
   const [inputs, setInputs] = useState({});
 
-  const config = useMemo(
-    () => getWeightBalanceConfig(profileValue),
-    [profileValue]
-  );
-
+  const config = useMemo(() => getWeightBalanceConfig(profileValue), [profileValue]);
   const canEdit = can(user, "peso_balanceamento", "criar");
 
   useEffect(() => {
@@ -163,7 +189,6 @@ export default function WeightBalance() {
 
   const selectedAircraft = aircraft.find((a) => a.id === selectedId) || null;
 
-  // Carrega peso vazio e CG vazio do cadastro da aeronave
   useEffect(() => {
     if (!selectedAircraft) return;
     setInputs((prev) => ({
@@ -173,10 +198,7 @@ export default function WeightBalance() {
     }));
   }, [selectedAircraft]);
 
-  const result = useMemo(
-    () => calculateWeightBalance(config, inputs),
-    [config, inputs]
-  );
+  const result = useMemo(() => calculateWeightBalance(config, inputs), [config, inputs]);
 
   const setField = (k, v) => setInputs((prev) => ({ ...prev, [k]: v }));
 
@@ -215,17 +237,16 @@ export default function WeightBalance() {
           >
             <RotateCcw className="w-4 h-4" /> Limpar
           </button>
+          <button
+            onClick={() => exportPdf({ config, result, aircraft: selectedAircraft, inputs })}
+            disabled={result.takeoff.totalWeight <= 0}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 disabled:opacity-40"
+          >
+            <Download className="w-4 h-4" /> Exportar PDF
+          </button>
         </div>
       </header>
 
-      <button
-        onClick={() => exportPdf({ config, result, aircraft: selectedAircraft, inputs })}
-        disabled={result.totalWeight <= 0}
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 disabled:opacity-40"
-      >
-        <Download className="w-4 h-4" /> Exportar PDF
-      </button>
-      
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Coluna esquerda: entradas */}
         <div className="lg:col-span-2 space-y-5">
@@ -265,9 +286,7 @@ export default function WeightBalance() {
                 />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-slate-600 mb-1.5">
-                  CG vazio (m)
-                </span>
+                <span className="block text-xs font-medium text-slate-600 mb-1.5">CG vazio (m)</span>
                 <input
                   type="number"
                   step="0.001"
@@ -311,83 +330,118 @@ export default function WeightBalance() {
                     disabled={st.arm == null && !st.isFuel}
                   />
                   {st.arm == null && !st.isFuel && (
-                    <span className="text-[10px] text-amber-600">
-                      Braço pendente no RFM
-                    </span>
+                    <span className="text-[10px] text-amber-600">Braço pendente no RFM</span>
                   )}
                 </label>
               ))}
             </div>
+          </section>
+
+          {/* Consumo da missão — gera o cálculo de pouso */}
+          <section className="bg-sky-50 rounded-2xl border border-sky-200 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Fuel className="w-4 h-4 text-sky-700" />
+              <h2 className="text-sm font-semibold text-sky-900">Consumo da missão</h2>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <label className="block">
+                <span className="block text-xs font-medium text-slate-600 mb-1.5">
+                  Combustível consumido (L)
+                </span>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max={inputs.fuel || undefined}
+                  value={inputs.fuelBurned ?? ""}
+                  onChange={(e) => setField("fuelBurned", e.target.value)}
+                  className={inputCls}
+                  placeholder="0"
+                />
+              </label>
+              <div className="flex items-end">
+                <p className="text-[11px] text-slate-600">
+                  Combustível no pouso:{" "}
+                  <strong className="text-slate-900">{result.fuelLanding.toFixed(1)} L</strong>
+                </p>
+              </div>
+            </div>
+            {Number(inputs.fuelBurned) > Number(inputs.fuel) && Number(inputs.fuel) > 0 && (
+              <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2 py-1.5">
+                O consumo não pode ser maior que o combustível inicial.
+              </p>
+            )}
           </section>
         </div>
 
         {/* Coluna direita: resultado */}
         <div className="space-y-5">
           <section
-            className={`rounded-2xl border p-5 shadow-sm ${
-              result.ok
-                ? "bg-emerald-50 border-emerald-200"
-                : "bg-rose-50 border-rose-200"
+            className={`rounded-2xl border p-4 shadow-sm ${
+              result.anyOutOfLimits
+                ? "bg-rose-50 border-rose-200"
+                : "bg-emerald-50 border-emerald-200"
             }`}
           >
-            <div className="flex items-center gap-2 mb-3">
-              {result.ok ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              ) : (
+            <div className="flex items-center gap-2">
+              {result.anyOutOfLimits ? (
                 <AlertTriangle className="w-5 h-5 text-rose-600" />
+              ) : (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
               )}
               <h2
                 className={`text-sm font-semibold ${
-                  result.ok ? "text-emerald-800" : "text-rose-800"
+                  result.anyOutOfLimits ? "text-rose-800" : "text-emerald-800"
                 }`}
               >
-                {result.ok ? "Dentro dos limites" : "Fora dos limites"}
+                {result.anyOutOfLimits
+                  ? "Fora dos limites em algum momento"
+                  : "Dentro dos limites na decolagem e no pouso"}
               </h2>
             </div>
-
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-slate-600">Peso total</dt>
-                <dd className={`font-semibold ${result.overweight ? "text-rose-700" : "text-slate-900"}`}>
-                  {result.totalWeight.toFixed(1)} kg
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-600">Limite</dt>
-                <dd className="text-slate-700">{result.maxAllowed} kg</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-600">CG longitudinal</dt>
-                <dd className={`font-semibold ${result.cgOutForward || result.cgOutRearward ? "text-rose-700" : "text-slate-900"}`}>
-                  {result.cgLong.toFixed(3)} m
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-600">Faixa permitida</dt>
-                <dd className="text-slate-700">
-                  {result.limits.forward.toFixed(2)} – {result.limits.rearward.toFixed(2)} m
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-600">CG lateral</dt>
-                <dd className={`font-semibold ${result.cgOutLateral ? "text-rose-700" : "text-slate-900"}`}>
-                  {result.cgLat.toFixed(3)} m
-                </dd>
-              </div>
-            </dl>
-
-            {!result.ok && (
-              <ul className="mt-3 pt-3 border-t border-rose-200 space-y-1 text-xs text-rose-700">
-                {result.overweight && <li>Peso acima do máximo permitido.</li>}
-                {result.cgOutForward && <li>CG à frente do limite dianteiro.</li>}
-                {result.cgOutRearward && <li>CG atrás do limite traseiro.</li>}
-                {result.cgOutLateral && <li>CG lateral fora do envelope.</li>}
-              </ul>
-            )}
           </section>
 
+          <StateCard title="Decolagem" state={result.takeoff} config={config} tone="sky" />
+          <StateCard title="Pouso" state={result.landing} config={config} tone="violet" />
+
+          {result.fuelBurned > 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-semibold text-slate-700 mb-2">
+                Deslocamento de CG pela queima
+              </p>
+              <dl className="space-y-1.5 text-xs">
+                <div className="flex justify-between">
+                  <dt className="text-slate-600">Combustível consumido</dt>
+                  <dd className="text-slate-900">{result.fuelBurned.toFixed(1)} L</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-slate-600">Peso perdido</dt>
+                  <dd className="text-slate-900">{result.weightLoss.toFixed(1)} kg</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-slate-600">Deslocamento do CG</dt>
+                  <dd
+                    className={`font-semibold ${
+                      Math.abs(result.cgShift) > 0.05 ? "text-amber-700" : "text-slate-900"
+                    }`}
+                  >
+                    {result.cgShift >= 0 ? "+" : ""}
+                    {result.cgShift.toFixed(3)} m
+                  </dd>
+                </div>
+              </dl>
+              {Math.abs(result.cgShift) > 0.05 && (
+                <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 mt-2">
+                  O CG se desloca mais de 5 cm durante a missão. Confirme o envelope no pouso.
+                </p>
+              )}
+            </div>
+          )}
+
           <section className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
-            <h2 className="text-sm font-semibold text-slate-900 mb-3">Memória de cálculo</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-3">
+              Memória de cálculo — decolagem
+            </h2>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
@@ -399,7 +453,7 @@ export default function WeightBalance() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {result.rows.map((r) => (
+                  {result.takeoff.rows.map((r) => (
                     <tr key={r.id}>
                       <td className="py-1.5 pr-2 text-slate-700">{r.label}</td>
                       <td className="py-1.5 px-2 text-right text-slate-600">{r.weight.toFixed(1)}</td>
@@ -409,26 +463,93 @@ export default function WeightBalance() {
                   ))}
                   <tr className="font-semibold text-slate-900 border-t-2 border-slate-300">
                     <td className="py-2 pr-2">Total</td>
-                    <td className="py-2 px-2 text-right">{result.totalWeight.toFixed(1)}</td>
+                    <td className="py-2 px-2 text-right">{result.takeoff.totalWeight.toFixed(1)}</td>
                     <td className="py-2 px-2 text-right">—</td>
-                    <td className="py-2 pl-2 text-right">{result.totalMoment.toFixed(1)}</td>
+                    <td className="py-2 pl-2 text-right">{result.takeoff.totalMoment.toFixed(1)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p className="text-[11px] text-slate-500 mt-3">
-              CG = Σ momentos ÷ Σ pesos = {result.totalMoment.toFixed(1)} ÷{" "}
-              {result.totalWeight.toFixed(1)} = <strong>{result.cgLong.toFixed(3)} m</strong>
+              CG = Σ momentos ÷ Σ pesos = {result.takeoff.totalMoment.toFixed(1)} ÷{" "}
+              {result.takeoff.totalWeight.toFixed(1)} ={" "}
+              <strong>{result.takeoff.cgLong.toFixed(3)} m</strong>
             </p>
           </section>
         </div>
       </div>
 
-      {/* Gráfico do envelope */}
+      {/* Gráficos do envelope */}
       <section className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
-        <h2 className="text-sm font-semibold text-slate-900 mb-4">Envelope de CG longitudinal</h2>
+        <h2 className="text-sm font-semibold text-slate-900 mb-4">Envelopes de CG</h2>
         <CgEnvelopeChart config={config} result={result} />
       </section>
+    </div>
+  );
+}
+
+/* ---------------------- CARD DE ESTADO ---------------------- */
+function StateCard({ title, state, config, tone }) {
+  const toneCls =
+    {
+      sky: "border-sky-200 bg-sky-50/50",
+      violet: "border-violet-200 bg-violet-50/50",
+    }[tone] || "border-slate-200 bg-white";
+
+  return (
+    <div className={`rounded-2xl border p-4 ${toneCls}`}>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+        <span
+          className={`text-[11px] font-semibold ${
+            state.ok ? "text-emerald-700" : "text-rose-700"
+          }`}
+        >
+          {state.ok ? "OK" : "FORA"}
+        </span>
+      </div>
+      <dl className="space-y-1.5 text-xs">
+        <div className="flex justify-between">
+          <dt className="text-slate-600">Peso total</dt>
+          <dd className={`font-semibold ${state.overweight ? "text-rose-700" : "text-slate-900"}`}>
+            {state.totalWeight.toFixed(1)} kg
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-slate-600">Limite</dt>
+          <dd className="text-slate-700">{state.maxAllowed} kg</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-slate-600">CG longitudinal</dt>
+          <dd
+            className={`font-semibold ${
+              state.cgOutForward || state.cgOutRearward ? "text-rose-700" : "text-slate-900"
+            }`}
+          >
+            {state.cgLong.toFixed(3)} m
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-slate-600">Faixa</dt>
+          <dd className="text-slate-700">
+            {state.limits.forward.toFixed(2)} – {state.limits.rearward.toFixed(2)} m
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-slate-600">CG lateral</dt>
+          <dd className={`font-semibold ${state.cgOutLateral ? "text-rose-700" : "text-slate-900"}`}>
+            {state.cgLat.toFixed(3)} m
+          </dd>
+        </div>
+      </dl>
+      {!state.ok && (
+        <ul className="mt-2 pt-2 border-t border-rose-200 space-y-0.5 text-[11px] text-rose-700">
+          {state.overweight && <li>Peso acima do máximo.</li>}
+          {state.cgOutForward && <li>CG à frente do limite.</li>}
+          {state.cgOutRearward && <li>CG atrás do limite.</li>}
+          {state.cgOutLateral && <li>CG lateral fora do envelope.</li>}
+        </ul>
+      )}
     </div>
   );
 }
@@ -444,8 +565,10 @@ function CgEnvelopeChart({ config, result }) {
         lateralLimits={null}
         config={config}
         result={result}
-        cgValue={result.cgLong}
-        outOfLimits={result.cgOutForward || result.cgOutRearward}
+        takeoffCg={result.takeoff.cgLong}
+        landingCg={result.landing.cgLong}
+        takeoffOut={result.takeoff.cgOutForward || result.takeoff.cgOutRearward}
+        landingOut={result.landing.cgOutForward || result.landing.cgOutRearward}
       />
       <EnvelopePlot
         title="CG lateral"
@@ -454,14 +577,27 @@ function CgEnvelopeChart({ config, result }) {
         lateralLimits={config.cgLimits.lateral}
         config={config}
         result={result}
-        cgValue={result.cgLat}
-        outOfLimits={result.cgOutLateral}
+        takeoffCg={result.takeoff.cgLat}
+        landingCg={result.landing.cgLat}
+        takeoffOut={result.takeoff.cgOutLateral}
+        landingOut={result.landing.cgOutLateral}
       />
     </div>
   );
 }
 
-function EnvelopePlot({ title, unitLabel, limits, lateralLimits, config, result, cgValue, outOfLimits }) {
+function EnvelopePlot({
+  title,
+  unitLabel,
+  limits,
+  lateralLimits,
+  config,
+  result,
+  takeoffCg,
+  landingCg,
+  takeoffOut,
+  landingOut,
+}) {
   const W = 560;
   const H = 320;
   const PAD = { top: 24, right: 24, bottom: 44, left: 56 };
@@ -469,17 +605,14 @@ function EnvelopePlot({ title, unitLabel, limits, lateralLimits, config, result,
   const minW = 1000;
   const maxW = config.maxExternalWeight;
 
-  // Faixa do eixo X conforme o tipo de envelope
   const minCg = lateralLimits ? lateralLimits.left - 0.05 : 3.0;
   const maxCg = lateralLimits ? lateralLimits.right + 0.05 : 3.7;
 
   const sx = (cg) => PAD.left + ((cg - minCg) / (maxCg - minCg)) * (W - PAD.left - PAD.right);
   const sy = (w) => H - PAD.bottom - ((w - minW) / (maxW - minW)) * (H - PAD.top - PAD.bottom);
 
-  // Monta o polígono do envelope
   let path = "";
   if (limits) {
-    // Longitudinal: varia com o peso
     const pts = [];
     let prevUpTo = minW;
     for (const l of limits) {
@@ -492,7 +625,6 @@ function EnvelopePlot({ title, unitLabel, limits, lateralLimits, config, result,
       ...[...pts].reverse().map((p) => `${sx(p.rwd)},${sy(p.w)}`),
     ].join(" ");
   } else if (lateralLimits) {
-    // Lateral: faixa constante em toda a faixa de peso
     path = [
       `${sx(lateralLimits.left)},${sy(minW)}`,
       `${sx(lateralLimits.left)},${sy(maxW)}`,
@@ -505,14 +637,14 @@ function EnvelopePlot({ title, unitLabel, limits, lateralLimits, config, result,
     ? [lateralLimits.left, 0, lateralLimits.right]
     : [3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7];
 
-  const pointIn = result.totalWeight > 0;
+  const hasTakeoff = result.takeoff.totalWeight > 0;
+  const hasLanding = result.fuelBurned > 0 && result.landing.totalWeight > 0;
 
   return (
     <div>
       <h3 className="text-xs font-semibold text-slate-700 mb-2">{title}</h3>
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
-          {/* Grade horizontal (peso) */}
           {[1000, 1400, 1800, 2200, 2600, 2800].map((w) => (
             <g key={`w${w}`}>
               <line
@@ -529,7 +661,6 @@ function EnvelopePlot({ title, unitLabel, limits, lateralLimits, config, result,
             </g>
           ))}
 
-          {/* Grade vertical (CG) */}
           {ticksX.map((cg) => (
             <g key={`cg${cg}`}>
               <line x1={sx(cg)} x2={sx(cg)} y1={PAD.top} y2={H - PAD.bottom} stroke="#f1f5f9" />
@@ -545,29 +676,61 @@ function EnvelopePlot({ title, unitLabel, limits, lateralLimits, config, result,
             </g>
           ))}
 
-          {/* Envelope */}
           <polygon points={path} fill="#dbeafe" stroke="#3b82f6" strokeWidth="2" />
 
-          {/* Ponto calculado */}
-          {pointIn && (
+          {hasTakeoff && (
             <g>
+              {hasLanding && (
+                <line
+                  x1={sx(takeoffCg)}
+                  y1={sy(result.takeoff.totalWeight)}
+                  x2={sx(landingCg)}
+                  y2={sy(result.landing.totalWeight)}
+                  stroke="#94a3b8"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 3"
+                />
+              )}
+
               <circle
-                cx={sx(cgValue)}
-                cy={sy(result.totalWeight)}
+                cx={sx(takeoffCg)}
+                cy={sy(result.takeoff.totalWeight)}
                 r="7"
-                fill={outOfLimits ? "#ef4444" : "#10b981"}
+                fill={takeoffOut ? "#ef4444" : "#0ea5e9"}
                 stroke="#fff"
                 strokeWidth="2"
               />
               <text
-                x={sx(cgValue) + 12}
-                y={sy(result.totalWeight) - 8}
-                fontSize="11"
+                x={sx(takeoffCg) + 12}
+                y={sy(result.takeoff.totalWeight) - 8}
+                fontSize="10"
                 fontWeight="600"
-                fill={outOfLimits ? "#b91c1c" : "#047857"}
+                fill={takeoffOut ? "#b91c1c" : "#0369a1"}
               >
-                {result.totalWeight.toFixed(0)} kg · {cgValue.toFixed(3)} m
+                DEC {result.takeoff.totalWeight.toFixed(0)} kg
               </text>
+
+              {hasLanding && (
+                <>
+                  <circle
+                    cx={sx(landingCg)}
+                    cy={sy(result.landing.totalWeight)}
+                    r="7"
+                    fill={landingOut ? "#ef4444" : "#8b5cf6"}
+                    stroke="#fff"
+                    strokeWidth="2"
+                  />
+                  <text
+                    x={sx(landingCg) + 12}
+                    y={sy(result.landing.totalWeight) + 14}
+                    fontSize="10"
+                    fontWeight="600"
+                    fill={landingOut ? "#b91c1c" : "#6d28d9"}
+                  >
+                    POUSO {result.landing.totalWeight.toFixed(0)} kg
+                  </text>
+                </>
+              )}
             </g>
           )}
 
