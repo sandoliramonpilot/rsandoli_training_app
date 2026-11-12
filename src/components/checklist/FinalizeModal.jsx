@@ -1,6 +1,12 @@
 import React, { useState, useMemo } from "react";
 import { AlertTriangle, X, CheckCircle2, ClipboardList } from "lucide-react";
 
+const podeFinalizar = weightBalanceStatus?.ok !== false;
+
+// no botão de finalizar:
+<button disabled={!podeFinalizar} ...>
+  {podeFinalizar ? "Finalizar checklist" : "Peso e balanceamento fora dos limites"}
+</button>
 // Finalização com justificativa por item não executado e resumo prévio.
 // pendingItems: [{ phaseId, phaseTitle, localIdx, text }]
 export default function FinalizeModal({ aircraftReg, user, pendingItems, onClose, onConfirm }) {
