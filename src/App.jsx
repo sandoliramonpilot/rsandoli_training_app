@@ -105,7 +105,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
-      <Route path="/peso-balanceamento" element={<WeightBalance />} />
+      <Route path="/peso-balanceamento" element={<ProtectedRoute><RequireModule module="operacoes"><WeightBalance /></RequireModule></ProtectedRoute>} />
       
       <Route element={<AppLayout />}>
         <Route path="/perfis-aeronave" element={<RequireModule moduleId="usuarios"><PerfisAeronave /></RequireModule>} />
