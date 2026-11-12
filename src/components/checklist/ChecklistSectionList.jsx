@@ -1,18 +1,5 @@
 import React from "react";
 import { CheckCircle2, Circle } from "lucide-react";
-import WeightBalancePanel from "@/components/weightBalance/WeightBalancePanel";
-
-// dentro do componente, antes de renderizar as seções:
-if (phase.isCustom === "weightBalance") {
-  return (
-    <WeightBalancePanel
-      onValidityChange={(v) => {
-        // guarda o resultado para bloquear a finalização se estiver fora dos limites
-        setWeightBalanceStatus(v);
-      }}
-    />
-  );
-}
 
 export default function ChecklistSectionList({ sections, checked, onToggle, finalized }) {
   if (sections.length === 0) {
