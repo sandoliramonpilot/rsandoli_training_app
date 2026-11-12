@@ -65,7 +65,20 @@
       "default": "available",
       "title": "Status"
     },
-    "notes": {
+      "empty_weight_kg": {
+      "type": "number",
+      "title": "Peso vazio equipado (kg)"
+    },
+      "empty_cg_m": {
+      "type": "number",
+      "title": "CG vazio (m)"
+    },
+      "empty_weight_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data da pesagem"
+    }
+      "notes": {
       "type": "string",
       "title": "Observa\u00e7\u00f5es"
     },
