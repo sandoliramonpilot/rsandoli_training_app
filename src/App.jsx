@@ -113,7 +113,7 @@ const AuthenticatedApp = () => {
         <Route path="/flight-log" element={<RequireModule moduleId="diario_bordo"><FlightLog /></RequireModule>} />
         <Route path="/aircraft" element={<Aircraft />} />
         <Route path="/checklist" element={<RequireModule moduleId="checklists"><Checklist /></RequireModule>} />
-        <Route path="/peso-balanceamento" element={<ProtectedRoute><RequireModule module="operacoes"><WeightBalance /></RequireModule></ProtectedRoute>} />
+        <Route path="/peso-balanceamento" element={<RequireModule moduleId="checklists"><WeightBalance /></RequireModule>} />
         <Route path="/qrh" element={<QRH />} />
         <Route path="/qrh-efis" element={<QRHEfis />} />
         <Route path="/biblioteca" element={<Biblioteca />} />
