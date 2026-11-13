@@ -58,17 +58,72 @@ function isPrivateIpv4(ip) {
   return false;
 }
 
+// Expande qualquer notação IPv6 (comprimida com ::, estendida, ou com
+// quadrupla dotted no final) para 8 grupos hex de 4 dígitos. Retorna null
+// se o endereço não for um IPv6 válido. Necessário porque formas
+// equivalentes do mesmo endereço (::ffff:7f00:1, 0:0:0:0:0:ffff:a9fe:a9fe,
+// ::ffff:127.0.0.1) precisam ser classificadas de forma idêntica.
+function expandIpv6(host) {
+  let h = String(host).toLowerCase().trim().replace(/^\[|\]$/g, "");
+  if (!h) return null;
+  // Quadrupla dotted embarcada (ex.: ::ffff:1.2.3.4) -> dois grupos hex.
+  const dotted = h.match(/^(.*?)(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (dotted) {
+    const octs = dotted[2].split(".").map(Number);
+    if (octs.some((o) => !Number.isFinite(o) || o < 0 || o > 255)) return null;
+    const hi = ((octs[0] << 8) | octs[1]) >>> 0;
+    const lo = ((octs[2] << 8) | octs[3]) >>> 0;
+    const prefix = dotted[1];
+    const sep = prefix && !prefix.endsWith(":") ? ":" : "";
+    h = prefix + sep + hi.toString(16) + ":" + lo.toString(16);
+  }
+  let groups;
+  if (h.includes("::")) {
+    if (h.indexOf("::") !== h.lastIndexOf("::")) return null;
+    const [left, right] = h.split("::");
+    const leftParts = left ? left.split(":") : [];
+    const rightParts = right ? right.split(":") : [];
+    if (leftParts.length + rightParts.length > 7) return null;
+    const fill = 8 - leftParts.length - rightParts.length;
+    groups = [...leftParts, ...Array(fill).fill("0"), ...rightParts];
+  } else {
+    groups = h.split(":");
+  }
+  if (groups.length !== 8) return null;
+  if (groups.some((g) => !/^[0-9a-f]{1,4}$/.test(g))) return null;
+  return groups.map((g) => g.padStart(4, "0"));
+}
+
 function isPrivateIpv6(ip) {
-  const h = String(ip).toLowerCase().replace(/^\[|\]$/g, "");
-  if (h === "::1" || h === "::") return true;
-  const mapped = h.match(/::ffff:([0-9.]+)$/);
-  if (mapped) return isPrivateIpv4(mapped[1]);
-  const parts = h.split(":");
-  const head = parts[0] === "" ? "0" : parts[0];
-  const headHex = parseInt(head, 16) || 0;
-  if (headHex >= 0xfe80 && headHex <= 0xfebf) return true;
-  if (headHex >= 0xfc00 && headHex <= 0xfdff) return true;
-  if (headHex >= 0xff00) return true;
+  const raw = String(ip).toLowerCase().replace(/^\[|\]$/g, "");
+  if (raw === "::1" || raw === "::") return true;
+  const groups = expandIpv6(raw);
+  if (!groups) return true; // endereço inválido -> rejeitar por segurança
+  // Não-especificado (::) e loopback (::1) em qualquer notação.
+  if (groups.every((g) => g === "0000")) return true;
+  if (groups.slice(0, 7).every((g) => g === "0000") && groups[7] === "0001") return true;
+  // IPv4-mapeado ::ffff:0:0/96 em qualquer notação (hex, estendida, dotted).
+  if (groups[0] === "0000" && groups[1] === "0000" && groups[2] === "0000" &&
+      groups[3] === "0000" && groups[4] === "0000" && groups[5] === "ffff") {
+    const hi = parseInt(groups[6], 16);
+    const lo = parseInt(groups[7], 16);
+    const ipv4 = [(hi >> 8) & 255, hi & 255, (lo >> 8) & 255, lo & 255].join(".");
+    return isPrivateIpv4(ipv4);
+  }
+  // IPv4-compatível (obsoleto, ::a.b.c.d) -> classifica como o IPv4 embutido.
+  if (groups[0] === "0000" && groups[1] === "0000" && groups[2] === "0000" &&
+      groups[3] === "0000" && groups[4] === "0000" && groups[5] === "0000") {
+    const hi = parseInt(groups[6], 16);
+    const lo = parseInt(groups[7], 16);
+    if (hi !== 0 || lo !== 0) {
+      const ipv4 = [(hi >> 8) & 255, hi & 255, (lo >> 8) & 255, lo & 255].join(".");
+      return isPrivateIpv4(ipv4);
+    }
+  }
+  const headHex = parseInt(groups[0], 16) || 0;
+  if (headHex >= 0xfe80 && headHex <= 0xfebf) return true; // link-local
+  if (headHex >= 0xfc00 && headHex <= 0xfdff) return true; // unique-local
+  if (headHex >= 0xff00) return true; // multicast
   return false;
 }
 
