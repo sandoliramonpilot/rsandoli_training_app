@@ -1,6 +1,3 @@
-import React, { useState, useMemo } from "react";
-import { AlertTriangle, X, CheckCircle2, ClipboardList } from "lucide-react";
-
 // Finalização com justificativa por item não executado e resumo prévio.
 // pendingItems: [{ phaseId, phaseTitle, localIdx, text }]
 export default function FinalizeModal({ aircraftReg, user, pendingItems, onClose, onConfirm }) {
