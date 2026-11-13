@@ -40,8 +40,9 @@ export default function Checklist() {
   const isH125 = profileValue === "H125";
   const h125VariantKey = isH125 ? getH125OperationalVariant(h125SubVariant) : null;
   const PHASES = isH125 ? getH125OperationalPhases(h125VariantKey) : getChecklistPhases(profileValue);
-
-  const { validationMap } = useChecklistValidation(isH125 ? h125VariantKey : null);
+  
+  const validationKey = isH125 ? h125VariantKey : profileValue; // "AW119"
+  const { validationMap } = useChecklistValidation(validationKey);
   const canValidate = getAccessLevel(user) === "admin_geral";
 
   const [view, setView] = useState("new"); // new | history
