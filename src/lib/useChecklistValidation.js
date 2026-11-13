@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 
-// Hook de validacao do checklist operacional H125: le o mapa de status por
-// variante e expoe acoes administrativas (aprovar / reprovar / reabrir / aprovar tudo).
+// Hook de validacao do checklist operacional: le o mapa de status por
+// variante (B2, B3e, AW119) e expoe acoes administrativas.
 export function useChecklistValidation(variantKey) {
   const [validationMap, setValidationMap] = useState({});
   const [loading, setLoading] = useState(true);
