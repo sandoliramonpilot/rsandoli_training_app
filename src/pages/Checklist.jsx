@@ -322,7 +322,7 @@ export default function Checklist() {
           <p className="text-slate-400 mt-2 text-sm">Sistema digital de execução e registro de checklists operacionais</p>
         </div>
         <div className="flex items-center gap-3">
-          {isH125 && canValidate && (
+          {canValidate && (
             <button
               onClick={() => setShowValidation(true)}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-colors"
@@ -444,7 +444,7 @@ export default function Checklist() {
           />
 
           {/* Badge de validação da fase ativa (H125) */}
-          {isH125 && currentPhase && (
+          {currentPhase && (
             <PhaseValidationBadge
               status={validationMap[currentPhase.id]?.status || "pending"}
               reviewedBy={validationMap[currentPhase.id]?.reviewed_by}
@@ -495,8 +495,8 @@ export default function Checklist() {
       )}
       {showValidation && isH125 && canValidate && (
         <ChecklistValidationPanel
-          variantKey={h125VariantKey}
-          variantLabel={h125VariantKey === "B3e" "AW119" ? "AS350 B3e" : "AS350 B2" : "AW119"}
+          variantKey={validationKey}
+          variantLabel={isH125 ? (h125VariantKey === "B3e" ? "AS350 B3e" : "AS350 B2") : "AW119"}
           phases={PHASES}
           onClose={() => setShowValidation(false)}
         />
