@@ -41,7 +41,7 @@ export default function Checklist() {
   const h125VariantKey = isH125 ? getH125OperationalVariant(h125SubVariant) : null;
   const PHASES = isH125 ? getH125OperationalPhases(h125VariantKey) : getChecklistPhases(profileValue);
   
-  const validationKey = isH125 ? h125VariantKey : profileValue; // "AW119"
+  const validationKey = isH125 ? h125VariantKey : profileValue;
   const { validationMap } = useChecklistValidation(validationKey);
   const canValidate = getAccessLevel(user) === "admin_geral";
 
@@ -373,16 +373,13 @@ export default function Checklist() {
       )}
 
       {/* Aviso de validação técnica pendente (H125) */}
-      {isH125 && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-          <p className="leading-relaxed">
-            Material transcrito da fonte fornecida, <strong>pendente de validação técnica aeronáutica</strong>. Não substitui o
-            manual oficial do fabricante, que deve permanecer a bordo conforme exigências da ANAC.
-          </p>
-        </div>
-      )}
-
+      <div className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <p className="leading-relaxed">
+          Material transcrito da fonte fornecida, <strong>dependente de validação técnica aeronáutica</strong>. Não substitui o
+          manual oficial do fabricante, que deve permanecer a bordo conforme exigências da ANAC.
+        </p>
+      </div>
       {offlineNotice && (
         <div
           role="status"
@@ -493,10 +490,14 @@ export default function Checklist() {
       {viewingRecord && (
         <ChecklistHistoryDetail record={viewingRecord} onClose={() => setViewingRecord(null)} />
       )}
-      {showValidation && isH125 && canValidate && (
+      {showValidation && canValidate && (
         <ChecklistValidationPanel
           variantKey={validationKey}
-          variantLabel={isH125 ? (h125VariantKey === "B3e" ? "AS350 B3e" : "AS350 B2") : "AW119"}
+          variantLabel={
+            isH125
+              ? h125VariantKey === "B3e" ? "AS350 B3e" : "AS350 B2"
+              : "AW119"
+          }
           phases={PHASES}
           onClose={() => setShowValidation(false)}
         />
