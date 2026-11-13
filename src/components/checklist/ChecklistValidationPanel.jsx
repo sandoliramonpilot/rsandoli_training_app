@@ -36,14 +36,15 @@ export default function ChecklistValidationPanel({ variantKey, variantLabel, pha
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
       <div className="bg-[#1A1D25] w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl border border-slate-700/60 max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 px-6 py-4 border-b border-slate-700/60 bg-[#1A1D25]/95 backdrop-blur flex items-center justify-between gap-3">
+        <div className="sticky top-0 px-6 py-4 border-b border-slate-700/60 bg-[#1A1D25]/95 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl border border-amber-500/30 bg-amber-500/15 flex items-center justify-center">
               <ShieldCheck className="w-5 h-5 text-amber-300" />
             </div>
             <div>
-              <h2 className="font-semibold text-lg text-slate-100">Validação do Checklist · {variantLabel}</h2>
-              <p className="text-xs text-slate-400">Revisão técnica por etapa · {variantKey === "B3e" ? "AS350 B3e" : "AS350 B2"}</p>
+              <h2 className="font-semibold text-lg text-white">Validação do Checklist · {variantLabel}</h2>
+              <p className="text-xs text-slate-400">Revisão técnica por etapa · {variantKey}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-slate-500 hover:text-slate-200 rounded-lg"><X className="w-5 h-5" /></button>
