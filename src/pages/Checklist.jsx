@@ -495,7 +495,7 @@ export default function Checklist() {
       {showValidation && isH125 && canValidate && (
         <ChecklistValidationPanel
           variantKey={h125VariantKey}
-          variantLabel={h125VariantKey === "B3e" ? "AS350 B3e" : "AS350 B2"}
+          variantLabel={h125VariantKey === "B3e" "AW119" ? "AS350 B3e" : "AS350 B2" : "AW119"}
           phases={PHASES}
           onClose={() => setShowValidation(false)}
         />
