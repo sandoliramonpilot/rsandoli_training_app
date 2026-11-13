@@ -1,19 +1,22 @@
+import React, { useState } from "react";
+import { AlertTriangle, X, CheckCircle2, ClipboardList } from "lucide-react";
+
 // Finalização com justificativa por item não executado e resumo prévio.
 // pendingItems: [{ phaseId, phaseTitle, localIdx, text }]
 export default function FinalizeModal({ aircraftReg, user, pendingItems, onClose, onConfirm }) {
-  const [justifications, setJustifications] = useState({}); // { [phaseId]: { [localIdx]: text } }
+  const [justifications, setJustifications] = useState({});
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState("");
 
   const pendingCount = pendingItems.length;
-  const executedCount = useMemo(() => {
-    // Total de itens nas fases - pendentes
-    // (não temos o total aqui, mas o resumo mostra pendentes e justificados)
-    return null;
-  }, [pendingItems]);
 
-  const justified = pendingItems.filter((it) => (justifications[it.phaseId]?.[it.localIdx] || "").trim()).length;
-  const pendingNoJustification = pendingItems.filter((it) => !(justifications[it.phaseId]?.[it.localIdx] || "").trim());
+  const justified = pendingItems.filter(
+    (it) => (justifications[it.phaseId]?.[it.localIdx] || "").trim()
+  ).length;
+
+  const pendingNoJustification = pendingItems.filter(
+    (it) => !(justifications[it.phaseId]?.[it.localIdx] || "").trim()
+  );
 
   const setJust = (item, value) => {
     setJustifications((prev) => ({
@@ -27,7 +30,9 @@ export default function FinalizeModal({ aircraftReg, user, pendingItems, onClose
   const confirm = () => {
     if (!canConfirm) {
       const faltantes = pendingNoJustification.length;
-      setError(`Ainda ${faltantes === 1 ? "falta 1 item" : `faltam ${faltantes} itens`} sem justificativa. Informe a justificativa antes de finalizar.`);
+      setError(
+        `Ainda ${faltantes === 1 ? "falta 1 item" : `faltam ${faltantes} itens`} sem justificativa. Informe a justificativa antes de finalizar.`
+      );
       return;
     }
     if (!confirmed) {
@@ -45,14 +50,15 @@ export default function FinalizeModal({ aircraftReg, user, pendingItems, onClose
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card text-card-foreground border border-border shadow-2xl">
+      <div className="bg-[#1A1D25] w-full max-w-2xl rounded-2xl border border-slate-700/60 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-[#1A1D25] px-6 py-4 border-b border-slate-700/60 flex items-center justify-between">
           <h2 className="font-semibold text-white text-lg">Finalizar checklist</h2>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-200"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-200">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <div className="px-6 py-5 space-y-5">
-          {/* Resumo prévio */}
           <div className="rounded-xl border border-slate-700/60 bg-black/20 p-4">
             <div className="flex items-center gap-2 mb-3">
               <ClipboardList className="w-4 h-4 text-amber-400" />
@@ -80,7 +86,9 @@ export default function FinalizeModal({ aircraftReg, user, pendingItems, onClose
             <div className="space-y-3">
               <div className="flex items-start gap-2 text-sm text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2.5">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>Existem {pendingCount} item(ns) não executado(s). Cada item exige uma justificativa própria antes de finalizar.</span>
+                <span>
+                  Existem {pendingCount} item(ns) não executado(s). Cada item exige uma justificativa própria antes de finalizar.
+                </span>
               </div>
               <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
                 {pendingItems.map((item, i) => (
@@ -103,7 +111,9 @@ export default function FinalizeModal({ aircraftReg, user, pendingItems, onClose
                 ))}
               </div>
               {pendingNoJustification.length > 0 && (
-                <div className="text-xs text-rose-400">{pendingNoJustification.length} item(ns) ainda sem justificativa.</div>
+                <div className="text-xs text-rose-400">
+                  {pendingNoJustification.length} item(ns) ainda sem justificativa.
+                </div>
               )}
             </div>
           )}
@@ -120,7 +130,9 @@ export default function FinalizeModal({ aircraftReg, user, pendingItems, onClose
           )}
 
           <div className="flex justify-end gap-3 pt-2">
-            <button onClick={onClose} className="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-white/5">Cancelar</button>
+            <button onClick={onClose} className="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-white/5">
+              Cancelar
+            </button>
             <button
               onClick={confirm}
               disabled={!canConfirm}
