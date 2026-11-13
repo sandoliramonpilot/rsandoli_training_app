@@ -92,13 +92,6 @@ export const CHECKLIST_PHASES = [
     ],
   },
   {
-    id: "peso_balanceamento",
-    name: "Peso e Balanceamento",
-    title: "PESO E BALANCEAMENTO",
-    isCustom: "weightBalance",   // marca que esta fase usa componente especial
-    sections: [],
-  },
-  {
     id: "pre_acionamento",
     name: "Pré-Acionamento",
     title: "PRÉ-ACIONAMENTO (ENGINE PRE-START CHECK)",
