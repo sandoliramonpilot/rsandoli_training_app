@@ -154,12 +154,14 @@ const PHASE_META = [
 
 export function getH125OperationalPhases(variantKey) {
   const src = variantKey === "B3e" ? B3e_SOURCE : B2_SOURCE;
-  return PHASE_META.filter((m) => src[m.id]).map((m) => ({
-    id: m.id,
-    name: m.name,
-    title: m.title,
-    sections: src[m.id],
-  }));
+  return PHASE_META
+    .filter((m) => m.isCustom || src[m.id])
+    .map((m) => {
+      if (m.isCustom) {
+        return { id: m.id, name: m.name, title: m.title, isCustom: m.isCustom, sections: [] };
+      }
+      return { id: m.id, name: m.name, title: m.title, sections: src[m.id] };
+    });
 }
 
 export function getH125OperationalVariant(subvariantId) {
