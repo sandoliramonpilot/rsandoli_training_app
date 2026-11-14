@@ -17,6 +17,7 @@ import FinalizeModal from "@/components/checklist/FinalizeModal";
 import ChecklistHistoryList from "@/components/checklist/ChecklistHistoryList";
 import ChecklistHistoryDetail from "@/components/checklist/ChecklistHistoryDetail";
 import StartChecklistFlow from "@/components/checklist/StartChecklistFlow";
+import WeightBalancePanel from "@/components/weightBalance/WeightBalancePanel";
 import { useProfile } from "@/lib/ProfileContext";
 import { useAuth } from "@/lib/AuthContext";
 import { getAccessLevel } from "@/lib/accessControl";
@@ -36,16 +37,17 @@ export default function Checklist() {
   const { profileFilter, profileValue, h125SubVariant, trocarSubvarianteH125, modulosPermitidos, trocarAeronave } = useProfile();
   const { user } = useAuth();
 
-  // H125: resolve a variante operacional (B2/B3e) e as fases correspondentes
   const isH125 = profileValue === "H125";
   const h125VariantKey = isH125 ? getH125OperationalVariant(h125SubVariant) : null;
   const PHASES = isH125 ? getH125OperationalPhases(h125VariantKey) : getChecklistPhases(profileValue);
-  
+
+  // PONTO 1: chave de validação para todas as aeronaves
   const validationKey = isH125 ? h125VariantKey : profileValue;
   const { validationMap } = useChecklistValidation(validationKey);
+
   const canValidate = getAccessLevel(user) === "admin_geral";
 
-  const [view, setView] = useState("new"); // new | history
+  const [view, setView] = useState("new");
   const [aircraft, setAircraft] = useState([]);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,18 +63,20 @@ export default function Checklist() {
   const [startedAt, setStartedAt] = useState(null);
   const [offlineNotice, setOfflineNotice] = useState("");
   const [showValidation, setShowValidation] = useState(false);
+
+  // PONTO 2: estado do peso e balanceamento
+  const [weightBalanceStatus, setWeightBalanceStatus] = useState(null);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const reviewFase = searchParams.get("fase");
   const reviewModelo = searchParams.get("modelo");
   const reviewVariante = searchParams.get("variante");
 
-  // Reset da fase ativa quando o perfil da aeronave ou variante muda
   useEffect(() => {
     setActivePhase(PHASES[0]?.id);
     setDiscrepanciesByPhase({});
   }, [profileValue, h125VariantKey]);
 
-  // Deep-link: alternar perfil/variante/fase a partir de parâmetros de URL (painel de aprovações)
   useEffect(() => {
     if (!reviewModelo) return;
     if (reviewModelo !== profileValue && modulosPermitidos.includes(reviewModelo)) {
@@ -98,7 +102,7 @@ export default function Checklist() {
   useEffect(() => {
     Promise.all([
       base44.entities.Aircraft.filter(profileFilter).catch(() => []),
-      base44.entities.ChecklistRecord.filter(profileFilter, { sort: "-date", limit: 100 }).then(r => r.items).catch(() => []),
+      base44.entities.ChecklistRecord.filter(profileFilter, { sort: "-date", limit: 100 }).then((r) => r.items).catch(() => []),
       base44.auth.me().catch(() => null),
     ]).then(([a, r, u]) => {
       setAircraft(a);
@@ -113,6 +117,7 @@ export default function Checklist() {
           setCheckedByPhase(draft.checkedByPhase || {});
           setDiscrepanciesByPhase(draft.discrepanciesByPhase || {});
           setStartedAt(draft.startedAt);
+          setWeightBalanceStatus(draft.weightBalanceStatus || null);
         }
       } catch {}
     });
@@ -120,7 +125,7 @@ export default function Checklist() {
 
   const persistDraft = (next) => {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({
-      setup, activePhase, checkedByPhase, discrepanciesByPhase, startedAt, ...next,
+      setup, activePhase, checkedByPhase, discrepanciesByPhase, startedAt, weightBalanceStatus, ...next,
     }));
   };
 
@@ -131,8 +136,16 @@ export default function Checklist() {
     setDiscrepanciesByPhase({});
     setActivePhase(PHASES[0]?.id);
     setShowStartFlow(false);
+    // PONTO 5: reset do peso e balanceamento ao iniciar novo checklist
     setWeightBalanceStatus(null);
-    persistDraft({ setup: data, startedAt: Date.now(), checkedByPhase: {}, discrepanciesByPhase: {}, activePhase: PHASES[0]?.id });
+    persistDraft({
+      setup: data,
+      startedAt: Date.now(),
+      checkedByPhase: {},
+      discrepanciesByPhase: {},
+      activePhase: PHASES[0]?.id,
+      weightBalanceStatus: null,
+    });
   };
 
   const beginNewChecklist = () => {
@@ -167,10 +180,11 @@ export default function Checklist() {
 
   const selectPhase = (id) => {
     setActivePhase(id);
-      setQuery("");
+    setQuery("");
     persistDraft({ activePhase: id });
   };
 
+  // PONTO 3: progresso considera a fase customizada de peso e balanceamento
   const progressByPhase = useMemo(() => {
     const map = {};
     PHASES.forEach((p) => {
@@ -187,6 +201,7 @@ export default function Checklist() {
   }, [checkedByPhase, PHASES, weightBalanceStatus]);
 
   const currentPhase = PHASES.find((p) => p.id === activePhase) || PHASES[0];
+
   const flatSections = useMemo(() => {
     let idx = -1;
     const sections = currentPhase.sections.map((sec) => ({
@@ -195,11 +210,14 @@ export default function Checklist() {
     }));
     const q = query.trim().toLowerCase();
     if (!q) return sections;
-    return sections.map((s) => ({ ...s, items: s.items.filter((i) => i.text.toLowerCase().includes(q)) })).filter((s) => s.items.length > 0);
+    return sections
+      .map((s) => ({ ...s, items: s.items.filter((i) => i.text.toLowerCase().includes(q)) }))
+      .filter((s) => s.items.length > 0);
   }, [currentPhase, query]);
 
   const isLastPhase = activePhase === PHASES[PHASES.length - 1].id;
 
+  // PONTO 4: pendências incluem a fase de peso e balanceamento
   const pendingItems = useMemo(() => {
     const list = [];
     PHASES.forEach((p) => {
@@ -232,6 +250,8 @@ export default function Checklist() {
   const finalize = async (justifications) => {
     const phasesProgress = {};
     if (isH125) phasesProgress.__variant = h125VariantKey;
+
+    // Grava o resultado do peso e balanceamento no registro
     if (weightBalanceStatus?.result) {
       phasesProgress.__weightBalance = {
         takeoff: {
@@ -249,10 +269,40 @@ export default function Checklist() {
         critical: weightBalanceStatus.critical || null,
       };
     }
+
+    PHASES.forEach((p) => {
+      if (p.isCustom === "weightBalance") {
+        phasesProgress[p.id] = {
+          items: [],
+          total: 1,
+          done: weightBalanceStatus?.ok ? 1 : 0,
+          discrepancy: null,
+          custom: "weightBalance",
+        };
+        return;
+      }
+      let idx = -1;
+      const items = p.sections.flatMap((sec) =>
+        sec.items.map((text) => ({
+          idx: ++idx,
+          text,
+          checked: !!checkedByPhase[p.id]?.[idx],
+          justification: checkedByPhase[p.id]?.[idx] ? null : (justifications[p.id]?.[idx] || null),
+        }))
+      );
+      phasesProgress[p.id] = {
+        items,
+        total: items.length,
+        done: items.filter((i) => i.checked).length,
+        discrepancy: discrepanciesByPhase[p.id] || null,
+      };
+    });
+
     const durationMinutes = startedAt ? Math.round((Date.now() - startedAt) / 60000) : 0;
     const endTime = new Date().toTimeString().slice(0, 5);
     const clientKey = newClientKey();
     const allDiscrepancies = Object.values(discrepanciesByPhase).filter(Boolean).join(" | ");
+
     const payload = {
       ...setup,
       aircraftProfile: profileValue,
@@ -273,8 +323,11 @@ export default function Checklist() {
       setCheckedByPhase({});
       setDiscrepanciesByPhase({});
       setStartedAt(null);
+      setWeightBalanceStatus(null);
       setShowFinalize(false);
-      const r = await base44.entities.ChecklistRecord.filter(profileFilter, { sort: "-date", limit: 100 }).then(res => res.items).catch(() => null);
+      const r = await base44.entities.ChecklistRecord.filter(profileFilter, { sort: "-date", limit: 100 })
+        .then((res) => res.items)
+        .catch(() => null);
       if (r) setRecords(r);
       setView("history");
     };
@@ -369,7 +422,6 @@ export default function Checklist() {
         </div>
       </header>
 
-      {/* Seletor de variante H125 */}
       {isH125 && (
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 text-sm text-slate-400">
@@ -394,7 +446,6 @@ export default function Checklist() {
         </div>
       )}
 
-      {/* Aviso de validação técnica pendente (H125) */}
       <div className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
         <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
         <p className="leading-relaxed">
@@ -402,6 +453,7 @@ export default function Checklist() {
           manual oficial do fabricante, que deve permanecer a bordo conforme exigências da ANAC.
         </p>
       </div>
+
       {offlineNotice && (
         <div
           role="status"
@@ -462,7 +514,6 @@ export default function Checklist() {
             onSelect={selectPhase}
           />
 
-          {/* Badge de validação da fase ativa (H125) */}
           {currentPhase && (
             <PhaseValidationBadge
               status={validationMap[currentPhase.id]?.status || "pending"}
@@ -484,33 +535,27 @@ export default function Checklist() {
             isLastPhase={isLastPhase}
           />
 
+          {/* Renderização condicional: fase customizada ou lista normal */}
           {currentPhase.isCustom === "weightBalance" ? (
             <WeightBalancePanel
-            aircraftId={setup?.aircraft_id}
-            onValidityChange={setWeightBalanceStatus}
-          />
-        ) : (
-          <>
-            <ChecklistSectionList
-              sections={flatSections}
+              aircraftId={setup?.aircraft_id}
+              onValidityChange={setWeightBalanceStatus}
+            />
+          ) : (
+            <>
+              <ChecklistSectionList
+                sections={flatSections}
                 checked={checkedByPhase[activePhase] || {}}
                 onToggle={(idx) => toggleItem(activePhase, idx)}
                 finalized={false}
-            />
-            <DiscrepancyField
-              phaseId={activePhase}
-              value={discrepanciesByPhase[activePhase] || ""}
-              onChange={(text) => setDiscrepancy(activePhase, text)}
-            />
-          </>
-        )}
-
-          {/* Campo de discrepância ao final da etapa */}
-          <DiscrepancyField
-            phaseId={activePhase}
-            value={discrepanciesByPhase[activePhase] || ""}
-            onChange={(text) => setDiscrepancy(activePhase, text)}
-          />
+              />
+              <DiscrepancyField
+                phaseId={activePhase}
+                value={discrepanciesByPhase[activePhase] || ""}
+                onChange={(text) => setDiscrepancy(activePhase, text)}
+              />
+            </>
+          )}
         </>
       )}
 
@@ -523,9 +568,11 @@ export default function Checklist() {
           onConfirm={finalize}
         />
       )}
+
       {viewingRecord && (
         <ChecklistHistoryDetail record={viewingRecord} onClose={() => setViewingRecord(null)} />
       )}
+
       {showValidation && canValidate && (
         <ChecklistValidationPanel
           variantKey={validationKey}
