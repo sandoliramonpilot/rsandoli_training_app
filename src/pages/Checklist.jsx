@@ -131,6 +131,7 @@ export default function Checklist() {
     setDiscrepanciesByPhase({});
     setActivePhase(PHASES[0]?.id);
     setShowStartFlow(false);
+    setWeightBalanceStatus(null);
     persistDraft({ setup: data, startedAt: Date.now(), checkedByPhase: {}, discrepanciesByPhase: {}, activePhase: PHASES[0]?.id });
   };
 
@@ -142,6 +143,7 @@ export default function Checklist() {
       setDiscrepanciesByPhase({});
       setStartedAt(null);
       setActivePhase(PHASES[0]?.id);
+      setWeightBalanceStatus(null);
       localStorage.removeItem(DRAFT_KEY);
     }
     setShowStartFlow(true);
@@ -165,19 +167,24 @@ export default function Checklist() {
 
   const selectPhase = (id) => {
     setActivePhase(id);
-    setQuery("");
+      setQuery("");
     persistDraft({ activePhase: id });
   };
 
   const progressByPhase = useMemo(() => {
     const map = {};
     PHASES.forEach((p) => {
+      if (p.isCustom === "weightBalance") {
+        const ok = weightBalanceStatus?.ok === true;
+        map[p.id] = { total: 1, done: ok ? 1 : 0 };
+        return;
+      }
       const total = p.sections.reduce((s, sec) => s + sec.items.length, 0);
       const done = Object.values(checkedByPhase[p.id] || {}).filter(Boolean).length;
       map[p.id] = { total, done };
     });
     return map;
-  }, [checkedByPhase, PHASES]);
+  }, [checkedByPhase, PHASES, weightBalanceStatus]);
 
   const currentPhase = PHASES.find((p) => p.id === activePhase) || PHASES[0];
   const flatSections = useMemo(() => {
@@ -196,6 +203,19 @@ export default function Checklist() {
   const pendingItems = useMemo(() => {
     const list = [];
     PHASES.forEach((p) => {
+      if (p.isCustom === "weightBalance") {
+        if (weightBalanceStatus?.ok !== true) {
+          list.push({
+            phaseId: p.id,
+            phaseTitle: p.name,
+            localIdx: 0,
+            text: weightBalanceStatus?.hasData
+              ? "Peso e balanceamento fora dos limites — ajuste o carregamento"
+              : "Peso e balanceamento não preenchido",
+          });
+        }
+        return;
+      }
       let idx = -1;
       p.sections.forEach((sec) => {
         sec.items.forEach((text) => {
@@ -207,26 +227,28 @@ export default function Checklist() {
       });
     });
     return list;
-  }, [checkedByPhase, PHASES]);
+  }, [checkedByPhase, PHASES, weightBalanceStatus]);
 
   const finalize = async (justifications) => {
     const phasesProgress = {};
     if (isH125) phasesProgress.__variant = h125VariantKey;
-    PHASES.forEach((p) => {
-      let idx = -1;
-      const items = p.sections.flatMap((sec) => sec.items.map((text) => ({
-        idx: ++idx,
-        text,
-        checked: !!checkedByPhase[p.id]?.[idx],
-        justification: checkedByPhase[p.id]?.[idx] ? null : (justifications[p.id]?.[idx] || null),
-      })));
-      phasesProgress[p.id] = {
-        items,
-        total: items.length,
-        done: items.filter((i) => i.checked).length,
-        discrepancy: discrepanciesByPhase[p.id] || null,
+    if (weightBalanceStatus?.result) {
+      phasesProgress.__weightBalance = {
+        takeoff: {
+          weight: weightBalanceStatus.result.takeoff.totalWeight,
+          cgLong: weightBalanceStatus.result.takeoff.cgLong,
+          cgLat: weightBalanceStatus.result.takeoff.cgLat,
+        },
+        landing: {
+          weight: weightBalanceStatus.result.landing.totalWeight,
+          cgLong: weightBalanceStatus.result.landing.cgLong,
+          cgLat: weightBalanceStatus.result.landing.cgLat,
+        },
+        fuelBurned: weightBalanceStatus.result.fuelBurned,
+        ok: weightBalanceStatus.ok,
+        critical: weightBalanceStatus.critical || null,
       };
-    });
+    }
     const durationMinutes = startedAt ? Math.round((Date.now() - startedAt) / 60000) : 0;
     const endTime = new Date().toTimeString().slice(0, 5);
     const clientKey = newClientKey();
@@ -462,12 +484,26 @@ export default function Checklist() {
             isLastPhase={isLastPhase}
           />
 
-          <ChecklistSectionList
-            sections={flatSections}
-            checked={checkedByPhase[activePhase] || {}}
-            onToggle={(idx) => toggleItem(activePhase, idx)}
-            finalized={false}
+          {currentPhase.isCustom === "weightBalance" ? (
+            <WeightBalancePanel
+            aircraftId={setup?.aircraft_id}
+            onValidityChange={setWeightBalanceStatus}
           />
+        ) : (
+          <>
+            <ChecklistSectionList
+              sections={flatSections}
+                checked={checkedByPhase[activePhase] || {}}
+                onToggle={(idx) => toggleItem(activePhase, idx)}
+                finalized={false}
+            />
+            <DiscrepancyField
+              phaseId={activePhase}
+              value={discrepanciesByPhase[activePhase] || ""}
+              onChange={(text) => setDiscrepancy(activePhase, text)}
+            />
+          </>
+        )}
 
           {/* Campo de discrepância ao final da etapa */}
           <DiscrepancyField
