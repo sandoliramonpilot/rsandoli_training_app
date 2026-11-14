@@ -93,6 +93,16 @@ export default function ChecklistReviewMode({
             </ul>
           </div>
         ))}
+        {currentPhase.sections.length === 0 && currentPhase.isCustom === "weightBalance" ? (
+          <div className="bg-[#1A1D25] rounded-xl border border-slate-700/60 px-4 py-8 text-center">
+            <p className="text-sm text-slate-400">Esta etapa é calculada dinamicamente durante a execução.</p>
+            <p className="text-xs text-slate-500 mt-1">Não há itens de checklist a revisar.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {currentPhase.sections.map((sec) => ( ... ))}
+          </div>
+        )}
       </div>
     </div>
   );
