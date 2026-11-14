@@ -144,6 +144,7 @@ const B3e_SOURCE = {
 
 const PHASE_META = [
   { id: "pre_voo", name: "Pré-Voo", title: "PRÉ-VOO" },
+  { id: "peso_balanceamento", name: "Peso e Balanceamento", title: "PESO E BALANCEAMENTO", isCustom: "weightBalance", sections: [], },
   { id: "pre_acionamento", name: "Pré-Acionamento", title: "PRÉ-ACIONAMENTO" },
   { id: "acionamento", name: "Acionamento", title: "ACIONAMENTO" },
   { id: "pos_acionamento", name: "Pós-Acionamento", title: "PÓS-ACIONAMENTO" },
