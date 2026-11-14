@@ -169,6 +169,13 @@ export const CHECKLIST_PHASES = [
     ],
   },
   {
+    id: "peso_balanceamento",
+    name: "Peso e Balanceamento",
+    title: "PESO E BALANCEAMENTO",
+    isCustom: "weightBalance",
+    sections: [],
+  },
+  {
     id: "acionamento",
     name: "Acionamento",
     title: "ACIONAMENTO (STARTING PROCEDURE)",
