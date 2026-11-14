@@ -1,8 +1,17 @@
 import { createClientFromRequest } from "npm:@base44/sdk";
 import { DENY_MESSAGE, getUserProfiles, hasProfileAccess, isActiveAccount, isAdminUser } from "../../shared/accessSecurity.js";
 
-// Validacao tecnica das fases do checklist operacional H125 (B2/B3e).
+// Validacao tecnica das fases do checklist operacional (H125 B2/B3e e AW119).
 // O Administrador Geral aprova, reprova ou reabre a validacao por etapa completa.
+
+const VALID_VARIANTS = ["B2", "B3e", "AW119"];
+
+// Mapeia a variante para o perfil de acesso exigido
+const VARIANT_PROFILE = {
+  B2: "H125",
+  B3e: "H125",
+  AW119: "AW119",
+};
 
 async function logAudit(base44, actor, action, details) {
   try {
@@ -27,19 +36,27 @@ export default async function (req) {
     if (!isAdminUser(user)) {
       return Response.json({ error: DENY_MESSAGE }, { status: 403 });
     }
-    // Validação de perfil: o checklist operacional é exclusivo do H125.
-    const userProfiles = await getUserProfiles(base44, user);
-    if (!hasProfileAccess(userProfiles, "H125")) {
-      return Response.json({ error: DENY_MESSAGE }, { status: 403 });
-    }
 
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
+    // Valida a variante em todas as ações que a recebem
+    const variant = body.variant;
+    if (action === "list" || action === "set_status" || action === "approve_all") {
+      if (!variant) return Response.json({ error: "Variante nao informada." }, { status: 400 });
+      if (!VALID_VARIANTS.includes(variant)) {
+        return Response.json({ error: "Variante invalida." }, { status: 400 });
+      }
+      // Perfil exigido conforme a variante (H125 para B2/B3e, AW119 para AW119)
+      const requiredProfile = VARIANT_PROFILE[variant];
+      const userProfiles = await getUserProfiles(base44, user);
+      if (!hasProfileAccess(userProfiles, requiredProfile)) {
+        return Response.json({ error: DENY_MESSAGE }, { status: 403 });
+      }
+    }
+
     // ---------- LIST: validacoes de uma variante ----------
     if (action === "list") {
-      const variant = body.variant;
-      if (!variant) return Response.json({ error: "Variante nao informada." }, { status: 400 });
       const records = await base44.asServiceRole.entities.ChecklistValidation
         .filter({ variant })
         .catch(() => []);
@@ -57,9 +74,9 @@ export default async function (req) {
 
     // ---------- SET_STATUS: aprovar / reprovar / reabrir uma fase ----------
     if (action === "set_status") {
-      const { variant, phase_id, phase_name, status, justification } = body;
-      if (!variant || !phase_id) {
-        return Response.json({ error: "Variante e fase sao obrigatorios." }, { status: 400 });
+      const { phase_id, phase_name, status, justification } = body;
+      if (!phase_id) {
+        return Response.json({ error: "Fase e obrigatoria." }, { status: 400 });
       }
       if (!["pending", "approved", "rejected"].includes(status)) {
         return Response.json({ error: "Status invalido." }, { status: 400 });
@@ -89,7 +106,7 @@ export default async function (req) {
           phase_name: phase_name || rec.phase_name || null,
           approval_log: JSON.stringify(log),
         });
-        await logAudit(base44, user, `Checklist H125 ${variant} - validacao: ${decision}`,
+        await logAudit(base44, user, `Checklist ${variant} - validacao: ${decision}`,
           `${phase_name || phase_id} -> ${status}. Justificativa: ${justification || "-"}`);
         return Response.json({ ok: true, status, message: `Fase ${status === "approved" ? "aprovada" : status === "rejected" ? "reprovada" : "reaberta"}.` });
       }
@@ -104,15 +121,13 @@ export default async function (req) {
         justification: justification || null,
         approval_log: JSON.stringify([logEntry]),
       });
-      await logAudit(base44, user, `Checklist H125 ${variant} - validacao: ${decision}`,
+      await logAudit(base44, user, `Checklist ${variant} - validacao: ${decision}`,
         `${phase_name || phase_id} -> ${status}. Justificativa: ${justification || "-"}`);
       return Response.json({ ok: true, status, message: `Fase ${status === "approved" ? "aprovada" : status === "rejected" ? "reprovada" : "reaberta"}.` });
     }
 
     // ---------- APPROVE_ALL: aprovar todas as fases pendentes ----------
     if (action === "approve_all") {
-      const variant = body.variant;
-      if (!variant) return Response.json({ error: "Variante nao informada." }, { status: 400 });
       const records = await base44.asServiceRole.entities.ChecklistValidation
         .filter({ variant, status: "pending" })
         .catch(() => []);
@@ -130,7 +145,7 @@ export default async function (req) {
         }).catch(() => {});
         count++;
       }
-      await logAudit(base44, user, `Checklist H125 ${variant} - aprovacao em lote`, `Total: ${count}`);
+      await logAudit(base44, user, `Checklist ${variant} - aprovacao em lote`, `Total: ${count}`);
       return Response.json({ ok: true, count, message: `${count} fase(s) aprovada(s).` });
     }
 
