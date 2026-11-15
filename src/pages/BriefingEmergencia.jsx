@@ -34,7 +34,7 @@ export default function BriefingEmergencia() {
         title="BRIEFING DE EMERGÊNCIA"
         description="SÓ FAZEMOS AQUILO QUE TREINAMOS."
         icon={Siren}
-        accent="red"
+        accent="rose"
       />
 
       {/* Apresentação */}
