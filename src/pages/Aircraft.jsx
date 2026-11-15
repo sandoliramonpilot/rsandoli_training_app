@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { can } from "@/lib/accessControl";
@@ -9,7 +9,7 @@ import { useProfile } from "@/lib/ProfileContext";
 const STATUS = {
   available: { label: "Disponível", color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
   in_maintenance: { label: "Em manutenção", color: "text-amber-700 bg-amber-50 border-amber-200", icon: Wrench },
-  grounded: { label: "Aterrissada", color: "text-rose-700 bg-rose-50 border-rose-200", icon: AlertTriangle },
+  grounded: { label: "Em missão externa", color: "text-sky-700 bg-sky-50 border-sky-200", icon: Plane },
 };
 
 const APPROVAL = {
@@ -50,6 +50,17 @@ export default function Aircraft() {
   const load = async () => setAircraft(await base44.entities.Aircraft.filter(profileFilter).catch(() => []));
 
   useEffect(() => { load(); }, [profileFilter]);
+
+  // Quadro resumo das condições da frota
+  const fleetSummary = useMemo(() => {
+    const list = aircraft || [];
+    return {
+      total: list.length,
+      available: list.filter((a) => a.status === "available").length,
+      maintenance: list.filter((a) => a.status === "in_maintenance").length,
+      external: list.filter((a) => a.status === "grounded").length,
+    };
+  }, [aircraft]);
 
   const openNew = () => { setEditing(null); setForm(emptyForm); setShowForm(true); };
 
@@ -134,6 +145,39 @@ export default function Aircraft() {
         </div>
       </header>
 
+      {/* ===== CONDIÇÕES ATUAIS DA FROTA ===== */}
+      {aircraft.length > 0 && (
+        <section className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-slate-900">Condições atuais da frota</h2>
+            <span className="text-xs text-slate-400">{fleetSummary.total} aeronave(s)</span>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <p className="text-xs font-medium text-emerald-700">Aeronaves disponíveis</p>
+              </div>
+              <p className="text-2xl font-bold text-emerald-800">{fleetSummary.available}</p>
+            </div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Wrench className="w-3.5 h-3.5 text-amber-600" />
+                <p className="text-xs font-medium text-amber-700">Aeronaves em manutenção</p>
+              </div>
+              <p className="text-2xl font-bold text-amber-800">{fleetSummary.maintenance}</p>
+            </div>
+            <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Plane className="w-3.5 h-3.5 text-sky-600" />
+                <p className="text-xs font-medium text-sky-700">Aeronaves em missão externa</p>
+              </div>
+              <p className="text-2xl font-bold text-sky-800">{fleetSummary.external}</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {aircraft.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm px-6 py-16 text-center">
           <Plane className="w-10 h-10 text-slate-300 mx-auto mb-3" />
@@ -195,7 +239,6 @@ export default function Aircraft() {
                   </div>
                 </div>
 
-                {/* Peso e balanceamento */}
                 {(a.empty_weight_kg != null || a.empty_cg_m != null) && (
                   <div className="mt-3 pt-3 border-t border-slate-100">
                     <div className="flex items-center gap-1.5 mb-1.5">
@@ -276,12 +319,11 @@ function AircraftForm({ form, editing, saving, onField, onClose, onSave }) {
               <select value={form.status} onChange={(e) => onField("status", e.target.value)} className={inputCls}>
                 <option value="available">Disponível</option>
                 <option value="in_maintenance">Em manutenção</option>
-                <option value="grounded">Aterrissada</option>
+                <option value="grounded">Em missão externa</option>
               </select>
             </Field>
           </div>
 
-          {/* ===== PESO E BALANCEAMENTO ===== */}
           <div className="p-4 rounded-lg bg-sky-50 border border-sky-200 space-y-3">
             <div className="flex items-center gap-1.5">
               <Scale className="w-4 h-4 text-sky-700" />
@@ -292,40 +334,19 @@ function AircraftForm({ form, editing, saving, onField, onClose, onSave }) {
             </p>
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Peso vazio equipado (kg)">
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={form.empty_weight_kg}
-                  onChange={(e) => onField("empty_weight_kg", e.target.value)}
-                  className={inputCls}
-                  placeholder="Ex.: 1200"
-                />
+                <input type="number" step="0.1" min="0" value={form.empty_weight_kg} onChange={(e) => onField("empty_weight_kg", e.target.value)} className={inputCls} placeholder="Ex.: 1200" />
               </Field>
               <Field label="CG vazio (m)">
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  value={form.empty_cg_m}
-                  onChange={(e) => onField("empty_cg_m", e.target.value)}
-                  className={inputCls}
-                  placeholder="Ex.: 3.560"
-                />
+                <input type="number" step="0.001" min="0" value={form.empty_cg_m} onChange={(e) => onField("empty_cg_m", e.target.value)} className={inputCls} placeholder="Ex.: 3.560" />
               </Field>
             </div>
             <Field label="Data da pesagem">
-              <input
-                type="date"
-                value={form.empty_weight_date}
-                onChange={(e) => onField("empty_weight_date", e.target.value)}
-                className={inputCls}
-              />
+              <input type="date" value={form.empty_weight_date} onChange={(e) => onField("empty_weight_date", e.target.value)} className={inputCls} />
             </Field>
           </div>
 
           <Field label="Observações">
-          <textarea value={form.notes} onChange={(e) => onField("notes", e.target.value)} rows={3} className={inputCls} placeholder="Notas sobre a aeronave" />
+            <textarea value={form.notes} onChange={(e) => onField("notes", e.target.value)} rows={3} className={inputCls} placeholder="Notas sobre a aeronave" />
           </Field>
 
           <div className="flex justify-end gap-3 pt-2">
