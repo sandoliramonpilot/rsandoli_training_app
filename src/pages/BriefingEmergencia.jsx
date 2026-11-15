@@ -28,7 +28,7 @@ export default function BriefingEmergencia() {
       </header>
 
       <AcademyHeroBanner
-        badgeIcon={GraduationCap}
+        badgeIcon={SirenAlert}
         badgeText="Instrução Teórica"
         subtitleLabel="Emergências no AW119Kx/KXi Koala"
         title="BRIEFING DE EMERGÊNCIA"
