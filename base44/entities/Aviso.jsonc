@@ -1,0 +1,75 @@
+{
+  "name": "Aviso",
+  "type": "object",
+  "properties": {
+    "titulo": {
+      "type": "string",
+      "title": "T\u00edtulo"
+    },
+    "texto": {
+      "type": "string",
+      "title": "Conte\u00fado"
+    },
+    "importante": {
+      "type": "boolean",
+      "title": "Marcar como importante",
+      "default": false
+    },
+    "publicado": {
+      "type": "boolean",
+      "title": "Publicado",
+      "default": false
+    },
+    "aircraft_profiles": {
+      "type": "string",
+      "title": "Perfis de aeronave",
+      "description": "JSON array: [\"AW119\"], [\"H125\"] ou ambos"
+    },
+    "anexos": {
+      "type": "string",
+      "title": "Anexos (JSON)"
+    },
+    "autor": {
+      "type": "string",
+      "title": "Autor"
+    },
+    "data_publicacao": {
+      "type": "string",
+      "format": "date",
+      "title": "Data de publica\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "titulo",
+    "texto"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.publicado": true
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

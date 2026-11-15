@@ -201,7 +201,10 @@
 [data-theme="light"] .text-amber-300,
 [data-theme="light"] .text-amber-400,
 [data-theme="light"] .text-amber-500,
-[data-theme="light"] .hover\:text-amber-300:hover { color: hsl(21 100% 35%); }
+[data-theme="light"] .text-amber-400\/80,
+[data-theme="light"] .text-amber-300\/80,
+[data-theme="light"] .text-amber-500\/80,
+[data-theme="light"] .hover\:text-amber-300:hover { color: hsl(21 100% 28%); }
 [data-theme="light"] .bg-amber-500,
 [data-theme="light"] .bg-amber-400 { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
 [data-theme="light"] .hover\:bg-amber-400:hover { background-color: hsl(21 100% 38%); }

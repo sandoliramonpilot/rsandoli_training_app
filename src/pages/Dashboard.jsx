@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { QRH_CATEGORIES } from "@/lib/qrhData";
 import AlertsPanel from "@/components/dashboard/AlertsPanel";
-import { Plane, BookOpen, Clock, TrendingUp, AlertTriangle, Plus, CheckCircle2, Wrench, Siren, Library, GraduationCap, ChevronRight, Award, ClipboardCheck, Users, HelpCircle, Gauge } from "lucide-react";
+import AvisosPanel from "@/components/dashboard/AvisosPanel";
+import { Plane, BookOpen, Clock, TrendingUp, AlertTriangle, Plus, CheckCircle2, Wrench, Siren, Library, GraduationCap, ChevronRight, Award, ClipboardCheck, Users, HeartPulse, Gauge, Megaphone, CalendarDays } from "lucide-react";
 import { useProfile } from "@/lib/ProfileContext";
 import { libraryProfileFilter } from "@/lib/aircraftProfile";
+import { collectExpiries } from "@/lib/oatUtils";
 
 function fmtHours(min) {
   if (!min) return "0h";
@@ -30,24 +32,31 @@ export default function Dashboard() {
   const [aircraft, setAircraft] = useState(null);
   const [checklists, setChecklists] = useState(null);
   const [docs, setDocs] = useState([]);
-  const [pilots, setPilots] = useState([]);
-  const [simStats, setSimStats] = useState({ count: 0, avg: 0 });
+  const [schedules, setSchedules] = useState([]);
+  const [openChecklists, setOpenChecklists] = useState(0);
+  const [habVencendo, setHabVencendo] = useState(0);
+  const [oatVencendo, setOatVencendo] = useState(0);
 
   useEffect(() => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const limite = new Date(hoje.getTime() + 60 * 86400000).toISOString().slice(0, 10);
+
     Promise.all([
     base44.entities.FlightLog.filter(profileFilter, { sort: "-date", limit: 200 }).then(r => r.items).catch(() => []),
     base44.entities.Aircraft.filter(profileFilter).catch(() => []),
     base44.entities.ChecklistRecord.filter(profileFilter, { sort: "-date", limit: 50 }).then(r => r.items).catch(() => []),
     base44.entities.LibraryDocument.filter(libraryProfileFilter(profileValue), { sort: "-created_date", limit: 5 }).then(r => r.items).catch(() => []),
-    base44.entities.Pilot.filter(profileFilter).catch(() => [])]
-    ).then(([f, a, c, d, p]) => {
-      setFlights(f);setAircraft(a);setChecklists(c);setDocs(d);setPilots(p);
+    base44.entities.Schedule.filter(profileFilter).catch(() => []),
+    base44.entities.Oat.filter(profileFilter).catch(() => []),
+    base44.entities.ChecklistRecord.count({ ...profileFilter, status: { $ne: "ok" } }).catch(() => 0),
+    base44.entities.PilotHabilitacao.count({ ...profileFilter, expiry_date: { $lte: limite } }).catch(() => 0)]
+    ).then(([f, a, c, d, s, o, abertos, hab]) => {
+      setFlights(f);setAircraft(a);setChecklists(c);setDocs(d);setSchedules(s);
+      setOpenChecklists(abertos);
+      setHabVencendo(hab);
+      setOatVencendo(o.reduce((acc, item) => acc + collectExpiries(item).filter((e) => e.date <= limite).length, 0));
     });
-    try {
-      const h = JSON.parse(localStorage.getItem("sim_history") || "[]");
-      const avg = h.length ? Math.round(h.reduce((s, x) => s + x.pct, 0) / h.length) : 0;
-      setSimStats({ count: h.length, avg });
-    } catch {}
   }, [profileFilter]);
 
   const loading = !flights || !aircraft || !checklists;
@@ -68,13 +77,25 @@ export default function Dashboard() {
   const discrepancies = (checklists || []).filter((c) => c.status !== "ok").length;
   const lastChecklist = checklists?.[0];
   const recentFlights = [...flights].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 4);
-  const activePilots = pilots.filter((p) => p.status === "active").length;
+
+  const ordensServico = aircraft.filter((a) => a.status === "in_maintenance" || a.status === "grounded").length;
+
+  const inicioSemana = new Date();
+  inicioSemana.setHours(0, 0, 0, 0);
+  inicioSemana.setDate(inicioSemana.getDate() - ((inicioSemana.getDay() + 6) % 7));
+  const fimSemana = new Date(inicioSemana);
+  fimSemana.setDate(fimSemana.getDate() + 7);
+  const escalaSemana = schedules.filter((s) => {
+    if (!s.date || s.status === "cancelada") return false;
+    const d = new Date(`${s.date}T00:00:00`);
+    return d >= inicioSemana && d < fimSemana;
+  }).length;
 
   const stats = [
-  { label: "Total de horas", value: fmtHours(totalMinutes), icon: Clock, accent: "from-amber-500 to-amber-400" },
+  { label: "Total de horas Voadas", value: fmtHours(totalMinutes), icon: Clock, accent: "from-amber-500 to-amber-400" },
   { label: "Voos registrados", value: flights.length, icon: BookOpen, accent: "from-violet-500 to-purple-400" },
-  { label: "Pilotos ativos", value: activePilots, icon: Users, accent: "from-teal-500 to-emerald-400" },
-  { label: "Simulados · média", value: `${simStats.avg}%`, icon: Award, accent: "from-sky-500 to-blue-400" }];
+  { label: "Ordem de serviço", value: ordensServico, icon: Wrench, accent: "from-teal-500 to-emerald-400" },
+  { label: "Escala da semana", value: escalaSemana, icon: CalendarDays, accent: "from-sky-500 to-blue-400" }];
 
 
   return (
@@ -86,6 +107,8 @@ export default function Dashboard() {
       </header>
 
       <AlertsPanel />
+
+      <AvisosPanel />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -104,12 +127,13 @@ export default function Dashboard() {
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <QuickLink to="/checklist" icon={ClipboardCheck} label="Checklists" sub="Fases de voo" accent="from-sky-500 to-blue-500" />
-        <QuickLink to="/qrh" icon={Siren} label="QRH" sub="Emergências" accent="from-rose-500 to-red-500" />
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <QuickLink to="/checklist" icon={ClipboardCheck} label="Checklists" sub="Em aberto" count={openChecklists} accent="from-sky-500 to-blue-500" />
+        <QuickLink to="/qrh" icon={Siren} label="QRH" sub="Emergências gerais" accent="from-rose-500 to-red-500" />
         <QuickLink to="/limitacoes" icon={Gauge} label="Limitações" sub="Consulta rápida" accent="from-amber-500 to-orange-500" />
-        <QuickLink to="/pilotos" icon={Users} label="Pilotos" sub="Cadastro e vencimentos" accent="from-teal-500 to-emerald-500" />
-        <QuickLink to="/simulados" icon={HelpCircle} label="Simulados" sub="Avaliações" accent="from-violet-500 to-purple-500" />
+        <QuickLink to="/pilotos" icon={Users} label="Pilotos" sub="Vencimento habilitações e treinamentos" count={habVencendo} accent="from-teal-500 to-emerald-500" />
+        <QuickLink to="/oat" icon={HeartPulse} label="OAT/TRIP.OPER." sub="Vencimento dos treinamentos" count={oatVencendo} accent="from-violet-500 to-purple-500" />
+        <QuickLink href="#avisos" icon={Megaphone} label="Avisos e recomendações" sub="Comunicados operacionais" accent="from-amber-400 to-yellow-500" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -236,15 +260,32 @@ function Panel({ title, to, linkLabel, children }) {
 
 }
 
-function QuickLink({ to, icon: Icon, label, sub, accent }) {
-  return (
-    <Link to={to} className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-4 hover:border-amber-500/40 hover:shadow-lg hover:shadow-black/30 transition-all group">
+function QuickLink({ to, href, icon: Icon, label, sub, count, accent }) {
+  const content = (
+    <>
       <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${accent} flex items-center justify-center mb-3 shadow-lg`}>
         <Icon className="w-5 h-5 text-slate-900" />
       </div>
-      <p className="font-semibold text-slate-100 text-sm">{label}</p>
-      <p className="text-xs text-slate-500 mt-0.5">{sub}</p>
-    </Link>);
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-semibold text-slate-100 text-sm">{label}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{sub}</p>
+        </div>
+        {typeof count === "number" && count > 0 && (
+          <span className="shrink-0 text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 rounded-full px-2 py-0.5">
+            {count}
+          </span>
+        )}
+      </div>
+    </>
+  );
+  const cls =
+    "bg-[#1A1D25] rounded-2xl border border-slate-700/60 p-4 hover:border-amber-500/40 hover:shadow-lg hover:shadow-black/30 transition-all group block";
+
+  if (href) {
+    return (<a href={href} className={cls}>{content}</a>);
+  }
+  return (<Link to={to} className={cls}>{content}</Link>);
 
 }
 

@@ -306,6 +306,21 @@ function SidebarContent({ location, onNavigate }) {
               )}
               {showUsersMenu && (
                 <Link
+                  to="/avisos-recomendacoes"
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                    isActive(location, "/avisos-recomendacoes")
+                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/20"
+                      : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+                  )}
+                >
+                  <Megaphone style={{ width: 18, height: 18 }} />
+                  Avisos e Recomendações
+                </Link>
+              )}
+              {showUsersMenu && (
+                <Link
                   to="/matriz-permissoes"
                   onClick={onNavigate}
                   className={cn(
