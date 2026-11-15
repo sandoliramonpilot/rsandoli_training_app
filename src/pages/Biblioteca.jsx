@@ -20,6 +20,32 @@ const LEGACY_LABELS = {
   icao: "Publicações ICAO", faa: "Publicações FAA",
 };
 
+// Cabeçalho dinâmico por grupo ativo
+const HEADER_BY_GROUP = {
+  manuais: {
+    eyebrow: "Biblioteca Técnica",
+    title: "Documentação Técnica",
+    description: "Manuais e publicações técnicas",
+  },
+  materiais_estudo: {
+    eyebrow: "Material teórico para consulta",
+    title: "Materiais Didáticos",
+    description:
+      "Biblioteca de recursos educacionais desenvolvida para complementar o treinamento operacional e de sistemas da aeronave, aprimorando o conhecimento teórico do equipamento.",
+  },
+  legislacao_normas: {
+    eyebrow: "Biblioteca jurídica",
+    title: "Legislação",
+    description: "Legislação, regulamentos e normas legais",
+  },
+};
+
+const DEFAULT_HEADER = {
+  eyebrow: "Conhecimento",
+  title: "Biblioteca Técnica",
+  description: "Manuais, procedimentos e publicações técnicas aeronáuticas — organização, consulta e gestão de PDFs.",
+};
+
 const catLabel = (id) => LIBRARY_CATEGORIES.find((c) => c.id === id)?.name || LEGACY_LABELS[id] || id;
 const groupOf = (catId) => CATEGORY_GROUP[catId] || null;
 const isGroupId = (v) => GROUP_LABELS[v] != null;
@@ -28,6 +54,7 @@ export default function Biblioteca() {
   const { profileFilter, profileValue } = useProfile();
   const [searchParams] = useSearchParams();
   const initialGroup = searchParams.get("grupo");
+
   const [docs, setDocs] = useState(null);
   const [aircraft, setAircraft] = useState([]);
   const [activeCat, setActiveCat] = useState(initialGroup && GROUP_LABELS[initialGroup] != null ? initialGroup : "all");
@@ -50,9 +77,9 @@ export default function Biblioteca() {
   useEffect(() => {
     localStorage.setItem("library_favorites", JSON.stringify(favorites));
   }, [favorites]);
+
   useEffect(() => {
     localStorage.setItem("offline_docs", JSON.stringify(offlineDocs));
-    // keep only currently known offline docs if a doc list exists
     if (docs) {
       const known = new Set(docs.map((d) => d.id));
       if (offlineDocs.some((o) => !known.has(o.id))) {
@@ -63,7 +90,7 @@ export default function Biblioteca() {
 
   const load = async () => {
     const [d, a] = await Promise.all([
-      base44.entities.LibraryDocument.filter(libraryProfileFilter(profileValue), { sort: "-created_date", limit: 200 }).then(r => r.items).catch(() => []),
+      base44.entities.LibraryDocument.filter(libraryProfileFilter(profileValue), { sort: "-created_date", limit: 200 }).then((r) => r.items).catch(() => []),
       base44.entities.Aircraft.filter(profileFilter).catch(() => []),
       base44.auth.me().catch(() => null),
     ]);
@@ -71,6 +98,7 @@ export default function Biblioteca() {
     setAircraft(a);
     setUser(a);
   };
+
   useEffect(() => { load(); }, [profileFilter]);
 
   // Sincroniza o grupo quando o usuário chega via link "Legislação" estando já na Biblioteca.
@@ -100,7 +128,7 @@ export default function Biblioteca() {
     else if (activeCat !== "all") list = list.filter((d) => d.category === activeCat);
 
     if (statusFilter !== "all") list = list.filter((d) => (d.status || "active") === statusFilter);
-    if (tagFilter) list = list.filter((d) => (d.tags || "").toLowerCase().split(",").map(t => t.trim()).includes(tagFilter));
+    if (tagFilter) list = list.filter((d) => (d.tags || "").toLowerCase().split(",").map((t) => t.trim()).includes(tagFilter));
     if (aircraftFilter !== "all") list = list.filter((d) => (d.aircraft_id || "") === aircraftFilter);
 
     const q = query.trim().toLowerCase();
@@ -167,13 +195,17 @@ export default function Biblioteca() {
     );
   }
 
+  const header = HEADER_BY_GROUP[activeCat] || DEFAULT_HEADER;
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Conhecimento</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">Biblioteca Técnica</h1>
-          <p className="text-slate-400 mt-2 text-sm">Manuais, procedimentos e publicações técnicas aeronáuticas — organização, consulta e gestão de PDFs.</p>
+          <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">{header.eyebrow}</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">
+            {header.title}
+          </h1>
+          <p className="text-slate-400 mt-2 text-sm max-w-3xl">{header.description}</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <button
@@ -218,6 +250,7 @@ export default function Biblioteca() {
             />
           ))}
         </div>
+
         {/* Sub-categorias do grupo selecionado */}
         {isGroupId(activeCat) && (() => {
           const group = LIBRARY_GROUPS.find((g) => g.id === activeCat);
