@@ -2,7 +2,7 @@ import React from "react";
 import BackToDashboard from "@/components/BackToDashboard";
 import AcademyUploadSection from "@/components/academy/AcademyUploadSection";
 import AcademyHeroBanner from "@/components/academy/AcademyHeroBanner";
-import { ClipboardList, GraduationCap, Quote } from "lucide-react";
+import { ClipboardList, Siren, Quote } from "lucide-react";
 
 const APRESENTACAO_PARAGRAFOS = [
   "A segurança não começa na decolagem. Ela começa na preparação. Este briefing foi desenvolvido para fortalecer a capacidade do piloto de reconhecer, compreender e responder corretamente às situações anormais e de emergência que podem surgir durante o voo. Mais do que memorizar procedimentos, o objetivo é construir confiança, disciplina operacional e consciência situacional para agir com precisão quando cada segundo importa. Cada alerta estudado, cada cenário discutido e cada procedimento praticado representam um investimento direto na segurança da missão e na proteção da tripulação e dos passageiros. O treinamento contínuo transforma conhecimento em habilidade e habilidade em reação adequada. Quando a situação exigir uma resposta imediata, não haverá tempo para aprender, apenas para executar.",
@@ -28,7 +28,7 @@ export default function BriefingEmergencia() {
       </header>
 
       <AcademyHeroBanner
-        badgeIcon={SirenAlert}
+        badgeIcon={Siren}
         badgeText="Instrução Teórica"
         subtitleLabel="Emergências no AW119Kx/KXi Koala"
         title="BRIEFING DE EMERGÊNCIA"
