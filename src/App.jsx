@@ -109,6 +109,7 @@ const AuthenticatedApp = () => {
       
       <Route element={<AppLayout />}>
         <Route path="/perfis-aeronave" element={<RequireModule moduleId="usuarios"><PerfisAeronave /></RequireModule>} />
+        <Route path="/avisos-recomendacoes" element={<RequireModule moduleId="usuarios"><AvisosRecomendacoes /></RequireModule>} />
         <Route path="/" element={<RequireModule moduleId="dashboard"><Dashboard /></RequireModule>} />
         <Route path="/flight-log" element={<RequireModule moduleId="diario_bordo"><FlightLog /></RequireModule>} />
         <Route path="/aircraft" element={<Aircraft />} />
