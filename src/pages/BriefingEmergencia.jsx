@@ -9,6 +9,8 @@ const APRESENTACAO_PARAGRAFOS = [
   "Em uma emergência real, o conhecimento orienta, o treinamento guia nossas ações e o desempenho determina o resultado. Mas é o treinamento que conduz nossas ações, permitindo uma atuação natural, precisa e assertiva, capaz de preservar o controle da aeronave e manter os níveis adequados de segurança operacional. O resultado é o reflexo daquilo que treinamos, aprendemos e praticamos.",
 ];
 
+const FRASE_FINAL = "Só fazemos aquilo que treinamos e já executamos, no mínimo, três vezes.";
+
 export default function BriefingEmergencia() {
   return (
     <div className="space-y-6">
@@ -19,7 +21,7 @@ export default function BriefingEmergencia() {
             Briefing de Emergência
           </h1>
           <p className="text-slate-400 mt-2 text-sm max-w-2xl">
-            "Só fazemos aquilo que treinamos e já executamos, no mínimo, três vezes.".
+            Briefings e procedimentos de emergência para instrução e treinamento.
           </p>
         </div>
         <BackToDashboard />
