@@ -1,6 +1,6 @@
 import { base44 } from "@/api/base44Client";
 
-export const AVISO_ACCEPT = ".pdf,.jpg,.jpeg,.doc,.docx,.mp4,.pptx";
+export const AVISO_ACCEPT = ".pdf,.ppsx,.pptx,.doc,.docx,.jpg,.jpeg,.mp4";
 export const AVISO_MAX_MB = 50;
 
 export const PERFIS = [
@@ -27,6 +27,28 @@ export function parseProfiles(aviso) {
   }
 }
 
+export function parseDestinatarios(aviso) {
+  try {
+    const list = JSON.parse(aviso?.pilotos_destinatarios || "[]");
+    if (!Array.isArray(list)) return [];
+    return list.filter(Boolean).map(String);
+  } catch {
+    return [];
+  }
+}
+
+// Aviso direcionado a pilotos específicos (não é um comunicado geral).
+export function isDirecionado(aviso) {
+  return parseDestinatarios(aviso).length > 0;
+}
+
+// Sem destinatários = todos os pilotos; com destinatários = apenas os selecionados.
+export function isDestinadoAo(aviso, pilotId) {
+  const ids = parseDestinatarios(aviso);
+  if (ids.length === 0) return true;
+  return !!pilotId && ids.includes(String(pilotId));
+}
+
 export function isAplicavel(aviso, profileValue) {
   const list = parseProfiles(aviso);
   if (list.length === 0) return true;
@@ -38,7 +60,7 @@ export function anexoKind(name = "") {
   if (["jpg", "jpeg", "png"].includes(ext)) return "image";
   if (ext === "mp4") return "video";
   if (["doc", "docx"].includes(ext)) return "doc";
-  if (ext === "pptx") return "slide";
+  if (ext === "pptx" || ext === "ppsx") return "slide";
   return "pdf";
 }
 

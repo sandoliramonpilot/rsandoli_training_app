@@ -25,6 +25,15 @@
       "title": "Perfis de aeronave",
       "description": "JSON array: [\"AW119\"], [\"H125\"] ou ambos"
     },
+    "pilotos_destinatarios": {
+      "type": "string",
+      "title": "Pilotos destinat\u00e1rios (JSON)",
+      "description": "JSON array com os IDs dos pilotos selecionados. Vazio = todos os pilotos dos perfis indicados."
+    },
+    "email_enviado_at": {
+      "type": "string",
+      "title": "E-mail enviado em"
+    },
     "anexos": {
       "type": "string",
       "title": "Anexos (JSON)"

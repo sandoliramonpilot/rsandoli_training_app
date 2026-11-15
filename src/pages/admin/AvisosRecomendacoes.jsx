@@ -5,14 +5,16 @@ import AnexoButton from "@/components/avisos/AnexoButton";
 import AvisoFormModal from "@/components/avisos/AvisoFormModal";
 import { useAuth } from "@/lib/AuthContext";
 import { getAccessLevel } from "@/lib/accessControl";
-import { Plus, Edit3, Trash2, Loader2, Megaphone, AlertTriangle, Eye, EyeOff } from "lucide-react";
-import { parseAnexos, parseProfiles, PERFIS } from "@/lib/avisoUtils";
+import { Plus, Edit3, Trash2, Loader2, Megaphone, AlertTriangle, Eye, EyeOff, Mail, Users, CheckCircle2, XCircle } from "lucide-react";
+import { parseAnexos, parseProfiles, parseDestinatarios, PERFIS } from "@/lib/avisoUtils";
 
 export default function AvisosRecomendacoes() {
   const { user } = useAuth();
   const [avisos, setAvisos] = useState(null);
   const [editing, setEditing] = useState(undefined);
   const [busyId, setBusyId] = useState(null);
+  const [emailBusyId, setEmailBusyId] = useState(null);
+  const [emailResult, setEmailResult] = useState({});
 
   const canManage = ["admin_geral", "administrador"].includes(getAccessLevel(user));
 
@@ -32,6 +34,24 @@ export default function AvisosRecomendacoes() {
       await load();
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const enviarEmail = async (aviso) => {
+    setEmailBusyId(aviso.id);
+    setEmailResult((p) => ({ ...p, [aviso.id]: null }));
+    try {
+      const res = await base44.functions.invoke("sendAvisoEmail", { aviso_id: aviso.id });
+      const data = res.data || {};
+      setEmailResult((p) => ({ ...p, [aviso.id]: data }));
+      if (data.sent > 0) await load();
+    } catch (err) {
+      setEmailResult((p) => ({
+        ...p,
+        [aviso.id]: { ok: false, message: err?.response?.data?.error || err.message },
+      }));
+    } finally {
+      setEmailBusyId(null);
     }
   };
 
@@ -66,7 +86,7 @@ export default function AvisosRecomendacoes() {
             AVISOS E RECOMENDAÇÕES
           </h1>
           <p className="text-slate-400 mt-2 text-sm">
-            Comunicados operacionais publicados para os pilotos, por aeronave.
+            Comunicados operacionais publicados para os pilotos, por aeronave e por piloto.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -97,6 +117,8 @@ export default function AvisosRecomendacoes() {
           {avisos.map((a) => {
             const anexos = parseAnexos(a);
             const profiles = parseProfiles(a);
+            const destinatarios = parseDestinatarios(a);
+            const resultado = emailResult[a.id];
             return (
               <article
                 key={a.id}
@@ -129,6 +151,11 @@ export default function AvisosRecomendacoes() {
                           {p.label}
                         </span>
                       ))}
+                      {destinatarios.length > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-sky-500/40 text-sky-300 bg-sky-500/10">
+                          <Users className="w-3 h-3" /> {destinatarios.length} piloto(s)
+                        </span>
+                      )}
                     </div>
                     <h3 className="text-base font-semibold text-slate-100 mt-2">{a.titulo}</h3>
                     <p className="text-sm text-slate-400 mt-1.5 whitespace-pre-line">{a.texto}</p>
@@ -139,8 +166,57 @@ export default function AvisosRecomendacoes() {
                         ))}
                       </div>
                     )}
+
+                    {resultado && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {resultado.sent > 0 && (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-2.5 py-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> E-mail enviado para {resultado.sent} piloto(s).
+                          </span>
+                        )}
+                        {resultado.message && (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-2.5 py-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5" /> {resultado.message}
+                          </span>
+                        )}
+                        {(resultado.failed || []).map((f, i) => (
+                          <span
+                            key={`f-${i}`}
+                            className="inline-flex items-center gap-1.5 text-[11px] text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-lg px-2.5 py-1.5"
+                          >
+                            <XCircle className="w-3.5 h-3.5" /> {f.nome || f.email}: {f.motivo}
+                          </span>
+                        ))}
+                        {(resultado.sem_conta || []).map((s, i) => (
+                          <span
+                            key={`s-${i}`}
+                            className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 bg-slate-700/20 border border-slate-600 rounded-lg px-2.5 py-1.5"
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5" /> {s.nome || s.email}: sem conta de acesso
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {a.email_enviado_at && (
+                      <p className="mt-2 text-[11px] text-slate-500">
+                        Último envio por e-mail: {new Date(a.email_enviado_at).toLocaleString("pt-BR")}
+                      </p>
+                    )}
                   </div>
                   <div className="flex gap-1 shrink-0">
+                    <button
+                      onClick={() => enviarEmail(a)}
+                      disabled={emailBusyId === a.id}
+                      title="Enviar por e-mail aos pilotos destinatários"
+                      className="p-2 text-slate-400 hover:text-sky-300 rounded-lg hover:bg-white/5 disabled:opacity-40"
+                    >
+                      {emailBusyId === a.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Mail className="w-4 h-4" />
+                      )}
+                    </button>
                     <button
                       onClick={() => togglePublicado(a)}
                       disabled={busyId === a.id}

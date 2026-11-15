@@ -1,8 +1,16 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { X, Loader2, AlertTriangle, Upload } from "lucide-react";
-import { AVISO_ACCEPT, AVISO_MAX_MB, PERFIS, parseAnexos, parseProfiles } from "@/lib/avisoUtils";
+import {
+  AVISO_ACCEPT,
+  AVISO_MAX_MB,
+  PERFIS,
+  parseAnexos,
+  parseProfiles,
+  parseDestinatarios,
+} from "@/lib/avisoUtils";
 import AnexoButton from "@/components/avisos/AnexoButton";
+import PilotosDestinatariosPicker from "@/components/avisos/PilotosDestinatariosPicker";
 
 const fieldCls =
   "w-full px-3 py-2 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/30";
@@ -15,6 +23,7 @@ export default function AvisoFormModal({ aviso, autor, onClose, onSaved }) {
     publicado: aviso ? aviso.publicado !== false : true,
     profiles: aviso ? parseProfiles(aviso) : ["AW119", "H125"],
     anexos: aviso ? parseAnexos(aviso) : [],
+    destinatarios: aviso ? parseDestinatarios(aviso) : [],
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -73,6 +82,7 @@ export default function AvisoFormModal({ aviso, autor, onClose, onSaved }) {
       importante: form.importante,
       publicado: form.publicado,
       aircraft_profiles: JSON.stringify(form.profiles),
+      pilotos_destinatarios: JSON.stringify(form.destinatarios),
       anexos: JSON.stringify(form.anexos),
       autor: autor || "",
       data_publicacao: new Date().toISOString().slice(0, 10),
@@ -151,6 +161,11 @@ export default function AvisoFormModal({ aviso, autor, onClose, onSaved }) {
             </div>
           </div>
 
+          <PilotosDestinatariosPicker
+            value={form.destinatarios}
+            onChange={(v) => set("destinatarios", v)}
+          />
+
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer px-3 py-2.5 rounded-lg bg-background border border-border">
               <input
@@ -175,7 +190,7 @@ export default function AvisoFormModal({ aviso, autor, onClose, onSaved }) {
           <div className="p-4 rounded-xl bg-background border border-border space-y-3">
             <p className="text-xs font-semibold text-slate-300">Anexos</p>
             <p className="text-[11px] text-slate-500">
-              Aceita .pdf, .jpg, .doc/.docx, .mp4 e .pptx — até {AVISO_MAX_MB} MB por arquivo.
+              Aceita .pdf, .ppsx, .doc/.docx, .pptx, .jpg e .mp4 — até {AVISO_MAX_MB} MB por arquivo.
             </p>
             <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 cursor-pointer">
               {uploading ? (
