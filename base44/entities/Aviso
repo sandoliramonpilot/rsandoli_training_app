@@ -1,0 +1,10 @@
+{
+  "titulo": { "type": "string", "title": "Título" },
+  "texto": { "type": "string", "title": "Conteúdo" },
+  "importante": { "type": "boolean", "title": "Marcar como importante" },
+  "categoria": { "type": "string", "title": "Categoria" },
+  "anexos": { "type": "array", "title": "Anexos" },
+  "publicado": { "type": "boolean", "title": "Publicado" },
+  "autor": { "type": "string", "title": "Autor" },
+  "data_publicacao": { "type": "string", "format": "date", "title": "Data de publicação" }
+}
