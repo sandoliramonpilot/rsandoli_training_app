@@ -8,7 +8,7 @@ const APRESENTACAO_PARAGRAFOS = [
   "A segurança não começa na decolagem. Ela começa na preparação. Este briefing foi desenvolvido para fortalecer a capacidade do piloto de reconhecer, compreender e responder corretamente às situações anormais e de emergência que podem surgir durante o voo. Mais do que memorizar procedimentos, o objetivo é construir confiança, disciplina operacional e consciência situacional para agir com precisão quando cada segundo importa. Cada alerta estudado, cada cenário discutido e cada procedimento praticado representam um investimento direto na segurança da missão e na proteção da tripulação e dos passageiros. O treinamento contínuo transforma conhecimento em habilidade e habilidade em reação adequada. Quando a situação exigir uma resposta imediata, não haverá tempo para aprender, apenas para executar.",
 ];
 
-const FRASE_FINAL = "Em uma emergência real, o conhecimento orienta, o treinamento guia nossas ações e o desempenho determina o resultado. Mas é o treinamento que conduz nossas ações, permitindo uma atuação natural, precisa e assertiva, capaz de preservar o controle da aeronave e manter os níveis adequados de segurança operacional. O resultado é o reflexo daquilo que treinamos, aprendemos e praticamos.",;
+const FRASE_FINAL = "Em uma emergência real, o conhecimento orienta, o treinamento guia nossas ações e o desempenho determina o resultado. Mas é o treinamento que conduz nossas ações, permitindo uma atuação natural, precisa e assertiva, capaz de preservar o controle da aeronave e manter os níveis adequados de segurança operacional. O resultado é o reflexo daquilo que treinamos, aprendemos e praticamos.";
 
 
 export default function BriefingEmergencia() {
