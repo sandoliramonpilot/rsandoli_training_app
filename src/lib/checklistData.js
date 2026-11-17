@@ -36,7 +36,6 @@ export const CHECKLIST_PHASES = [
         category: "Inspeção Interna",
         items: [
           "Cintos e assentos — funcionais e seguros",
-          "Controles de voo — movimento livre e completo",
           "Pedais — curso completo e suave",
           "Coletivo e cíclico — sem folga excessiva",
           "Extintor de incêndio a bordo e carregado",
@@ -49,7 +48,7 @@ export const CHECKLIST_PHASES = [
         items: [
           "Certificado de matrícula e airworthiness a bordo",
           "Licença de piloto e certificado médico válidos",
-          "Diário de bordo atualizado",
+          "Diário de bordo atualizado - Horímetro inicial anotado",
           "Plano de voo arquivado (se aplicável)",
           "Briefing de passageiros realizado",
         ],
@@ -57,9 +56,8 @@ export const CHECKLIST_PHASES = [
       {
         category: "Combustível",
         items: [
-          "Quantidade de combustível suficiente para missão + reserva",
+          "Quantidade de combustível conferido",
           "Tampa do tanque fechada e travada",
-          "Válvulas de combustível na posição correta",
           "Indicadores de combustível funcionais",
         ],
       },
