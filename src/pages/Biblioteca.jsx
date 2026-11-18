@@ -89,15 +89,15 @@ export default function Biblioteca() {
   }, [offlineDocs]);
 
   const load = async () => {
-    const [d, a] = await Promise.all([
-      base44.entities.LibraryDocument.filter(libraryProfileFilter(profileValue), { sort: "-created_date", limit: 200 }).then((r) => r.items).catch(() => []),
-      base44.entities.Aircraft.filter(profileFilter).catch(() => []),
-      base44.auth.me().catch(() => null),
-    ]);
-    setDocs(d);
-    setAircraft(a);
-    setUser(a);
-  };
+  const [d, a, u] = await Promise.all([
+    base44.entities.LibraryDocument.filter(libraryProfileFilter(profileValue), { sort: "-created_date", limit: 200 }).then((r) => r.items).catch(() => []),
+    base44.entities.Aircraft.filter(profileFilter).catch(() => []),
+    base44.auth.me().catch(() => null),
+  ]);
+  setDocs(d);
+  setAircraft(a);
+  setUser(u);   // era setUser(a)
+};
 
   useEffect(() => { load(); }, [profileFilter]);
 
