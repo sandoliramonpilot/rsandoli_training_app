@@ -269,7 +269,7 @@ export const CHECKLIST_PHASES = [
       {
         category: "Painel de Reconfiguração (RCP)",
         items: [
-          "NÃO APLICÁVEL"
+          "NÃO APLICÁVEL",
           "ADU Knob — NORM (SAME ADC apaga); 1 (SAME ADC exibida, verificar airspeed/altitude/VSI válidos); 2 (idem); retornar a NORM",
           "AHRS Knob — NORM (SAME AHRS apaga); 1 (SAME AHRS exibida, verificar atitude/proa válidos); 2 (idem); retornar a NORM",
           "GPS Knob — NORM (FMS2 piloto / FMS1 copiloto); 1 (FMS1 ambos, SAME GPS/SAME NAV exibidas); 2 (FMS2 ambos, SAME GPS/SAME NAV exibidas); retornar a NORM",
@@ -299,7 +299,7 @@ export const CHECKLIST_PHASES = [
       {
         category: "Flight Director (FD)",
         items: [
-          "NÃO APLICÁVEL"
+          "NÃO APLICÁVEL",
           "SBY — Pressionar e manter; verificar todos anunciadores FD iluminam; soltar",
           "FD STBY (botão cíclico) — Pressionar e manter; verificar anunciadores; soltar",
           "HDG — Pressionar HDG no PFD para sincronizar bug; com SAS 1/2 e ATTD HOLD ON, engatar modo HDG; confirmar bug magenta e label HDG no ADI",
