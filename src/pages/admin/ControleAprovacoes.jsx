@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -17,18 +18,15 @@ import {
 } from "lucide-react";
 
 const AREA_ICON = { principal: LayoutDashboard, operacoes: ClipboardList, academy: GraduationCap, biblioteca: Library, administracao: ShieldCheck };
-
 const SOURCE_ICON = {
   aircraft: Plane, pilot: Users, pilot_license: Award, pilot_habilitacao: BadgeCheck,
   qrh_validation: Siren, checklist_validation: ClipboardCheck, training_doc: GraduationCap,
   library_doc: Library, user_invite: UserPlus, pilot_change: UserCog, oat_change: HeartPulse,
 };
-
 const DECISION_ICON = {
   approved: CheckCircle2, rejected: RejectIcon, correction_requested: AlertTriangle,
   suspended: PauseCircle, unsuspended: PlayCircle,
 };
-
 const TONE_BADGE = {
   emerald: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
   rose: "bg-rose-500/15 text-rose-300 border-rose-500/30",
@@ -37,7 +35,6 @@ const TONE_BADGE = {
   sky: "bg-sky-500/15 text-sky-300 border-sky-500/30",
   slate: "bg-slate-700/40 text-slate-300 border-slate-600/40",
 };
-
 const STATUS_FILTERS = [
   { v: "all", label: "Todos" },
   { v: "pending", label: "Pendentes" },
@@ -47,28 +44,44 @@ const STATUS_FILTERS = [
   { v: "suspended", label: "Suspensos" },
 ];
 
+const VALID_AREA = (v) => AREAS.some((a) => a.key === v);
+const VALID_STATUS = (v) => STATUS_FILTERS.some((f) => f.v === v);
+
 export default function ControleAprovacoes() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  // Deep-link: ?area=&source=&status=
+  const urlArea = searchParams.get("area");
+  const urlSource = searchParams.get("source");
+  const urlStatus = searchParams.get("status");
+
   const [tab, setTab] = useState("fila");
-  const [area, setArea] = useState("principal");
+  const [area, setArea] = useState(VALID_AREA(urlArea) ? urlArea : "principal");
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [history, setHistory] = useState([]);
   const [usingSample, setUsingSample] = useState(false);
-
-  // filtros da área
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [moduleFilter, setModuleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(VALID_STATUS(urlStatus) ? urlStatus : "all");
+  const [moduleFilter, setModuleFilter] = useState(urlSource || "all");
   const [query, setQuery] = useState("");
-
-  // detalhe
   const [selected, setSelected] = useState(null);
   const [decision, setDecision] = useState("approved");
   const [justification, setJustification] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const isAdminGeral = getAccessLevel(user) === "admin_geral";
+
+  // Reage a mudanças de URL sem recarregar a página
+  useEffect(() => {
+    const a = searchParams.get("area");
+    const s = searchParams.get("source");
+    const st = searchParams.get("status");
+    if (a && VALID_AREA(a)) setArea(a);
+    if (s) setModuleFilter(s);
+    if (st && VALID_STATUS(st)) setStatusFilter(st);
+  }, [searchParams]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -102,7 +115,6 @@ export default function ControleAprovacoes() {
     if (tab === "historico" && isAdminGeral) loadHistory();
   }, [tab, isAdminGeral, loadHistory]);
 
-  // Contadores por área (pendentes e total).
   const areaCounts = useMemo(() => {
     const counts = {};
     for (const a of AREAS) counts[a.key] = { pending: 0, total: 0 };
@@ -117,9 +129,7 @@ export default function ControleAprovacoes() {
   const totalPending = useMemo(() => items.filter((i) => i.display_status === "pending").length, [items]);
   const totalSuspended = useMemo(() => items.filter((i) => i.display_status === "suspended").length, [items]);
   const totalApproved = useMemo(() => items.filter((i) => i.display_status === "approved").length, [items]);
-  const totalRejected = useMemo(() => items.filter((i) => i.display_status === "rejected").length, [items]);
 
-  // Itens da área atual com filtros aplicados.
   const areaItems = useMemo(() => {
     let list = items.filter((i) => i.area === area);
     if (statusFilter !== "all") list = list.filter((i) => i.display_status === statusFilter);
@@ -203,7 +213,6 @@ export default function ControleAprovacoes() {
         <SummaryCard icon={ListChecks} label="Total de itens" value={items.length} tone="slate" />
       </div>
 
-      {/* Tabs */}
       <div className="inline-flex bg-[#1A1D25] border border-slate-700/60 rounded-lg p-1 text-sm">
         <TabButton active={tab === "fila"} onClick={() => setTab("fila")} icon={ListChecks} label="Fila de Análise" />
         <TabButton active={tab === "historico"} onClick={() => setTab("historico")} icon={HistoryIcon} label="Histórico" />
@@ -211,7 +220,6 @@ export default function ControleAprovacoes() {
 
       {tab === "fila" && (
         <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4">
-          {/* Menu lateral interno por área */}
           <aside className="md:sticky md:top-4 md:self-start">
             <p className="px-2 mb-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Áreas</p>
             <div className="flex md:flex-col gap-1.5 overflow-x-auto md:overflow-visible pb-1 md:pb-0">
@@ -240,7 +248,6 @@ export default function ControleAprovacoes() {
             </div>
           </aside>
 
-          {/* Painel da área */}
           <div className="min-w-0 space-y-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2">
@@ -545,8 +552,6 @@ function DetailDialog({ item, decision, setDecision, justification, setJustifica
                 href="#"
                 onClick={async (e) => {
                   e.preventDefault();
-                  // Validação de esquema: só abrimos URIs de armazenamento privadas do app.
-                  // Rejeita esquemas perigosos como javascript:, data:, vbscript:.
                   const uri = String(item.doc_uri || "");
                   const isSafeUri =
                     /^(https?:|storage:\/\/|private-files:\/\/|media\.base44\.com|static\.wixstatic\.com)/i.test(uri) ||
@@ -574,7 +579,6 @@ function DetailDialog({ item, decision, setDecision, justification, setJustifica
             </div>
           )}
 
-          {/* Histórico de decisões do registro */}
           <div className="rounded-xl border border-slate-700/60 bg-[#1A1D25] px-4 py-3">
             <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-2">Histórico de decisões</p>
             {loadingHistory ? (
@@ -623,7 +627,6 @@ function DetailDialog({ item, decision, setDecision, justification, setJustifica
                 );
               })}
             </div>
-
             <div>
               <label className="text-[11px] uppercase tracking-wider text-slate-500">Justificativa</label>
               <textarea
