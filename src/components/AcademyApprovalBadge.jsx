@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Hourglass, X, AlertTriangle, ChevronRight } from "lucide-react";
 
+// Retorna { id, label, pill, dot, icon } tratando undefined/null/"" como legado (aprovado)
 export function getApprovalInfo(status) {
   switch (status) {
     case "pending_review":
@@ -29,7 +30,7 @@ export function getApprovalInfo(status) {
         icon: AlertTriangle,
       };
     default:
-      return null;
+      return null; // approved ou legado — sem selo
   }
 }
 
@@ -38,6 +39,7 @@ export default function AcademyApprovalBadge({ status, size = "sm", linkTo }) {
   if (!info) return null;
   const Icon = info.icon;
   const sizeCls = size === "xs" ? "text-[10px] px-2 py-0.5" : "text-[11px] px-2.5 py-1";
+  const iconCls = size === "xs" ? "w-2.5 h-2.5" : "w-3 h-3";
   const baseCls = `inline-flex items-center gap-1 rounded-full border font-medium ${info.pill} ${sizeCls}`;
 
   if (linkTo) {
@@ -47,16 +49,16 @@ export default function AcademyApprovalBadge({ status, size = "sm", linkTo }) {
         className={`${baseCls} hover:brightness-125 transition-all`}
         title="Abrir no Controle de Aprovações"
       >
-        <Icon className={size === "xs" ? "w-2.5 h-2.5" : "w-3 h-3"} />
+        <Icon className={iconCls} />
         {info.label}
-        <ChevronRight className={size === "xs" ? "w-2.5 h-2.5" : "w-3 h-3"} />
+        <ChevronRight className={iconCls} />
       </Link>
     );
   }
 
   return (
     <span className={baseCls}>
-      <Icon className={size === "xs" ? "w-2.5 h-2.5" : "w-3 h-3"} />
+      <Icon className={iconCls} />
       {info.label}
     </span>
   );
