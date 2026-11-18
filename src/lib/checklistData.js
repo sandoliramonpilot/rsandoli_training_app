@@ -157,7 +157,6 @@ export const CHECKLIST_PHASES = [
           "Chave PUMP 1 — ON (1 FUEL PUMP apaga, verificar pressão); OFF (1-2 FUEL PMP e FUEL PRESS exibidas)",
           "Chave PUMP 2 — ON (2 FUEL PUMP e FUEL PRESS apagam, verificar pressão)",
           "Chave PUMP 1 — ON; cautela 1 FUEL PUMP apaga",
-          ],
         ],
       },
     ],
@@ -191,7 +190,7 @@ export const CHECKLIST_PHASES = [
         category: "Partida do Motor",
         items: [
           "Botão START (manete coletiva) — Pressionar e soltar; MFD exibe ENG START e IGNITER ON",
-          "Disparar cronômetro"
+          "Disparar cronômetro",
           "Acelerador do motor (N1 > 12% e ITT < 100°C) — Twist Grip posição IDLE; observar aumento de N1 e ITT. Cuidado: ITT transiente máximo 1090°C, não exceder 980°C por mais de 2s. Monitorar partida — ignição em 10s",
           "Pressão de óleo do motor — Verificar (pode exceder 110 psi temporariamente em partida a frio)",
           "MFD — Verificar desativação automática do motor de partida (N1 ≈43%), avisos ENG START/IGNITER ON apagam; ao rotor girar, verificar aumento da pressão hidráulica",
