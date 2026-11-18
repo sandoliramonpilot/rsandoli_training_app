@@ -121,7 +121,7 @@ export const CHECKLIST_PHASES = [
           "Painel de combustível — Todas as chaves OFF ou CLOSED",
           "Chave SERVO — NORM",
           "Chave AWG — NORM",
-          "Chave TEST — Centralizada",
+          "Chave FCU/FIRE TEST — Centralizada",
           "Chave F-TRIM — ON",
           "Chaves AHRS, ADU e GPS — NORM",
           "Chave ELT — ARM",
@@ -151,7 +151,6 @@ export const CHECKLIST_PHASES = [
           "Chave TEST — LAMP (manter); verificar iluminação de todos os interruptores e anunciadores do painel. Manter TEST acionada. Todos os alertas sonoros armazenados serão reproduzidos sequencialmente",
           "Chave TEST — FCU/FIRE (manter); aviso CAS ENG FIRE, FUEL LOW; alertas PBA MWL e MCL e sonoro ENGINE FIRE Combustível indicação 0 kg e X XTRANSFER",
           "Chave EEC/MEC — Autoteste alternando MEC-EEC: verificar EEC FAIL, EEC DEGRADED e MEC OPN sequenciais com tons no headset; sucesso indicado por MEC OPN ao final; PLA POS reativa ao final (nota: com NR <30% o MEC OPN é exibido independente da posição da chave)",
-          "Quantidade de combustível — Verificar",
           "Chave VALVE — OPEN; verificar luz OPEN no painel de combustível",
           "Chave PUMP (transferência) — XFER; cautela XFER PUMP apaga",
           "Chave PUMP 1 — ON (1 FUEL PUMP apaga, verificar pressão); OFF (1-2 FUEL PMP e FUEL PRESS exibidas)",
@@ -205,8 +204,8 @@ export const CHECKLIST_PHASES = [
           "Chave BAT — Confirmar ON",
           "Energia externa — Desconectar (se usada), porta segura; EXT PWR ON apaga; BATT DISCH exibida",
           "Chave GEN — ON; DC GEN e BATT DISCH apagam",
-          "Indicação elétrica — Tensão dentro dos limites (fonte GEN) e amperagem dentro dos limites",
-          "Chaves INV 1 e 2 — ON; 1 INV OFF e 2 INV OFF apagam",
+          "Indicação elétrica — Tensão e amperagem dentro dos limites (fonte GEN)",
+          "Chaves INV 1 e 2 — ON; indicação no CAS 1 INV OFF e 2 INV OFF apagam",
           "Chave AVNX MSTR — ON",
           "Chave AUX GEN — ON (nota: com óleo do motor <10°C manter IDLE até 10°C; se transmissão ainda a 0°C, girar suavemente para FLT)",
         ],
@@ -231,19 +230,16 @@ export const CHECKLIST_PHASES = [
       {
         category: "Sistema Hidráulico",
         items: [
-          "Chave SERVO em NORM — pequenos movimentos de cíclico, coletiva e pedais; queda de pressão igual nos sistemas #1 e #2, não excedendo 70 psi",
-          "Chave SERVO em 1 OFF — cautela 2 SERVO exibida; repetir verificação no sistema #1; queda não deve exceder 70 psi, sem aumento de força, discontinuidade ou acoplamento cíclico/coletivo",
-          "Repetir com chave em 1 OFF para checar sistema #2, depois retornar a NORM (nota: boost dos pedais vem do sistema #1; ao testar o #2 é normal pedais ficarem sem boost)",
+          "Chave SERVO em NORM — pequenos movimentos (Ftrim acionado) de cíclico, coletiva e pedais; queda de pressão igual nos sistemas #1 e #2, não excedendo 70 psi",
+          "Chave SERVO em 1 OFF —mensagem 2 SERVO exibida; repetir verificação acima; queda não deve exceder 70 psi, sem aumento de força, discontinuidade ou acoplamento cíclico/coletivo. OBS: Pedal apenas rígido",
+          "Repetir com chave em 1 OFF para checar sistema #1, depois retornar a NORM (nota: boost dos pedais vem do sistema #1; ao testar o #2 é normal pedais ficarem sem boost)",
         ],
       },
       {
         category: "Sistema de Combustível",
         items: [
           "Chave XFER — OFF; cautela XFER PUMP exibida",
-          "Chaves PUMP 1 e PUMP 2 — OFF; cautelas 1-2 FUEL PMP e FUEL PRESS exibidas; pressão de combustível zero",
-          "Bomba de combustível acionada pelo motor — Verificar operação",
-          "Chave PUMP 1 — ON; 1 FUEL PMP e FUEL PRESS apagam",
-          "Chave PUMP 1 — OFF; 1-2 FUEL PMP e FUEL PRESS exibidas novamente",
+          "Chaves PUMP 1 e PUMP 2 — OFF; cautelas 1-2 FUEL PMP e FUEL PRESS exibidas; pressão de combustível zero. Bomba mecânica de combustível acionada pelo motor",
           "Chave PUMP 2 — ON; 2 FUEL PMP e FUEL PRESS apagam; verificar pressão dentro dos limites",
           "Chave PUMP 1 — ON; 1 FUEL PMP apaga (nota: pode ocorrer ativação temporária de FUEL FILTER pela variação de pressão)",
           "Chave XFER — XFER; cautela XFER PUMP apaga",
@@ -260,14 +256,11 @@ export const CHECKLIST_PHASES = [
         category: "Sistema Elétrico CA (Inversores) e Gerador Auxiliar DC",
         items: [
           "MFD — Verificar tensão 115±5 VAC",
-          "Chave INV 1 — OFF; cautelas 1 INV OFF e 1 SAS OFF exibidas (1 VG pode aparecer brevemente)",
-          "Chave SAS 1 — SAS 1; cautela 1 SAS OFF apaga",
-          "Chave INV 1 — ON; 1 INV OFF apaga, 1 SAS OFF exibida",
-          "Chave SAS 1 — SAS 1; 1 SAS OFF apaga",
-          "Chave INV 2 — OFF; cautelas 2 INV OFF e 2 SAS OFF exibidas (2 VG pode aparecer brevemente)",
-          "Chave SAS 2 — SAS 2; 2 SAS OFF apaga",
-          "Chave INV 2 — ON; 2 INV OFF apaga, 2 SAS OFF exibida",
-          "Chave SAS 2 — SAS 2; 2 SAS OFF apaga",
+          "Chave INV 1 — OFF; cautelas 1 INV OFF e 1 SAS OFF pode ser exibidas (1 VG pode aparecer brevemente)",
+          "Chave SAS 1 — ON; cautela 1 SAS OFF apaga",
+          "Chave INV 1 — ON; 1 INV OFF apaga, 1 SAS OFF pode ser exibida",
+          "Chave SAS 1 — ON; 1 SAS OFF apaga",
+          "Chave INV 2 — Repetir procedimento acima,
           "Gerador Auxiliar DC — Pressionar e manter TEST; 0-3s: DC GEN e BATT DISCH exibidas, fonte BATT ≈24VDC",
           "Gerador Auxiliar DC — 3-6s: BATT DISCH apaga, fonte AUX GEN ≈26-28VDC",
           "Gerador Auxiliar DC — Soltar o botão: DC GEN apaga, fonte GEN ≈28VDC estabilizados",
@@ -276,6 +269,7 @@ export const CHECKLIST_PHASES = [
       {
         category: "Painel de Reconfiguração (RCP)",
         items: [
+          "NÃO APLICÁVEL"
           "ADU Knob — NORM (SAME ADC apaga); 1 (SAME ADC exibida, verificar airspeed/altitude/VSI válidos); 2 (idem); retornar a NORM",
           "AHRS Knob — NORM (SAME AHRS apaga); 1 (SAME AHRS exibida, verificar atitude/proa válidos); 2 (idem); retornar a NORM",
           "GPS Knob — NORM (FMS2 piloto / FMS1 copiloto); 1 (FMS1 ambos, SAME GPS/SAME NAV exibidas); 2 (FMS2 ambos, SAME GPS/SAME NAV exibidas); retornar a NORM",
@@ -305,6 +299,7 @@ export const CHECKLIST_PHASES = [
       {
         category: "Flight Director (FD)",
         items: [
+          "NÃO APLICÁVEL"
           "SBY — Pressionar e manter; verificar todos anunciadores FD iluminam; soltar",
           "FD STBY (botão cíclico) — Pressionar e manter; verificar anunciadores; soltar",
           "HDG — Pressionar HDG no PFD para sincronizar bug; com SAS 1/2 e ATTD HOLD ON, engatar modo HDG; confirmar bug magenta e label HDG no ADI",
@@ -358,7 +353,7 @@ export const CHECKLIST_PHASES = [
         items: [
           "MFD — Carregar plano de voo; ajustar frequências de comunicação/navegação e código do transponder (nota: VOR pode ficar instável com separação <1,5MHz entre COMM e NAV; transponder muda automaticamente para ALT na decolagem)",
           "Portas (passageiros e tripulação) — Fechar e travar; cautela DOORS OPEN apaga",
-          "Acelerador do motor — Posição FLT; cautela PLA POS apaga; NR em 102%",
+          "Acelerador do motor — Posição FLT; Mensagem PLA POS apagada; NR em 102%",
           "SAS 1 e SAS 2 — ON",
           "PLT IN COMMAND — Selecionar conforme necessário",
           "PFD — Verificar instrumentos de voo; checagem cruzada EICAS/Standby Atitude; ajustar altímetro",
