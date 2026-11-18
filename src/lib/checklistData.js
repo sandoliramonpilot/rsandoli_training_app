@@ -260,7 +260,7 @@ export const CHECKLIST_PHASES = [
           "Chave SAS 1 — ON; cautela 1 SAS OFF apaga",
           "Chave INV 1 — ON; 1 INV OFF apaga, 1 SAS OFF pode ser exibida",
           "Chave SAS 1 — ON; 1 SAS OFF apaga",
-          "Chave INV 2 — Repetir procedimento acima,
+          "Chave INV 2 — Repetir procedimento acima",
           "Gerador Auxiliar DC — Pressionar e manter TEST; 0-3s: DC GEN e BATT DISCH exibidas, fonte BATT ≈24VDC",
           "Gerador Auxiliar DC — 3-6s: BATT DISCH apaga, fonte AUX GEN ≈26-28VDC",
           "Gerador Auxiliar DC — Soltar o botão: DC GEN apaga, fonte GEN ≈28VDC estabilizados",
