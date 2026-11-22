@@ -10,6 +10,7 @@ import PptxViewer from "@/components/library/PptxViewer";
 import DownloadUrlModal from "@/components/library/DownloadUrlModal";
 import AcademyApprovalBadge from "@/components/AcademyApprovalBadge";
 import { useProfile } from "@/lib/ProfileContext";
+import { getAccessLevel } from "@/lib/accessControl";
 
 // Legacy categories que podem existir em documentos antigos
 const LEGACY_LABELS = {
@@ -73,6 +74,7 @@ export default function Biblioteca() {
     try { return JSON.parse(localStorage.getItem("offline_docs") || "[]"); } catch { return []; }
   });
   const [user, setUser] = useState(null);
+  const isAdminGeral = getAccessLevel(user) === "admin_geral";
 
   useEffect(() => {
     localStorage.setItem("library_favorites", JSON.stringify(favorites));
@@ -96,7 +98,7 @@ export default function Biblioteca() {
   ]);
   setDocs(d);
   setAircraft(a);
-  setUser(u);   // era setUser(a)
+  setUser(u);   // era setUser(a) — bug
 };
 
   useEffect(() => { load(); }, [profileFilter]);
@@ -330,6 +332,15 @@ export default function Biblioteca() {
                 <div className="flex flex-wrap gap-1 mt-2">
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${statusTone} bg-slate-700/30`}>{status}</span>
                   <AcademyApprovalBadge status={doc.approval_status} size="xs" />
+                  <AcademyApprovalBadge
+                    status={doc.approval_status}
+                    size="xs"
+                    linkTo={
+                      isAdminGeral && doc.approval_status
+                        ? `/controle-aprovacoes?area=biblioteca&source=library_doc&status=pending`
+                        : undefined
+                    }
+                  />
                   {(doc.tags || "").split(",").slice(0, 2).map((t, i) => t.trim() && (
                     <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-400">{t.trim()}</span>
                   ))}
