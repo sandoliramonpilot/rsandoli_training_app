@@ -1,185 +1,126 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
-import { getAccessLevel } from "@/lib/accessControl";
-import {
-  AREAS, AREA_LABEL, APPROVAL_SOURCES, APPROVAL_SOURCE_LABEL, SOURCE_BY_KEY, SOURCES_BY_AREA,
-  DECISION_LABELS, DECISION_OPTIONS, DISPLAY_STATUS, SAMPLE_ITEMS, SAMPLE_HISTORY,
-} from "@/lib/approvalSources";
+import { can, getAccessLevel } from "@/lib/accessControl";
 import BackToDashboard from "@/components/BackToDashboard";
-import {
-  ShieldCheck, ListChecks, History as HistoryIcon, Search, XCircle, FileText,
-  CheckCircle2, XCircle as RejectIcon, AlertTriangle, PauseCircle, PlayCircle,
-  ChevronRight, X, Inbox, LayoutDashboard, ClipboardList, GraduationCap, Library,
-  Users, Plane, Award, BadgeCheck, Siren, ClipboardCheck, UserPlus, UserCog,
-  HeartPulse, Circle,
-} from "lucide-react";
+import { Plus, X, Plane, Trash2, Edit3, Wrench, CheckCircle2, AlertTriangle, Hourglass, XCircle, Scale, ChevronRight } from "lucide-react";
+import { useProfile } from "@/lib/ProfileContext";
 
-const AREA_ICON = { principal: LayoutDashboard, operacoes: ClipboardList, academy: GraduationCap, biblioteca: Library, administracao: ShieldCheck };
-const SOURCE_ICON = {
-  aircraft: Plane, pilot: Users, pilot_license: Award, pilot_habilitacao: BadgeCheck,
-  qrh_validation: Siren, checklist_validation: ClipboardCheck, training_doc: GraduationCap,
-  library_doc: Library, user_invite: UserPlus, pilot_change: UserCog, oat_change: HeartPulse,
+const STATUS = {
+  available: { label: "Disponível", color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
+  in_maintenance: { label: "Em manutenção", color: "text-amber-700 bg-amber-50 border-amber-200", icon: Wrench },
+  grounded: { label: "Em missão externa", color: "text-sky-700 bg-sky-50 border-sky-200", icon: Plane },
 };
-const DECISION_ICON = {
-  approved: CheckCircle2, rejected: RejectIcon, correction_requested: AlertTriangle,
-  suspended: PauseCircle, unsuspended: PlayCircle,
-};
-const TONE_BADGE = {
-  emerald: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  rose: "bg-rose-500/15 text-rose-300 border-rose-500/30",
-  amber: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  orange: "bg-orange-500/15 text-orange-300 border-orange-500/30",
-  sky: "bg-sky-500/15 text-sky-300 border-sky-500/30",
-  slate: "bg-slate-700/40 text-slate-300 border-slate-600/40",
-};
-const STATUS_FILTERS = [
-  { v: "all", label: "Todos" },
-  { v: "pending", label: "Pendentes" },
-  { v: "approved", label: "Aprovados" },
-  { v: "rejected", label: "Reprovados" },
-  { v: "correction", label: "Em correção" },
-  { v: "suspended", label: "Suspensos" },
-];
 
-const VALID_AREA = (v) => AREAS.some((a) => a.key === v);
-const VALID_STATUS = (v) => STATUS_FILTERS.some((f) => f.v === v);
+const APPROVAL = {
+  approved: null,
+  pending: { label: "Aguardando aprovação", color: "text-amber-700 bg-amber-50 border-amber-200", icon: Hourglass, status: "pending" },
+  rejected: { label: "Rejeitada", color: "text-rose-700 bg-rose-50 border-rose-200", icon: XCircle, status: "rejected" },
+};
 
-export default function ControleAprovacoes() {
+const emptyForm = {
+  registration: "",
+  callsign: "",
+  model: "",
+  manufacturer: "",
+  operator_name: "",
+  year: "",
+  total_hours: 0,
+  total_mnt_hours: 0,
+  color: "",
+  status: "available",
+  notes: "",
+  empty_weight_kg: "",
+  empty_cg_m: "",
+  empty_weight_date: "",
+};
+
+export default function Aircraft() {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [searchParams] = useSearchParams();
+  const { profileFilter, profileValue } = useProfile();
+  const [aircraft, setAircraft] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
 
-  // Deep-link: ?area=&source=&status=
-  const urlArea = searchParams.get("area");
-  const urlSource = searchParams.get("source");
-  const urlStatus = searchParams.get("status");
-
-  const [tab, setTab] = useState("fila");
-  const [area, setArea] = useState(VALID_AREA(urlArea) ? urlArea : "principal");
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState([]);
-  const [history, setHistory] = useState([]);
-  const [usingSample, setUsingSample] = useState(false);
-  const [statusFilter, setStatusFilter] = useState(VALID_STATUS(urlStatus) ? urlStatus : "all");
-  const [moduleFilter, setModuleFilter] = useState(urlSource || "all");
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(null);
-  const [decision, setDecision] = useState("approved");
-  const [justification, setJustification] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
+  const canEdit = can(user, "aeronaves", "editar");
+  const canCreate = can(user, "aeronaves", "criar");
   const isAdminGeral = getAccessLevel(user) === "admin_geral";
 
-  // Reage a mudanças de URL sem recarregar a página
-  useEffect(() => {
-    const a = searchParams.get("area");
-    const s = searchParams.get("source");
-    const st = searchParams.get("status");
-    if (a && VALID_AREA(a)) setArea(a);
-    if (s) setModuleFilter(s);
-    if (st && VALID_STATUS(st)) setStatusFilter(st);
-  }, [searchParams]);
+  const load = async () => setAircraft(await base44.entities.Aircraft.filter(profileFilter).catch(() => []));
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await base44.functions.invoke("manageApprovalCentral", { action: "list" });
-      setItems(res.items || []);
-      setUsingSample(false);
-    } catch (e) {
-      setItems(SAMPLE_ITEMS);
-      setUsingSample(true);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  useEffect(() => { load(); }, [profileFilter]);
 
-  const loadHistory = useCallback(async () => {
-    try {
-      const res = await base44.functions.invoke("manageApprovalCentral", { action: "history", limit: 200 });
-      setHistory(res.items || []);
-    } catch (e) {
-      setHistory(SAMPLE_HISTORY);
-    }
-  }, []);
+  const fleetSummary = useMemo(() => {
+    const list = aircraft || [];
+    return {
+      total: list.length,
+      available: list.filter((a) => a.status === "available").length,
+      maintenance: list.filter((a) => a.status === "in_maintenance").length,
+      external: list.filter((a) => a.status === "grounded").length,
+    };
+  }, [aircraft]);
 
-  useEffect(() => {
-    if (!isAdminGeral) { setLoading(false); return; }
-    load();
-  }, [isAdminGeral, load]);
+  const openNew = () => { setEditing(null); setForm(emptyForm); setShowForm(true); };
 
-  useEffect(() => {
-    if (tab === "historico" && isAdminGeral) loadHistory();
-  }, [tab, isAdminGeral, loadHistory]);
-
-  const areaCounts = useMemo(() => {
-    const counts = {};
-    for (const a of AREAS) counts[a.key] = { pending: 0, total: 0 };
-    for (const it of items) {
-      if (!counts[it.area]) continue;
-      counts[it.area].total += 1;
-      if (it.display_status === "pending") counts[it.area].pending += 1;
-    }
-    return counts;
-  }, [items]);
-
-  const totalPending = useMemo(() => items.filter((i) => i.display_status === "pending").length, [items]);
-  const totalSuspended = useMemo(() => items.filter((i) => i.display_status === "suspended").length, [items]);
-  const totalApproved = useMemo(() => items.filter((i) => i.display_status === "approved").length, [items]);
-
-  const areaItems = useMemo(() => {
-    let list = items.filter((i) => i.area === area);
-    if (statusFilter !== "all") list = list.filter((i) => i.display_status === statusFilter);
-    if (moduleFilter !== "all") list = list.filter((i) => i.source_key === moduleFilter);
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      list = list.filter(
-        (i) => (i.title || "").toLowerCase().includes(q) || (i.subtitle || "").toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [items, area, statusFilter, moduleFilter, query]);
-
-  const openDetail = (item) => {
-    setSelected(item);
-    setDecision(item.display_status === "suspended" ? "unsuspended" : "approved");
-    setJustification("");
+  const openEdit = (a) => {
+    setEditing(a);
+    setForm({
+      registration: a.registration || "",
+      callsign: a.callsign || "",
+      model: a.model || "",
+      manufacturer: a.manufacturer || "",
+      operator_name: a.operator_name || "",
+      year: a.year ?? "",
+      total_hours: a.total_hours ?? 0,
+      total_mnt_hours: a.total_mnt_hours ?? 0,
+      color: a.color || "",
+      status: a.status || "available",
+      notes: a.notes || "",
+      empty_weight_kg: a.empty_weight_kg ?? "",
+      empty_cg_m: a.empty_cg_m ?? "",
+      empty_weight_date: a.empty_weight_date ?? "",
+    });
+    setShowForm(true);
   };
 
-  const submitDecision = async () => {
-    if (!selected) return;
-    if (!justification.trim() && decision !== "approved") {
-      toast({ title: "Informe a justificativa", variant: "destructive" });
-      return;
-    }
-    setSubmitting(true);
+  const save = async (e) => {
+    e.preventDefault();
+    if (!form.registration || !form.model) return;
+    setSaving(true);
+    const payload = {
+      ...form,
+      year: form.year === "" ? null : Number(form.year),
+      total_hours: Number(form.total_hours) || 0,
+      total_mnt_hours: Number(form.total_mnt_hours) || 0,
+      empty_weight_kg: form.empty_weight_kg === "" ? null : Number(form.empty_weight_kg),
+      empty_cg_m: form.empty_cg_m === "" ? null : Number(form.empty_cg_m),
+      empty_weight_date: form.empty_weight_date || null,
+    };
     try {
-      await base44.functions.invoke("manageApprovalCentral", {
-        action: "decide",
-        source_key: selected.source_key,
-        id: selected.id,
-        decision,
-        justification: justification.trim(),
-      });
-      toast({ title: "Decisão registrada", description: DECISION_LABELS[decision]?.label || decision });
-      setSelected(null);
+      if (editing) await base44.entities.Aircraft.update(editing.id, payload);
+      else await base44.entities.Aircraft.create({ ...payload, aircraftProfile: profileValue, approval_status: "pending" });
+      setShowForm(false);
       await load();
-      if (tab === "historico") await loadHistory();
-    } catch (e) {
-      toast({ title: "Erro ao registrar decisão", description: String(e?.message || e), variant: "destructive" });
+    } catch (err) {
+      alert(err?.response?.data?.error || err?.data?.error || err.message || "Erro ao salvar aeronave.");
     } finally {
-      setSubmitting(false);
+      setSaving(false);
     }
   };
 
-  if (!isAdminGeral) {
+  const remove = async (a) => {
+    if (!confirm(`Excluir a aeronave ${a.registration}?`)) return;
+    await base44.entities.Aircraft.delete(a.id);
+    await load();
+  };
+
+  if (!aircraft) {
     return (
-      <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 px-6 py-16 text-center">
-        <XCircle className="w-10 h-10 text-rose-500/60 mx-auto mb-3" />
-        <p className="text-sm text-slate-400">Acesso restrito ao Administrador Geral.</p>
+      <div className="flex items-center justify-center py-24">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-sky-600 rounded-full animate-spin" />
       </div>
     );
   }
@@ -188,469 +129,257 @@ export default function ControleAprovacoes() {
     <div className="space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">Administração</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">
-            Controle de Aprovações
-          </h1>
-          <p className="text-slate-400 mt-2 text-sm max-w-2xl">
-            Central unificada de análise, aprovação, reprovação, correção e suspensão de registros e documentos de todos os módulos.
-          </p>
+          <p className="text-xs uppercase tracking-widest text-sky-600 font-semibold">Frota</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-1 bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">Aeronaves</h1>
+          <p className="text-slate-500 mt-2 text-sm">{aircraft.length} helicóptero(s) cadastrado(s)</p>
         </div>
-        <BackToDashboard />
+        <div className="flex items-center gap-2">
+          <BackToDashboard />
+          {canCreate && (
+            <button
+              onClick={openNew}
+              className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Nova aeronave
+            </button>
+          )}
+        </div>
       </header>
 
-      {usingSample && (
-        <div className="px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>Modo demonstração: a função de backend <code>manageApprovalCentral</code> ainda não está publicada. Os itens exibidos são exemplos.</span>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <SummaryCard icon={Inbox} label="Pendentes" value={totalPending} tone="amber" onClick={() => { setTab("fila"); setStatusFilter("pending"); }} />
-        <SummaryCard icon={PauseCircle} label="Suspensos" value={totalSuspended} tone="orange" onClick={() => { setTab("fila"); setStatusFilter("suspended"); }} />
-        <SummaryCard icon={CheckCircle2} label="Aprovados" value={totalApproved} tone="emerald" onClick={() => { setTab("fila"); setStatusFilter("approved"); }} />
-        <SummaryCard icon={ListChecks} label="Total de itens" value={items.length} tone="slate" />
-      </div>
-
-      <div className="inline-flex bg-[#1A1D25] border border-slate-700/60 rounded-lg p-1 text-sm">
-        <TabButton active={tab === "fila"} onClick={() => setTab("fila")} icon={ListChecks} label="Fila de Análise" />
-        <TabButton active={tab === "historico"} onClick={() => setTab("historico")} icon={HistoryIcon} label="Histórico" />
-      </div>
-
-      {tab === "fila" && (
-        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4">
-          <aside className="md:sticky md:top-4 md:self-start">
-            <p className="px-2 mb-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Áreas</p>
-            <div className="flex md:flex-col gap-1.5 overflow-x-auto md:overflow-visible pb-1 md:pb-0">
-              {AREAS.map((a) => {
-                const Icon = AREA_ICON[a.key] || ShieldCheck;
-                const active = area === a.key;
-                const c = areaCounts[a.key] || { pending: 0, total: 0 };
-                return (
-                  <button
-                    key={a.key}
-                    onClick={() => { setArea(a.key); setStatusFilter("all"); setModuleFilter("all"); }}
-                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap md:w-full text-left ${
-                      active ? "bg-amber-500/15 text-amber-300 border border-amber-500/20" : "text-slate-400 hover:text-slate-100 hover:bg-white/5 border border-transparent"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span className="flex-1">{a.label}</span>
-                    {c.pending > 0 ? (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">{c.pending}</span>
-                    ) : (
-                      <span className="text-[10px] text-slate-600">{c.total}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </aside>
-
-          <div className="min-w-0 space-y-3">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-2">
-                {(() => {
-                  const AIcon = AREA_ICON[area] || ShieldCheck;
-                  return <AIcon className="w-4 h-4 text-amber-400" />;
-                })()}
-                <h2 className="text-base font-semibold text-slate-100">{AREA_LABEL[area]}</h2>
-                <span className="text-xs text-slate-500">{areaItems.length} item(ns)</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col md:flex-row gap-2">
-              <div className="inline-flex bg-[#1A1D25] border border-slate-700/60 rounded-lg p-1 text-xs overflow-x-auto">
-                {STATUS_FILTERS.map((f) => (
-                  <button
-                    key={f.v}
-                    onClick={() => setStatusFilter(f.v)}
-                    className={`px-2.5 py-1.5 rounded-md font-medium whitespace-nowrap transition-colors ${statusFilter === f.v ? "bg-amber-500 text-slate-900" : "text-slate-400"}`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-              <select
-                value={moduleFilter}
-                onChange={(e) => setModuleFilter(e.target.value)}
-                className="bg-[#1A1D25] border border-slate-700/60 rounded-lg px-3 py-2 text-sm text-slate-200"
-              >
-                <option value="all">Todos os tipos</option>
-                {(SOURCES_BY_AREA[area] || []).map((s) => (
-                  <option key={s.key} value={s.key}>{s.label}</option>
-                ))}
-              </select>
-              <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Buscar por título ou descrição…"
-                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500"
-                />
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="w-8 h-8 border-4 border-slate-700 border-t-amber-500 rounded-full animate-spin" />
-              </div>
-            ) : areaItems.length === 0 ? (
-              <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 px-6 py-16 text-center">
-                <Inbox className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                <p className="text-sm text-slate-500">Nenhum item nesta área com os filtros atuais.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {areaItems.map((item) => (
-                  <FilaRow key={`${item.source_key}-${item.id}`} item={item} onClick={() => openDetail(item)} />
-                ))}
-              </div>
-            )}
+      {aircraft.length > 0 && (
+        <section className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-slate-900">Condições atuais da frota</h2>
+            <span className="text-xs text-slate-400">{fleetSummary.total} aeronave(s)</span>
           </div>
-        </div>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <p className="text-xs font-medium text-emerald-700">Aeronaves disponíveis</p>
+              </div>
+              <p className="text-2xl font-bold text-emerald-800">{fleetSummary.available}</p>
+            </div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Wrench className="w-3.5 h-3.5 text-amber-600" />
+                <p className="text-xs font-medium text-amber-700">Aeronaves em manutenção</p>
+              </div>
+              <p className="text-2xl font-bold text-amber-800">{fleetSummary.maintenance}</p>
+            </div>
+            <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Plane className="w-3.5 h-3.5 text-sky-600" />
+                <p className="text-xs font-medium text-sky-700">Aeronaves em missão externa</p>
+              </div>
+              <p className="text-2xl font-bold text-sky-800">{fleetSummary.external}</p>
+            </div>
+          </div>
+        </section>
       )}
 
-      {tab === "historico" && (
-        <HistoryView items={history} loading={loading && history.length === 0} />
-      )}
-
-      {selected && (
-        <DetailDialog
-          item={selected}
-          decision={decision}
-          setDecision={setDecision}
-          justification={justification}
-          setJustification={setJustification}
-          submitting={submitting}
-          onClose={() => setSelected(null)}
-          onSubmit={submitDecision}
-        />
-      )}
-    </div>
-  );
-}
-
-function SummaryCard({ icon: Icon, label, value, tone, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-xl border ${TONE_BADGE[tone]} px-4 py-3 flex items-center gap-3 text-left hover:brightness-110 transition`}
-    >
-      <Icon className="w-7 h-7" />
-      <div>
-        <p className="text-xl font-bold leading-none">{value}</p>
-        <p className="text-[11px] text-slate-400 uppercase tracking-wider mt-1">{label}</p>
-      </div>
-    </button>
-  );
-}
-
-function TabButton({ active, onClick, icon: Icon, label }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-1.5 rounded-md font-medium transition-colors flex items-center gap-2 ${active ? "bg-amber-500 text-slate-900" : "text-slate-400"}`}
-    >
-      <Icon className="w-4 h-4" /> {label}
-    </button>
-  );
-}
-
-function FilaRow({ item, onClick }) {
-  const Icon = SOURCE_ICON[item.source_key] || ShieldCheck;
-  const ds = DISPLAY_STATUS[item.display_status] || DISPLAY_STATUS.other;
-  const StatusIcon = ds.icon === "CheckCircle2" ? CheckCircle2
-    : ds.icon === "XCircle" ? RejectIcon
-    : ds.icon === "AlertTriangle" ? AlertTriangle
-    : ds.icon === "PauseCircle" ? PauseCircle
-    : ds.icon === "Inbox" ? Inbox
-    : Circle;
-  return (
-    <button
-      onClick={onClick}
-      className="w-full text-left bg-[#1A1D25] rounded-xl border border-slate-700/60 hover:border-amber-500/30 transition-colors px-4 py-3 flex items-center gap-4"
-    >
-      <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${TONE_BADGE[ds.tone]}`}>
-        <Icon className="w-4 h-4" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-300">
-            {APPROVAL_SOURCE_LABEL[item.source_key] || item.source_key}
-          </span>
-          <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border inline-flex items-center gap-1 ${TONE_BADGE[ds.tone]}`}>
-            <StatusIcon className="w-2.5 h-2.5" /> {ds.label}
-          </span>
-          <span className="text-sm font-medium text-slate-200 truncate">{item.title}</span>
-        </div>
-        {item.subtitle && <p className="text-xs text-slate-500 mt-1 truncate">{item.subtitle}</p>}
-      </div>
-      <div className="text-right shrink-0">
-        <p className="text-[11px] text-slate-500">{item.created_date ? new Date(item.created_date).toLocaleDateString("pt-BR") : ""}</p>
-        <ChevronRight className="w-4 h-4 text-slate-600 ml-auto mt-1" />
-      </div>
-    </button>
-  );
-}
-
-function HistoryView({ items, loading }) {
-  const [decisionFilter, setDecisionFilter] = useState("all");
-  const [areaFilter, setAreaFilter] = useState("all");
-  const [query, setQuery] = useState("");
-
-  const filtered = useMemo(() => {
-    let list = items;
-    if (decisionFilter !== "all") list = list.filter((h) => h.decision === decisionFilter);
-    if (areaFilter !== "all") {
-      const src = APPROVAL_SOURCES.find((s) => s.key === areaFilter);
-      list = list.filter((h) => h.source_key === areaFilter || h.source_entity === (src?.entity || areaFilter));
-    }
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      list = list.filter((h) => (h.record_title || "").toLowerCase().includes(q) || (h.justification || "").toLowerCase().includes(q));
-    }
-    return list.sort((a, b) => new Date(b.reviewed_at || 0) - new Date(a.reviewed_at || 0));
-  }, [items, decisionFilter, areaFilter, query]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-slate-700 border-t-amber-500 rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="flex flex-col md:flex-row gap-3">
-        <select value={decisionFilter} onChange={(e) => setDecisionFilter(e.target.value)} className="bg-[#1A1D25] border border-slate-700/60 rounded-lg px-3 py-2 text-sm text-slate-200">
-          <option value="all">Todas as decisões</option>
-          {DECISION_OPTIONS.map((d) => (
-            <option key={d.value} value={d.value}>{d.label}</option>
-          ))}
-        </select>
-        <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} className="bg-[#1A1D25] border border-slate-700/60 rounded-lg px-3 py-2 text-sm text-slate-200">
-          <option value="all">Todos os módulos</option>
-          {APPROVAL_SOURCES.map((s) => (
-            <option key={s.key} value={s.key}>{s.label}</option>
-          ))}
-        </select>
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar no histórico…" className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500" />
-        </div>
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="bg-[#1A1D25] rounded-2xl border border-slate-700/60 px-6 py-16 text-center">
-          <HistoryIcon className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">Nenhuma decisão registrada.</p>
+      {aircraft.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm px-6 py-16 text-center">
+          <Plane className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm text-slate-400">Nenhuma aeronave cadastrada.</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map((h) => {
-            const Icon = DECISION_ICON[h.decision] || ShieldCheck;
-            const tone = DECISION_LABELS[h.decision]?.tone || "slate";
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {aircraft.map((a) => {
+            const st = STATUS[a.status] || STATUS.available;
+            const StIcon = st.icon;
+            const ap = APPROVAL[a.approval_status] || null;
+            const ApIcon = ap?.icon;
             return (
-              <div key={h.id} className="bg-[#1A1D25] rounded-xl border border-slate-700/60 px-4 py-3 flex items-start gap-4">
-                <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${TONE_BADGE[tone]}`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-300">{h.module_label || APPROVAL_SOURCE_LABEL[h.source_key] || h.source_entity}</span>
-                    <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${TONE_BADGE[tone]}`}>{DECISION_LABELS[h.decision]?.label || h.decision}</span>
-                    <span className="text-sm font-medium text-slate-200">{h.record_title}</span>
+              <div key={a.id} className={`bg-white rounded-2xl border shadow-sm p-5 flex flex-col hover:shadow-md transition-shadow ${ap ? "border-amber-300/60 ring-1 ring-amber-200/40" : "border-slate-200/80"}`}>
+                {ap && (
+                  isAdminGeral ? (
+                    <Link
+                      to={`/controle-aprovacoes?area=principal&source=aircraft&status=${ap.status}`}
+                      className={`mb-3 inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border ${ap.color} hover:brightness-95 transition-all`}
+                      title="Abrir no Controle de Aprovações"
+                    >
+                      <ApIcon className="w-3.5 h-3.5" />
+                      {ap.label}
+                      <ChevronRight className="w-3 h-3" />
+                    </Link>
+                  ) : (
+                    <div className={`mb-3 inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border ${ap.color}`}>
+                      <ApIcon className="w-3.5 h-3.5" />
+                      {ap.label}
+                    </div>
+                  )
+                )}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-block text-lg font-bold tracking-tight text-black bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1">{a.registration || "—"}</span>
+                      {a.callsign && (
+                        <span className="inline-block text-sm font-semibold tracking-tight text-black bg-amber-100 border border-amber-300 rounded-lg px-2.5 py-1">{a.callsign}</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-500 mt-2">{a.model || "—"}</p>
+                    {a.operator_name && <p className="text-xs text-slate-600 mt-0.5 font-medium">Operador: {a.operator_name}</p>}
+                    {a.manufacturer && <p className="text-xs text-slate-400 mt-0.5">{a.manufacturer}{a.year ? ` · ${a.year}` : ""}</p>}
                   </div>
-                  {h.justification && <p className="text-xs text-slate-400 mt-1">{h.justification}</p>}
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    {h.reviewed_by_name || "—"} · {h.reviewed_at ? new Date(h.reviewed_at).toLocaleString("pt-BR") : ""}
-                  </p>
+                  <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border ${st.color}`}>
+                    <StIcon className="w-3.5 h-3.5" />
+                    {st.label}
+                  </span>
                 </div>
+
+                <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-slate-400">Total de horas de voo</p>
+                    <p className="font-semibold text-slate-900">{(a.total_hours || 0).toFixed(1)}h</p>
+                    {a.total_mnt_hours != null && a.total_mnt_hours > 0 && (
+                      <p className="text-[11px] text-slate-400 mt-0.5">MNT: {(a.total_mnt_hours || 0).toFixed(1)}h</p>
+                    )}
+                    {a.color && <p className="text-[11px] text-slate-400 capitalize">Cor: {a.color}</p>}
+                  </div>
+                  <div className="flex gap-1">
+                    {canEdit && (
+                      <>
+                        <button onClick={() => openEdit(a)} className="p-2 text-slate-400 hover:text-sky-600 rounded-lg hover:bg-sky-50 transition-colors">
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => remove(a)} className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {(a.empty_weight_kg != null || a.empty_cg_m != null) && (
+                  <div className="mt-3 pt-3 border-t border-slate-100">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Scale className="w-3.5 h-3.5 text-sky-600" />
+                      <p className="text-[11px] font-semibold text-slate-600">Peso e Balanceamento</p>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-slate-500">
+                      {a.empty_weight_kg != null && (
+                        <span>Peso vazio: <strong className="text-slate-700">{a.empty_weight_kg} kg</strong></span>
+                      )}
+                      {a.empty_cg_m != null && (
+                        <span>CG vazio: <strong className="text-slate-700">{a.empty_cg_m} m</strong></span>
+                      )}
+                      {a.empty_weight_date && (
+                        <span>Pesagem: {new Date(a.empty_weight_date).toLocaleDateString("pt-BR")}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {a.notes && <p className="mt-3 text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">{a.notes}</p>}
               </div>
             );
           })}
         </div>
       )}
-    </>
+
+      {showForm && (
+        <AircraftForm form={form} editing={editing} saving={saving} onField={(k, v) => setForm((p) => ({ ...p, [k]: v }))} onClose={() => setShowForm(false)} onSave={save} />
+      )}
+    </div>
   );
 }
 
-function DetailDialog({ item, decision, setDecision, justification, setJustification, submitting, onClose, onSubmit }) {
-  const summary = item.summary || {};
-  const isSuspended = item.display_status === "suspended";
-  const [recordHistory, setRecordHistory] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      setLoadingHistory(true);
-      try {
-        const res = await base44.functions.invoke("manageApprovalCentral", {
-          action: "history_for",
-          source_entity: item.source_entity,
-          source_record_id: item.id,
-        });
-        if (active) setRecordHistory(res.items || []);
-      } catch {
-        if (active) setRecordHistory([]);
-      } finally {
-        if (active) setLoadingHistory(false);
-      }
-    })();
-    return () => { active = false; };
-  }, [item.source_entity, item.id]);
-
-  const availableDecisions = isSuspended
-    ? DECISION_OPTIONS.filter((d) => d.value === "unsuspended" || d.value === "approved" || d.value === "rejected")
-    : DECISION_OPTIONS.filter((d) => d.value !== "unsuspended");
-
+function AircraftForm({ form, editing, saving, onField, onClose, onSave }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-2xl bg-[#16222F] border border-slate-700/60 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700/60 sticky top-0 bg-[#16222F] z-10">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-300">
-              {APPROVAL_SOURCE_LABEL[item.source_key] || item.source_key}
-            </span>
-            <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${TONE_BADGE[(DISPLAY_STATUS[item.display_status] || DISPLAY_STATUS.other).tone]}`}>
-              {(DISPLAY_STATUS[item.display_status] || DISPLAY_STATUS.other).label}
-            </span>
-          </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm p-0 sm:p-4">
+      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white/95 backdrop-blur px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 className="font-semibold text-lg text-slate-900">{editing ? "Editar aeronave" : "Nova aeronave"}</h2>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="px-5 py-5 space-y-5">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-100">{item.title}</h3>
-            {item.subtitle && <p className="text-sm text-slate-400 mt-1">{item.subtitle}</p>}
-            <p className="text-[11px] text-slate-500 mt-1">Enviado em {item.created_date ? new Date(item.created_date).toLocaleString("pt-BR") : "—"}</p>
+        <form onSubmit={onSave} className="px-6 py-5 space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Matrícula *">
+              <input required value={form.registration} onChange={(e) => onField("registration", e.target.value.toUpperCase())} className={inputCls} placeholder="PR-ABC" />
+            </Field>
+            <Field label="Designativo de Chamada">
+              <input value={form.callsign} onChange={(e) => onField("callsign", e.target.value)} className={inputCls} placeholder="Ex: Arcanjo 16" />
+            </Field>
+            <Field label="Modelo *">
+              <input required value={form.model} onChange={(e) => onField("model", e.target.value)} className={inputCls} placeholder="Robinson R44" />
+            </Field>
+            <Field label="Fabricante">
+              <input value={form.manufacturer} onChange={(e) => onField("manufacturer", e.target.value)} className={inputCls} placeholder="Robinson" />
+            </Field>
+            <Field label="Operador">
+              <input value={form.operator_name} onChange={(e) => onField("operator_name", e.target.value)} className={inputCls} placeholder="Nome do operador" />
+            </Field>
+            <Field label="Ano">
+              <input type="number" value={form.year} onChange={(e) => onField("year", e.target.value)} className={inputCls} placeholder="2020" />
+            </Field>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Total de horas de voo">
+                <input type="number" step="0.1" min="0" value={form.total_hours} onChange={(e) => onField("total_hours", e.target.value)} className={inputCls} />
+              </Field>
+              <Field label="Total de horas MNT">
+                <input type="number" step="0.1" min="0" value={form.total_mnt_hours} onChange={(e) => onField("total_mnt_hours", e.target.value)} className={inputCls} placeholder="Manutenção" />
+              </Field>
+            </div>
+            <Field label="Cor">
+              <input value={form.color} onChange={(e) => onField("color", e.target.value)} className={inputCls} placeholder="Ex: Branca e vermelha" />
+            </Field>
+            <Field label="Status">
+              <select value={form.status} onChange={(e) => onField("status", e.target.value)} className={inputCls}>
+                <option value="available">Disponível</option>
+                <option value="in_maintenance">Em manutenção</option>
+                <option value="grounded">Em missão externa</option>
+              </select>
+            </Field>
           </div>
 
-          {Object.keys(summary).length > 0 && (
-            <div className="rounded-xl border border-slate-700/60 bg-[#1A1D25] divide-y divide-slate-700/60">
-              {Object.entries(summary).map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4 px-4 py-2.5 text-sm">
-                  <span className="text-slate-500">{k}</span>
-                  <span className="text-slate-200 text-right">{String(v ?? "—")}</span>
-                </div>
-              ))}
+          <div className="p-4 rounded-lg bg-sky-50 border border-sky-200 space-y-3">
+            <div className="flex items-center gap-1.5">
+              <Scale className="w-4 h-4 text-sky-700" />
+              <p className="text-xs font-semibold text-sky-900">Peso e Balanceamento</p>
             </div>
-          )}
-
-          {item.doc_uri && (
-            <div className="rounded-xl border border-slate-700/60 bg-[#1A1D25] px-4 py-3">
-              <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">Documento</p>
-              <a
-                href="#"
-                onClick={async (e) => {
-                  e.preventDefault();
-                  const uri = String(item.doc_uri || "");
-                  const isSafeUri =
-                    /^(https?:|storage:\/\/|private-files:\/\/|media\.base44\.com|static\.wixstatic\.com)/i.test(uri) ||
-                    !/^[a-z][a-z0-9+.-]*:/i.test(uri);
-                  if (!isSafeUri) {
-                    alert("Documento indisponível: URI inválida ou não suportada.");
-                    return;
-                  }
-                  try {
-                    const { CreateFileSignedUrl } = base44.integrations.Core;
-                    const { signed_url } = await CreateFileSignedUrl({ file_uri: uri });
-                    if (typeof signed_url === "string" && /^https?:\/\//i.test(signed_url)) {
-                      window.open(signed_url, "_blank", "noopener,noreferrer");
-                    } else {
-                      alert("Não foi possível gerar um link seguro para o documento.");
-                    }
-                  } catch (err) {
-                    alert("Documento indisponível: não foi possível gerar o link assinado.");
-                  }
-                }}
-                className="inline-flex items-center gap-2 text-sm text-amber-300 hover:text-amber-200"
-              >
-                <FileText className="w-4 h-4" /> {item.doc_name || "Abrir documento"}
-              </a>
+            <p className="text-[11px] text-slate-600">
+              Valores da ficha de pesagem da aeronave. Carregados automaticamente no cálculo de Peso e Balanceamento.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Peso vazio equipado (kg)">
+                <input type="number" step="0.1" min="0" value={form.empty_weight_kg} onChange={(e) => onField("empty_weight_kg", e.target.value)} className={inputCls} placeholder="Ex.: 1200" />
+              </Field>
+              <Field label="CG vazio (m)">
+                <input type="number" step="0.001" min="0" value={form.empty_cg_m} onChange={(e) => onField("empty_cg_m", e.target.value)} className={inputCls} placeholder="Ex.: 3.560" />
+              </Field>
             </div>
-          )}
-
-          <div className="rounded-xl border border-slate-700/60 bg-[#1A1D25] px-4 py-3">
-            <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-2">Histórico de decisões</p>
-            {loadingHistory ? (
-              <p className="text-xs text-slate-500">Carregando…</p>
-            ) : recordHistory.length === 0 ? (
-              <p className="text-xs text-slate-500">Nenhuma decisão anterior registrada.</p>
-            ) : (
-              <div className="space-y-2">
-                {recordHistory.map((h) => {
-                  const Icon = DECISION_ICON[h.decision] || ShieldCheck;
-                  const tone = DECISION_LABELS[h.decision]?.tone || "slate";
-                  return (
-                    <div key={h.id} className="flex items-start gap-2">
-                      <div className={`shrink-0 w-6 h-6 rounded-md flex items-center justify-center ${TONE_BADGE[tone]}`}>
-                        <Icon className="w-3 h-3" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs text-slate-300">
-                          <span className="font-medium">{DECISION_LABELS[h.decision]?.label || h.decision}</span>
-                          <span className="text-slate-500"> · {h.reviewed_by_name || "—"}</span>
-                        </p>
-                        {h.justification && <p className="text-[11px] text-slate-500">{h.justification}</p>}
-                        <p className="text-[10px] text-slate-600">{h.reviewed_at ? new Date(h.reviewed_at).toLocaleString("pt-BR") : ""}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <Field label="Data da pesagem">
+              <input type="date" value={form.empty_weight_date} onChange={(e) => onField("empty_weight_date", e.target.value)} className={inputCls} />
+            </Field>
           </div>
 
-          <div className="space-y-3">
-            <p className="text-[11px] uppercase tracking-wider text-slate-500">Decisão</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {availableDecisions.map((d) => {
-                const Icon = DECISION_ICON[d.value] || ShieldCheck;
-                const active = decision === d.value;
-                return (
-                  <button
-                    key={d.value}
-                    onClick={() => setDecision(d.value)}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm transition ${active ? `border-amber-500/50 ${TONE_BADGE[d.tone]}` : "border-slate-700/60 bg-[#1A1D25] text-slate-300 hover:border-amber-500/30"}`}
-                  >
-                    <Icon className="w-4 h-4" /> {d.label}
-                  </button>
-                );
-              })}
-            </div>
-            <div>
-              <label className="text-[11px] uppercase tracking-wider text-slate-500">Justificativa</label>
-              <textarea
-                value={justification}
-                onChange={(e) => setJustification(e.target.value)}
-                rows={3}
-                placeholder="Fundamente a decisão (obrigatório para reprovar, corrigir ou suspender)…"
-                className="mt-1 w-full px-3 py-2 rounded-lg bg-[#1A1D25] border border-slate-700/60 text-sm text-slate-200 placeholder:text-slate-500 resize-none"
-              />
-            </div>
-          </div>
-        </div>
+          <Field label="Observações">
+            <textarea value={form.notes} onChange={(e) => onField("notes", e.target.value)} rows={3} className={inputCls} placeholder="Notas sobre a aeronave" />
+          </Field>
 
-        <div className="px-5 py-4 border-t border-slate-700/60 flex justify-end gap-2 sticky bottom-0 bg-[#16222F]">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/5">Cancelar</button>
-          <button
-            onClick={onSubmit}
-            disabled={submitting}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-amber-500 text-slate-900 hover:bg-amber-400 disabled:opacity-50"
-          >
-            {submitting ? "Registrando…" : "Registrar decisão"}
-          </button>
-        </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">Cancelar</button>
+            <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition-colors">
+              {saving ? "Salvando…" : "Salvar"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
+  );
+}
+
+const inputCls = "w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500";
+
+function Field({ label, children }) {
+  return (
+    <label className="block">
+      <span className="block text-xs font-medium text-slate-600 mb-1.5">{label}</span>
+      {children}
+    </label>
   );
 }
