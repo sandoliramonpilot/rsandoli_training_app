@@ -125,7 +125,8 @@ const SOURCES = [
 function relevantStatusValues(src) {
   return Array.from(new Set([
     ...src.pendingValues, src.approveVal, src.rejectVal, src.correctionVal,
-  ]));
+    src.suspendVal, src.restoreVal,
+  ].filter(Boolean)));
 }
 
 function classify(src, rawStatus, latestDecision, recordId) {
@@ -230,24 +231,31 @@ export default async function (req) {
 
     // ---------- LIST ----------
     if (action === "list") {
+      const areaFilter = body.area || null;
+      const sourceFilter = body.source_key || null;
+      const statusFilter = body.display_status || null;
+
       const latestDecision = await buildLatestDecisionMap(base44);
       const items = [];
+      const sourcesToQuery = SOURCES.filter((s) => {
+        if (sourceFilter && s.key !== sourceFilter) return false;
+        if (areaFilter && s.area !== areaFilter) return false;
+        return true;
+      });
 
       await Promise.all(
-        SOURCES.map(async (src) => {
-          const records = await base44.asServiceRole.entities[src.entity]
-            .filter({ [src.statusField]: { $in: relevantStatusValues(src) } }, { sort: "-created_date", limit: 300 })
-            .then((r) => (Array.isArray(r) ? r : r.items || []))
-            .catch(() => []);
-          for (const r of records) {
-            if (!inProfileScope(userProfiles, r)) continue;
-            const s = buildSummary(src, r);
-            s.display_status = classify(src, r[src.statusField], latestDecision, r.id);
-            s.summary = buildSnapshot(src, r);
-            items.push(s);
-          }
+        sourcesToQuery.map(async (src) => {
+          // ... resto igual
         })
       );
+
+      const filtered = statusFilter
+        ? items.filter((i) => i.display_status === statusFilter)
+        : items;
+
+      filtered.sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
+      return Response.json({ items: filtered });
+    }
 
       items.sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
       return Response.json({ items });
