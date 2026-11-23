@@ -14,6 +14,7 @@
   "theme_color": "#0D141C",
   "categories": ["education", "productivity", "aviation"],
   "prefer_related_applications": false,
+  "orientation": "portrait",
   "icons": [
     { "src": "/icons/icon-48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-72.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
