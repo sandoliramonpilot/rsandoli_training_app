@@ -47,6 +47,7 @@ export default function Checklist() {
   const { validationMap } = useChecklistValidation(validationKey);
 
   const canValidate = getAccessLevel(user) === "admin_geral";
+  // canValidate já é o isAdminGeral neste arquivo
 
   const [view, setView] = useState("new");
   const [aircraft, setAircraft] = useState([]);
@@ -520,6 +521,11 @@ export default function Checklist() {
               status={validationMap[currentPhase.id]?.status || "pending"}
               reviewedBy={validationMap[currentPhase.id]?.reviewed_by}
               reviewedAt={validationMap[currentPhase.id]?.reviewed_at}
+              linkTo={
+                canValidate
+                  ? `/controle-aprovacoes?area=operacoes&source=checklist_validation&status=pending`
+                  : undefined
+              }
             />
           )}
 
@@ -590,14 +596,27 @@ export default function Checklist() {
   );
 }
 
-function PhaseValidationBadge({ status, reviewedBy, reviewedAt }) {
+function PhaseValidationBadge({ status, reviewedBy, reviewedAt, linkTo }) {
   const meta = VALIDATION_META[status] || VALIDATION_META.pending;
   const Icon = status === "approved" ? BadgeCheck : status === "rejected" ? XCircle : Clock;
+  const pillCls = `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${meta.badge}`;
+
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${meta.badge}`}>
-        <Icon className="w-3 h-3" /> Validação técnica: {meta.label}
-      </span>
+      {linkTo ? (
+        <Link
+          to={linkTo}
+          className={`${pillCls} hover:brightness-125 transition-all`}
+          title="Abrir no Controle de Aprovações"
+        >
+          <Icon className="w-3 h-3" /> Validação técnica: {meta.label}
+          <ChevronRight className="w-3 h-3" />
+        </Link>
+      ) : (
+        <span className={pillCls}>
+          <Icon className="w-3 h-3" /> Validação técnica: {meta.label}
+        </span>
+      )}
       {reviewedBy && status !== "pending" && (
         <span className="text-slate-500">
           {reviewedBy}{reviewedAt ? ` · ${new Date(reviewedAt).toLocaleDateString("pt-BR")}` : ""}
