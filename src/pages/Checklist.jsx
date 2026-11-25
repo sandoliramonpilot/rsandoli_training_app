@@ -24,7 +24,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getAccessLevel } from "@/lib/accessControl";
 import { enqueueOperation, newClientKey } from "@/lib/offlineStore";
 import { isNetworkError } from "@/lib/useOnlineStatus";
-import { ShieldCheck, AlertTriangle, BadgeCheck, Clock, XCircle, Plane } from "lucide-react";
+import { ShieldCheck, AlertTriangle, BadgeCheck, Clock, XCircle, Plane, ChevronRight } from "lucide-react";
 
 const DRAFT_KEY = "checklist_draft_v2";
 

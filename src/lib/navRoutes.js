@@ -9,6 +9,7 @@ export const NAV_MODULE_ROUTES = [
   { label: "Pilotos", path: "/pilotos", moduleId: "pilotos" },
   { label: "Treinamento", path: "/treinamentos", moduleId: "treinamentos" },
   { label: "AW119 Training", path: "/training", moduleId: "aw119_training" },
+  { label: "Aviônicos", path: "/academy/avionicos", moduleId: "aw119_training" },
   { label: "Treinamentos Gerais", path: "/treinamentos-gerais", moduleId: "treinamentos_gerais" },
   { label: "Limitações", path: "/limitacoes", moduleId: "limitacoes" },
   { label: "Procedimentos Normais", path: "/procedimentos-normais", moduleId: "procedimentos_normais" },

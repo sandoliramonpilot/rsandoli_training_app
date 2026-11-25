@@ -57,6 +57,7 @@ import Privacidade from '@/pages/Privacidade';
 import Termos from '@/pages/Termos';
 import Configuracoes from '@/pages/Configuracoes';
 import WeightBalance from '@/pages/WeightBalance';
+import AcademyAvionicos from '@/pages/AcademyAvionicos';
 import UpdatePrompt from '@/components/UpdatePrompt';
 
 const PUBLIC_TRUST_PATHS = ["/sobre", "/contato", "/privacidade", "/termos"];
@@ -115,6 +116,7 @@ const AuthenticatedApp = () => {
         <Route path="/aircraft" element={<Aircraft />} />
         <Route path="/checklist" element={<RequireModule moduleId="checklists"><Checklist /></RequireModule>} />
         <Route path="/peso-balanceamento" element={<RequireModule moduleId="checklists"><WeightBalance /></RequireModule>} />
+        <Route path="/academy/avionicos" element={<RequireModule moduleId="aw119_training"><AcademyAvionicos /></RequireModule>} />
         <Route path="/qrh" element={<QRH />} />
         <Route path="/qrh-efis" element={<QRHEfis />} />
         <Route path="/biblioteca" element={<Biblioteca />} />

@@ -33,6 +33,7 @@ const navSections = [
     label: "Academy",
     items: [
       { label: "Treinamentos", path: "/training", icon: Crown, moduleId: "aw119_training", badge: "Premium" },
+      { label: "Aviônicos", path: "/academy/avionicos", icon: Monitor, moduleId: "aw119_training", aw119Only: true },
       { label: "Dashboard de Progresso", path: "/painel-progresso", icon: TrendingUp, moduleId: "treinamentos" },
       { label: "Treinamentos Gerais", path: "/treinamentos-gerais", icon: GraduationCap, moduleId: "treinamentos_gerais" },
       { label: "Limitações", path: "/limitacoes", icon: Gauge, moduleId: "limitacoes" },
@@ -142,6 +143,7 @@ function SidebarContent({ location, onNavigate }) {
         items: s.items.filter((i) => {
           // QRH-EFIS é exclusivo do módulo AW119.
           if (i.moduleId === "qrh_efis" && profileValue !== "AW119") return false;
+          if (i.aw119Only && profileValue !== "AW119") return false;
           if (i.h125Only && profileValue !== "H125") return false;
           if (i.moduleId === "aw119_training") {
       return can(user, "aw119_training", "visualizar") || can(user, "h125_training", "visualizar");
